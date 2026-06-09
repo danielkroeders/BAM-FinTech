@@ -27,6 +27,7 @@ The app works without an OpenAI API key by using deterministic explanations. If 
 ## Pages
 
 - `Home.py`: portfolio metrics, known fraud count, model ROC-AUC, recall, and workflow overview.
+- `pages/About.py`: definitions for Loan Intake scoring dimensions and risk grade interpretation.
 - `pages/Loan_Intake.py`: score one B2B loan application and store the latest decision in session state.
 - `pages/Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, and live session decisions.
 - `pages/Model_Insights.py`: model metrics, confusion matrix, feature importances, and grading thresholds.
