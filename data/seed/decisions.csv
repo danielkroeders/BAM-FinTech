@@ -1,0 +1,1201 @@
+application_id,is_fraud,historical_action
+APP-00001,1,Fraud confirmed
+APP-00002,0,No fraud found
+APP-00003,1,Fraud confirmed
+APP-00004,1,Fraud confirmed
+APP-00005,0,No fraud found
+APP-00006,0,No fraud found
+APP-00007,1,Fraud confirmed
+APP-00008,1,Fraud confirmed
+APP-00009,1,Fraud confirmed
+APP-00010,0,No fraud found
+APP-00011,0,No fraud found
+APP-00012,0,No fraud found
+APP-00013,0,No fraud found
+APP-00014,1,Fraud confirmed
+APP-00015,0,No fraud found
+APP-00016,0,No fraud found
+APP-00017,0,No fraud found
+APP-00018,1,Fraud confirmed
+APP-00019,1,Fraud confirmed
+APP-00020,1,Fraud confirmed
+APP-00021,1,Fraud confirmed
+APP-00022,1,Fraud confirmed
+APP-00023,1,Fraud confirmed
+APP-00024,1,Fraud confirmed
+APP-00025,0,No fraud found
+APP-00026,1,Fraud confirmed
+APP-00027,0,No fraud found
+APP-00028,1,Fraud confirmed
+APP-00029,0,No fraud found
+APP-00030,1,Fraud confirmed
+APP-00031,0,No fraud found
+APP-00032,1,Fraud confirmed
+APP-00033,0,No fraud found
+APP-00034,1,Fraud confirmed
+APP-00035,0,No fraud found
+APP-00036,1,Fraud confirmed
+APP-00037,0,No fraud found
+APP-00038,0,No fraud found
+APP-00039,1,Fraud confirmed
+APP-00040,1,Fraud confirmed
+APP-00041,0,No fraud found
+APP-00042,0,No fraud found
+APP-00043,1,Fraud confirmed
+APP-00044,1,Fraud confirmed
+APP-00045,0,No fraud found
+APP-00046,1,Fraud confirmed
+APP-00047,1,Fraud confirmed
+APP-00048,1,Fraud confirmed
+APP-00049,1,Fraud confirmed
+APP-00050,0,No fraud found
+APP-00051,0,No fraud found
+APP-00052,0,No fraud found
+APP-00053,0,No fraud found
+APP-00054,1,Fraud confirmed
+APP-00055,1,Fraud confirmed
+APP-00056,1,Fraud confirmed
+APP-00057,0,No fraud found
+APP-00058,1,Fraud confirmed
+APP-00059,0,No fraud found
+APP-00060,1,Fraud confirmed
+APP-00061,1,Fraud confirmed
+APP-00062,0,No fraud found
+APP-00063,1,Fraud confirmed
+APP-00064,1,Fraud confirmed
+APP-00065,0,No fraud found
+APP-00066,0,No fraud found
+APP-00067,1,Fraud confirmed
+APP-00068,1,Fraud confirmed
+APP-00069,0,No fraud found
+APP-00070,0,No fraud found
+APP-00071,1,Fraud confirmed
+APP-00072,1,Fraud confirmed
+APP-00073,1,Fraud confirmed
+APP-00074,1,Fraud confirmed
+APP-00075,0,No fraud found
+APP-00076,0,No fraud found
+APP-00077,1,Fraud confirmed
+APP-00078,1,Fraud confirmed
+APP-00079,1,Fraud confirmed
+APP-00080,0,No fraud found
+APP-00081,1,Fraud confirmed
+APP-00082,1,Fraud confirmed
+APP-00083,1,Fraud confirmed
+APP-00084,1,Fraud confirmed
+APP-00085,1,Fraud confirmed
+APP-00086,0,No fraud found
+APP-00087,1,Fraud confirmed
+APP-00088,1,Fraud confirmed
+APP-00089,1,Fraud confirmed
+APP-00090,0,No fraud found
+APP-00091,1,Fraud confirmed
+APP-00092,0,No fraud found
+APP-00093,0,No fraud found
+APP-00094,0,No fraud found
+APP-00095,0,No fraud found
+APP-00096,0,No fraud found
+APP-00097,1,Fraud confirmed
+APP-00098,0,No fraud found
+APP-00099,1,Fraud confirmed
+APP-00100,1,Fraud confirmed
+APP-00101,0,No fraud found
+APP-00102,0,No fraud found
+APP-00103,1,Fraud confirmed
+APP-00104,1,Fraud confirmed
+APP-00105,1,Fraud confirmed
+APP-00106,1,Fraud confirmed
+APP-00107,0,No fraud found
+APP-00108,1,Fraud confirmed
+APP-00109,1,Fraud confirmed
+APP-00110,0,No fraud found
+APP-00111,1,Fraud confirmed
+APP-00112,0,No fraud found
+APP-00113,1,Fraud confirmed
+APP-00114,1,Fraud confirmed
+APP-00115,1,Fraud confirmed
+APP-00116,1,Fraud confirmed
+APP-00117,1,Fraud confirmed
+APP-00118,1,Fraud confirmed
+APP-00119,0,No fraud found
+APP-00120,0,No fraud found
+APP-00121,0,No fraud found
+APP-00122,1,Fraud confirmed
+APP-00123,0,No fraud found
+APP-00124,0,No fraud found
+APP-00125,1,Fraud confirmed
+APP-00126,1,Fraud confirmed
+APP-00127,1,Fraud confirmed
+APP-00128,1,Fraud confirmed
+APP-00129,1,Fraud confirmed
+APP-00130,1,Fraud confirmed
+APP-00131,1,Fraud confirmed
+APP-00132,1,Fraud confirmed
+APP-00133,1,Fraud confirmed
+APP-00134,0,No fraud found
+APP-00135,0,No fraud found
+APP-00136,0,No fraud found
+APP-00137,1,Fraud confirmed
+APP-00138,1,Fraud confirmed
+APP-00139,0,No fraud found
+APP-00140,1,Fraud confirmed
+APP-00141,0,No fraud found
+APP-00142,1,Fraud confirmed
+APP-00143,1,Fraud confirmed
+APP-00144,1,Fraud confirmed
+APP-00145,0,No fraud found
+APP-00146,1,Fraud confirmed
+APP-00147,0,No fraud found
+APP-00148,1,Fraud confirmed
+APP-00149,0,No fraud found
+APP-00150,0,No fraud found
+APP-00151,1,Fraud confirmed
+APP-00152,0,No fraud found
+APP-00153,0,No fraud found
+APP-00154,1,Fraud confirmed
+APP-00155,0,No fraud found
+APP-00156,1,Fraud confirmed
+APP-00157,0,No fraud found
+APP-00158,0,No fraud found
+APP-00159,1,Fraud confirmed
+APP-00160,0,No fraud found
+APP-00161,1,Fraud confirmed
+APP-00162,1,Fraud confirmed
+APP-00163,0,No fraud found
+APP-00164,1,Fraud confirmed
+APP-00165,1,Fraud confirmed
+APP-00166,1,Fraud confirmed
+APP-00167,1,Fraud confirmed
+APP-00168,0,No fraud found
+APP-00169,0,No fraud found
+APP-00170,0,No fraud found
+APP-00171,0,No fraud found
+APP-00172,0,No fraud found
+APP-00173,1,Fraud confirmed
+APP-00174,1,Fraud confirmed
+APP-00175,1,Fraud confirmed
+APP-00176,0,No fraud found
+APP-00177,0,No fraud found
+APP-00178,1,Fraud confirmed
+APP-00179,0,No fraud found
+APP-00180,1,Fraud confirmed
+APP-00181,1,Fraud confirmed
+APP-00182,0,No fraud found
+APP-00183,1,Fraud confirmed
+APP-00184,1,Fraud confirmed
+APP-00185,1,Fraud confirmed
+APP-00186,0,No fraud found
+APP-00187,1,Fraud confirmed
+APP-00188,1,Fraud confirmed
+APP-00189,1,Fraud confirmed
+APP-00190,1,Fraud confirmed
+APP-00191,1,Fraud confirmed
+APP-00192,0,No fraud found
+APP-00193,1,Fraud confirmed
+APP-00194,0,No fraud found
+APP-00195,1,Fraud confirmed
+APP-00196,1,Fraud confirmed
+APP-00197,1,Fraud confirmed
+APP-00198,1,Fraud confirmed
+APP-00199,0,No fraud found
+APP-00200,1,Fraud confirmed
+APP-00201,0,No fraud found
+APP-00202,0,No fraud found
+APP-00203,1,Fraud confirmed
+APP-00204,1,Fraud confirmed
+APP-00205,1,Fraud confirmed
+APP-00206,0,No fraud found
+APP-00207,1,Fraud confirmed
+APP-00208,1,Fraud confirmed
+APP-00209,1,Fraud confirmed
+APP-00210,1,Fraud confirmed
+APP-00211,1,Fraud confirmed
+APP-00212,1,Fraud confirmed
+APP-00213,1,Fraud confirmed
+APP-00214,0,No fraud found
+APP-00215,0,No fraud found
+APP-00216,0,No fraud found
+APP-00217,1,Fraud confirmed
+APP-00218,1,Fraud confirmed
+APP-00219,0,No fraud found
+APP-00220,0,No fraud found
+APP-00221,0,No fraud found
+APP-00222,1,Fraud confirmed
+APP-00223,1,Fraud confirmed
+APP-00224,1,Fraud confirmed
+APP-00225,1,Fraud confirmed
+APP-00226,1,Fraud confirmed
+APP-00227,0,No fraud found
+APP-00228,0,No fraud found
+APP-00229,1,Fraud confirmed
+APP-00230,1,Fraud confirmed
+APP-00231,1,Fraud confirmed
+APP-00232,0,No fraud found
+APP-00233,1,Fraud confirmed
+APP-00234,1,Fraud confirmed
+APP-00235,1,Fraud confirmed
+APP-00236,1,Fraud confirmed
+APP-00237,0,No fraud found
+APP-00238,1,Fraud confirmed
+APP-00239,0,No fraud found
+APP-00240,0,No fraud found
+APP-00241,1,Fraud confirmed
+APP-00242,1,Fraud confirmed
+APP-00243,0,No fraud found
+APP-00244,1,Fraud confirmed
+APP-00245,1,Fraud confirmed
+APP-00246,1,Fraud confirmed
+APP-00247,1,Fraud confirmed
+APP-00248,1,Fraud confirmed
+APP-00249,0,No fraud found
+APP-00250,1,Fraud confirmed
+APP-00251,1,Fraud confirmed
+APP-00252,1,Fraud confirmed
+APP-00253,1,Fraud confirmed
+APP-00254,1,Fraud confirmed
+APP-00255,1,Fraud confirmed
+APP-00256,1,Fraud confirmed
+APP-00257,1,Fraud confirmed
+APP-00258,0,No fraud found
+APP-00259,1,Fraud confirmed
+APP-00260,0,No fraud found
+APP-00261,0,No fraud found
+APP-00262,1,Fraud confirmed
+APP-00263,0,No fraud found
+APP-00264,0,No fraud found
+APP-00265,1,Fraud confirmed
+APP-00266,0,No fraud found
+APP-00267,1,Fraud confirmed
+APP-00268,0,No fraud found
+APP-00269,1,Fraud confirmed
+APP-00270,1,Fraud confirmed
+APP-00271,1,Fraud confirmed
+APP-00272,1,Fraud confirmed
+APP-00273,1,Fraud confirmed
+APP-00274,1,Fraud confirmed
+APP-00275,0,No fraud found
+APP-00276,1,Fraud confirmed
+APP-00277,1,Fraud confirmed
+APP-00278,0,No fraud found
+APP-00279,1,Fraud confirmed
+APP-00280,0,No fraud found
+APP-00281,1,Fraud confirmed
+APP-00282,0,No fraud found
+APP-00283,0,No fraud found
+APP-00284,0,No fraud found
+APP-00285,0,No fraud found
+APP-00286,1,Fraud confirmed
+APP-00287,1,Fraud confirmed
+APP-00288,1,Fraud confirmed
+APP-00289,0,No fraud found
+APP-00290,1,Fraud confirmed
+APP-00291,1,Fraud confirmed
+APP-00292,0,No fraud found
+APP-00293,0,No fraud found
+APP-00294,1,Fraud confirmed
+APP-00295,0,No fraud found
+APP-00296,0,No fraud found
+APP-00297,1,Fraud confirmed
+APP-00298,0,No fraud found
+APP-00299,1,Fraud confirmed
+APP-00300,1,Fraud confirmed
+APP-00301,1,Fraud confirmed
+APP-00302,0,No fraud found
+APP-00303,1,Fraud confirmed
+APP-00304,1,Fraud confirmed
+APP-00305,1,Fraud confirmed
+APP-00306,0,No fraud found
+APP-00307,0,No fraud found
+APP-00308,1,Fraud confirmed
+APP-00309,1,Fraud confirmed
+APP-00310,0,No fraud found
+APP-00311,0,No fraud found
+APP-00312,1,Fraud confirmed
+APP-00313,0,No fraud found
+APP-00314,0,No fraud found
+APP-00315,0,No fraud found
+APP-00316,0,No fraud found
+APP-00317,0,No fraud found
+APP-00318,0,No fraud found
+APP-00319,1,Fraud confirmed
+APP-00320,1,Fraud confirmed
+APP-00321,1,Fraud confirmed
+APP-00322,0,No fraud found
+APP-00323,0,No fraud found
+APP-00324,0,No fraud found
+APP-00325,1,Fraud confirmed
+APP-00326,1,Fraud confirmed
+APP-00327,0,No fraud found
+APP-00328,1,Fraud confirmed
+APP-00329,0,No fraud found
+APP-00330,1,Fraud confirmed
+APP-00331,1,Fraud confirmed
+APP-00332,0,No fraud found
+APP-00333,1,Fraud confirmed
+APP-00334,1,Fraud confirmed
+APP-00335,1,Fraud confirmed
+APP-00336,1,Fraud confirmed
+APP-00337,1,Fraud confirmed
+APP-00338,0,No fraud found
+APP-00339,0,No fraud found
+APP-00340,1,Fraud confirmed
+APP-00341,0,No fraud found
+APP-00342,1,Fraud confirmed
+APP-00343,1,Fraud confirmed
+APP-00344,1,Fraud confirmed
+APP-00345,1,Fraud confirmed
+APP-00346,0,No fraud found
+APP-00347,0,No fraud found
+APP-00348,1,Fraud confirmed
+APP-00349,1,Fraud confirmed
+APP-00350,0,No fraud found
+APP-00351,0,No fraud found
+APP-00352,1,Fraud confirmed
+APP-00353,0,No fraud found
+APP-00354,0,No fraud found
+APP-00355,0,No fraud found
+APP-00356,0,No fraud found
+APP-00357,0,No fraud found
+APP-00358,0,No fraud found
+APP-00359,1,Fraud confirmed
+APP-00360,1,Fraud confirmed
+APP-00361,1,Fraud confirmed
+APP-00362,0,No fraud found
+APP-00363,1,Fraud confirmed
+APP-00364,0,No fraud found
+APP-00365,1,Fraud confirmed
+APP-00366,1,Fraud confirmed
+APP-00367,1,Fraud confirmed
+APP-00368,0,No fraud found
+APP-00369,1,Fraud confirmed
+APP-00370,1,Fraud confirmed
+APP-00371,1,Fraud confirmed
+APP-00372,0,No fraud found
+APP-00373,0,No fraud found
+APP-00374,0,No fraud found
+APP-00375,0,No fraud found
+APP-00376,1,Fraud confirmed
+APP-00377,1,Fraud confirmed
+APP-00378,1,Fraud confirmed
+APP-00379,1,Fraud confirmed
+APP-00380,1,Fraud confirmed
+APP-00381,1,Fraud confirmed
+APP-00382,1,Fraud confirmed
+APP-00383,0,No fraud found
+APP-00384,1,Fraud confirmed
+APP-00385,1,Fraud confirmed
+APP-00386,1,Fraud confirmed
+APP-00387,1,Fraud confirmed
+APP-00388,0,No fraud found
+APP-00389,1,Fraud confirmed
+APP-00390,1,Fraud confirmed
+APP-00391,1,Fraud confirmed
+APP-00392,0,No fraud found
+APP-00393,0,No fraud found
+APP-00394,1,Fraud confirmed
+APP-00395,0,No fraud found
+APP-00396,0,No fraud found
+APP-00397,1,Fraud confirmed
+APP-00398,1,Fraud confirmed
+APP-00399,0,No fraud found
+APP-00400,0,No fraud found
+APP-00401,1,Fraud confirmed
+APP-00402,1,Fraud confirmed
+APP-00403,0,No fraud found
+APP-00404,1,Fraud confirmed
+APP-00405,1,Fraud confirmed
+APP-00406,0,No fraud found
+APP-00407,0,No fraud found
+APP-00408,0,No fraud found
+APP-00409,1,Fraud confirmed
+APP-00410,0,No fraud found
+APP-00411,1,Fraud confirmed
+APP-00412,0,No fraud found
+APP-00413,1,Fraud confirmed
+APP-00414,1,Fraud confirmed
+APP-00415,1,Fraud confirmed
+APP-00416,0,No fraud found
+APP-00417,0,No fraud found
+APP-00418,1,Fraud confirmed
+APP-00419,1,Fraud confirmed
+APP-00420,0,No fraud found
+APP-00421,0,No fraud found
+APP-00422,1,Fraud confirmed
+APP-00423,1,Fraud confirmed
+APP-00424,0,No fraud found
+APP-00425,0,No fraud found
+APP-00426,1,Fraud confirmed
+APP-00427,1,Fraud confirmed
+APP-00428,0,No fraud found
+APP-00429,0,No fraud found
+APP-00430,1,Fraud confirmed
+APP-00431,1,Fraud confirmed
+APP-00432,1,Fraud confirmed
+APP-00433,0,No fraud found
+APP-00434,1,Fraud confirmed
+APP-00435,0,No fraud found
+APP-00436,1,Fraud confirmed
+APP-00437,0,No fraud found
+APP-00438,1,Fraud confirmed
+APP-00439,0,No fraud found
+APP-00440,1,Fraud confirmed
+APP-00441,0,No fraud found
+APP-00442,0,No fraud found
+APP-00443,1,Fraud confirmed
+APP-00444,1,Fraud confirmed
+APP-00445,1,Fraud confirmed
+APP-00446,1,Fraud confirmed
+APP-00447,0,No fraud found
+APP-00448,0,No fraud found
+APP-00449,1,Fraud confirmed
+APP-00450,0,No fraud found
+APP-00451,1,Fraud confirmed
+APP-00452,1,Fraud confirmed
+APP-00453,1,Fraud confirmed
+APP-00454,0,No fraud found
+APP-00455,1,Fraud confirmed
+APP-00456,1,Fraud confirmed
+APP-00457,0,No fraud found
+APP-00458,0,No fraud found
+APP-00459,1,Fraud confirmed
+APP-00460,0,No fraud found
+APP-00461,0,No fraud found
+APP-00462,0,No fraud found
+APP-00463,1,Fraud confirmed
+APP-00464,1,Fraud confirmed
+APP-00465,1,Fraud confirmed
+APP-00466,1,Fraud confirmed
+APP-00467,1,Fraud confirmed
+APP-00468,1,Fraud confirmed
+APP-00469,1,Fraud confirmed
+APP-00470,1,Fraud confirmed
+APP-00471,0,No fraud found
+APP-00472,1,Fraud confirmed
+APP-00473,1,Fraud confirmed
+APP-00474,0,No fraud found
+APP-00475,0,No fraud found
+APP-00476,1,Fraud confirmed
+APP-00477,1,Fraud confirmed
+APP-00478,0,No fraud found
+APP-00479,1,Fraud confirmed
+APP-00480,1,Fraud confirmed
+APP-00481,1,Fraud confirmed
+APP-00482,0,No fraud found
+APP-00483,1,Fraud confirmed
+APP-00484,1,Fraud confirmed
+APP-00485,1,Fraud confirmed
+APP-00486,0,No fraud found
+APP-00487,0,No fraud found
+APP-00488,0,No fraud found
+APP-00489,1,Fraud confirmed
+APP-00490,1,Fraud confirmed
+APP-00491,0,No fraud found
+APP-00492,1,Fraud confirmed
+APP-00493,0,No fraud found
+APP-00494,1,Fraud confirmed
+APP-00495,0,No fraud found
+APP-00496,0,No fraud found
+APP-00497,1,Fraud confirmed
+APP-00498,1,Fraud confirmed
+APP-00499,1,Fraud confirmed
+APP-00500,1,Fraud confirmed
+APP-00501,1,Fraud confirmed
+APP-00502,0,No fraud found
+APP-00503,0,No fraud found
+APP-00504,0,No fraud found
+APP-00505,1,Fraud confirmed
+APP-00506,0,No fraud found
+APP-00507,0,No fraud found
+APP-00508,1,Fraud confirmed
+APP-00509,1,Fraud confirmed
+APP-00510,1,Fraud confirmed
+APP-00511,0,No fraud found
+APP-00512,0,No fraud found
+APP-00513,1,Fraud confirmed
+APP-00514,1,Fraud confirmed
+APP-00515,0,No fraud found
+APP-00516,0,No fraud found
+APP-00517,1,Fraud confirmed
+APP-00518,1,Fraud confirmed
+APP-00519,0,No fraud found
+APP-00520,1,Fraud confirmed
+APP-00521,0,No fraud found
+APP-00522,1,Fraud confirmed
+APP-00523,1,Fraud confirmed
+APP-00524,1,Fraud confirmed
+APP-00525,0,No fraud found
+APP-00526,1,Fraud confirmed
+APP-00527,1,Fraud confirmed
+APP-00528,1,Fraud confirmed
+APP-00529,1,Fraud confirmed
+APP-00530,0,No fraud found
+APP-00531,1,Fraud confirmed
+APP-00532,1,Fraud confirmed
+APP-00533,1,Fraud confirmed
+APP-00534,1,Fraud confirmed
+APP-00535,1,Fraud confirmed
+APP-00536,1,Fraud confirmed
+APP-00537,1,Fraud confirmed
+APP-00538,0,No fraud found
+APP-00539,0,No fraud found
+APP-00540,1,Fraud confirmed
+APP-00541,1,Fraud confirmed
+APP-00542,0,No fraud found
+APP-00543,1,Fraud confirmed
+APP-00544,1,Fraud confirmed
+APP-00545,1,Fraud confirmed
+APP-00546,0,No fraud found
+APP-00547,1,Fraud confirmed
+APP-00548,0,No fraud found
+APP-00549,1,Fraud confirmed
+APP-00550,0,No fraud found
+APP-00551,1,Fraud confirmed
+APP-00552,1,Fraud confirmed
+APP-00553,1,Fraud confirmed
+APP-00554,0,No fraud found
+APP-00555,1,Fraud confirmed
+APP-00556,0,No fraud found
+APP-00557,1,Fraud confirmed
+APP-00558,1,Fraud confirmed
+APP-00559,0,No fraud found
+APP-00560,0,No fraud found
+APP-00561,1,Fraud confirmed
+APP-00562,0,No fraud found
+APP-00563,1,Fraud confirmed
+APP-00564,1,Fraud confirmed
+APP-00565,0,No fraud found
+APP-00566,0,No fraud found
+APP-00567,1,Fraud confirmed
+APP-00568,1,Fraud confirmed
+APP-00569,1,Fraud confirmed
+APP-00570,1,Fraud confirmed
+APP-00571,0,No fraud found
+APP-00572,1,Fraud confirmed
+APP-00573,1,Fraud confirmed
+APP-00574,1,Fraud confirmed
+APP-00575,1,Fraud confirmed
+APP-00576,1,Fraud confirmed
+APP-00577,0,No fraud found
+APP-00578,1,Fraud confirmed
+APP-00579,1,Fraud confirmed
+APP-00580,1,Fraud confirmed
+APP-00581,0,No fraud found
+APP-00582,1,Fraud confirmed
+APP-00583,1,Fraud confirmed
+APP-00584,1,Fraud confirmed
+APP-00585,0,No fraud found
+APP-00586,1,Fraud confirmed
+APP-00587,1,Fraud confirmed
+APP-00588,1,Fraud confirmed
+APP-00589,0,No fraud found
+APP-00590,0,No fraud found
+APP-00591,0,No fraud found
+APP-00592,1,Fraud confirmed
+APP-00593,1,Fraud confirmed
+APP-00594,1,Fraud confirmed
+APP-00595,1,Fraud confirmed
+APP-00596,1,Fraud confirmed
+APP-00597,1,Fraud confirmed
+APP-00598,0,No fraud found
+APP-00599,1,Fraud confirmed
+APP-00600,0,No fraud found
+APP-00601,0,No fraud found
+APP-00602,0,No fraud found
+APP-00603,1,Fraud confirmed
+APP-00604,0,No fraud found
+APP-00605,1,Fraud confirmed
+APP-00606,1,Fraud confirmed
+APP-00607,0,No fraud found
+APP-00608,1,Fraud confirmed
+APP-00609,0,No fraud found
+APP-00610,1,Fraud confirmed
+APP-00611,0,No fraud found
+APP-00612,1,Fraud confirmed
+APP-00613,1,Fraud confirmed
+APP-00614,0,No fraud found
+APP-00615,0,No fraud found
+APP-00616,1,Fraud confirmed
+APP-00617,1,Fraud confirmed
+APP-00618,0,No fraud found
+APP-00619,0,No fraud found
+APP-00620,0,No fraud found
+APP-00621,0,No fraud found
+APP-00622,0,No fraud found
+APP-00623,0,No fraud found
+APP-00624,0,No fraud found
+APP-00625,1,Fraud confirmed
+APP-00626,0,No fraud found
+APP-00627,0,No fraud found
+APP-00628,0,No fraud found
+APP-00629,0,No fraud found
+APP-00630,1,Fraud confirmed
+APP-00631,0,No fraud found
+APP-00632,1,Fraud confirmed
+APP-00633,0,No fraud found
+APP-00634,1,Fraud confirmed
+APP-00635,1,Fraud confirmed
+APP-00636,1,Fraud confirmed
+APP-00637,1,Fraud confirmed
+APP-00638,0,No fraud found
+APP-00639,1,Fraud confirmed
+APP-00640,1,Fraud confirmed
+APP-00641,1,Fraud confirmed
+APP-00642,0,No fraud found
+APP-00643,0,No fraud found
+APP-00644,1,Fraud confirmed
+APP-00645,1,Fraud confirmed
+APP-00646,0,No fraud found
+APP-00647,1,Fraud confirmed
+APP-00648,0,No fraud found
+APP-00649,1,Fraud confirmed
+APP-00650,1,Fraud confirmed
+APP-00651,0,No fraud found
+APP-00652,0,No fraud found
+APP-00653,1,Fraud confirmed
+APP-00654,0,No fraud found
+APP-00655,1,Fraud confirmed
+APP-00656,0,No fraud found
+APP-00657,1,Fraud confirmed
+APP-00658,0,No fraud found
+APP-00659,1,Fraud confirmed
+APP-00660,1,Fraud confirmed
+APP-00661,1,Fraud confirmed
+APP-00662,0,No fraud found
+APP-00663,0,No fraud found
+APP-00664,1,Fraud confirmed
+APP-00665,0,No fraud found
+APP-00666,1,Fraud confirmed
+APP-00667,1,Fraud confirmed
+APP-00668,0,No fraud found
+APP-00669,0,No fraud found
+APP-00670,0,No fraud found
+APP-00671,0,No fraud found
+APP-00672,0,No fraud found
+APP-00673,1,Fraud confirmed
+APP-00674,0,No fraud found
+APP-00675,1,Fraud confirmed
+APP-00676,1,Fraud confirmed
+APP-00677,1,Fraud confirmed
+APP-00678,1,Fraud confirmed
+APP-00679,1,Fraud confirmed
+APP-00680,1,Fraud confirmed
+APP-00681,1,Fraud confirmed
+APP-00682,1,Fraud confirmed
+APP-00683,0,No fraud found
+APP-00684,0,No fraud found
+APP-00685,1,Fraud confirmed
+APP-00686,0,No fraud found
+APP-00687,1,Fraud confirmed
+APP-00688,1,Fraud confirmed
+APP-00689,1,Fraud confirmed
+APP-00690,1,Fraud confirmed
+APP-00691,0,No fraud found
+APP-00692,1,Fraud confirmed
+APP-00693,0,No fraud found
+APP-00694,1,Fraud confirmed
+APP-00695,1,Fraud confirmed
+APP-00696,0,No fraud found
+APP-00697,1,Fraud confirmed
+APP-00698,1,Fraud confirmed
+APP-00699,1,Fraud confirmed
+APP-00700,1,Fraud confirmed
+APP-00701,0,No fraud found
+APP-00702,1,Fraud confirmed
+APP-00703,1,Fraud confirmed
+APP-00704,1,Fraud confirmed
+APP-00705,0,No fraud found
+APP-00706,1,Fraud confirmed
+APP-00707,1,Fraud confirmed
+APP-00708,1,Fraud confirmed
+APP-00709,0,No fraud found
+APP-00710,1,Fraud confirmed
+APP-00711,1,Fraud confirmed
+APP-00712,1,Fraud confirmed
+APP-00713,0,No fraud found
+APP-00714,1,Fraud confirmed
+APP-00715,1,Fraud confirmed
+APP-00716,1,Fraud confirmed
+APP-00717,1,Fraud confirmed
+APP-00718,1,Fraud confirmed
+APP-00719,1,Fraud confirmed
+APP-00720,1,Fraud confirmed
+APP-00721,1,Fraud confirmed
+APP-00722,0,No fraud found
+APP-00723,1,Fraud confirmed
+APP-00724,0,No fraud found
+APP-00725,0,No fraud found
+APP-00726,1,Fraud confirmed
+APP-00727,0,No fraud found
+APP-00728,0,No fraud found
+APP-00729,1,Fraud confirmed
+APP-00730,0,No fraud found
+APP-00731,1,Fraud confirmed
+APP-00732,1,Fraud confirmed
+APP-00733,0,No fraud found
+APP-00734,0,No fraud found
+APP-00735,0,No fraud found
+APP-00736,0,No fraud found
+APP-00737,0,No fraud found
+APP-00738,1,Fraud confirmed
+APP-00739,1,Fraud confirmed
+APP-00740,0,No fraud found
+APP-00741,1,Fraud confirmed
+APP-00742,0,No fraud found
+APP-00743,1,Fraud confirmed
+APP-00744,1,Fraud confirmed
+APP-00745,1,Fraud confirmed
+APP-00746,0,No fraud found
+APP-00747,0,No fraud found
+APP-00748,0,No fraud found
+APP-00749,1,Fraud confirmed
+APP-00750,1,Fraud confirmed
+APP-00751,0,No fraud found
+APP-00752,1,Fraud confirmed
+APP-00753,0,No fraud found
+APP-00754,1,Fraud confirmed
+APP-00755,0,No fraud found
+APP-00756,1,Fraud confirmed
+APP-00757,1,Fraud confirmed
+APP-00758,0,No fraud found
+APP-00759,1,Fraud confirmed
+APP-00760,1,Fraud confirmed
+APP-00761,1,Fraud confirmed
+APP-00762,0,No fraud found
+APP-00763,1,Fraud confirmed
+APP-00764,1,Fraud confirmed
+APP-00765,1,Fraud confirmed
+APP-00766,1,Fraud confirmed
+APP-00767,1,Fraud confirmed
+APP-00768,1,Fraud confirmed
+APP-00769,0,No fraud found
+APP-00770,1,Fraud confirmed
+APP-00771,1,Fraud confirmed
+APP-00772,0,No fraud found
+APP-00773,0,No fraud found
+APP-00774,0,No fraud found
+APP-00775,0,No fraud found
+APP-00776,1,Fraud confirmed
+APP-00777,1,Fraud confirmed
+APP-00778,1,Fraud confirmed
+APP-00779,1,Fraud confirmed
+APP-00780,0,No fraud found
+APP-00781,1,Fraud confirmed
+APP-00782,1,Fraud confirmed
+APP-00783,1,Fraud confirmed
+APP-00784,1,Fraud confirmed
+APP-00785,0,No fraud found
+APP-00786,0,No fraud found
+APP-00787,1,Fraud confirmed
+APP-00788,1,Fraud confirmed
+APP-00789,1,Fraud confirmed
+APP-00790,1,Fraud confirmed
+APP-00791,1,Fraud confirmed
+APP-00792,0,No fraud found
+APP-00793,0,No fraud found
+APP-00794,0,No fraud found
+APP-00795,0,No fraud found
+APP-00796,1,Fraud confirmed
+APP-00797,0,No fraud found
+APP-00798,1,Fraud confirmed
+APP-00799,1,Fraud confirmed
+APP-00800,0,No fraud found
+APP-00801,1,Fraud confirmed
+APP-00802,1,Fraud confirmed
+APP-00803,1,Fraud confirmed
+APP-00804,1,Fraud confirmed
+APP-00805,1,Fraud confirmed
+APP-00806,0,No fraud found
+APP-00807,1,Fraud confirmed
+APP-00808,1,Fraud confirmed
+APP-00809,1,Fraud confirmed
+APP-00810,1,Fraud confirmed
+APP-00811,0,No fraud found
+APP-00812,0,No fraud found
+APP-00813,1,Fraud confirmed
+APP-00814,1,Fraud confirmed
+APP-00815,1,Fraud confirmed
+APP-00816,0,No fraud found
+APP-00817,0,No fraud found
+APP-00818,1,Fraud confirmed
+APP-00819,1,Fraud confirmed
+APP-00820,1,Fraud confirmed
+APP-00821,0,No fraud found
+APP-00822,1,Fraud confirmed
+APP-00823,0,No fraud found
+APP-00824,0,No fraud found
+APP-00825,1,Fraud confirmed
+APP-00826,0,No fraud found
+APP-00827,1,Fraud confirmed
+APP-00828,1,Fraud confirmed
+APP-00829,1,Fraud confirmed
+APP-00830,0,No fraud found
+APP-00831,0,No fraud found
+APP-00832,1,Fraud confirmed
+APP-00833,1,Fraud confirmed
+APP-00834,1,Fraud confirmed
+APP-00835,1,Fraud confirmed
+APP-00836,1,Fraud confirmed
+APP-00837,1,Fraud confirmed
+APP-00838,1,Fraud confirmed
+APP-00839,0,No fraud found
+APP-00840,1,Fraud confirmed
+APP-00841,1,Fraud confirmed
+APP-00842,0,No fraud found
+APP-00843,1,Fraud confirmed
+APP-00844,0,No fraud found
+APP-00845,1,Fraud confirmed
+APP-00846,1,Fraud confirmed
+APP-00847,1,Fraud confirmed
+APP-00848,0,No fraud found
+APP-00849,1,Fraud confirmed
+APP-00850,1,Fraud confirmed
+APP-00851,1,Fraud confirmed
+APP-00852,0,No fraud found
+APP-00853,0,No fraud found
+APP-00854,1,Fraud confirmed
+APP-00855,0,No fraud found
+APP-00856,1,Fraud confirmed
+APP-00857,1,Fraud confirmed
+APP-00858,1,Fraud confirmed
+APP-00859,0,No fraud found
+APP-00860,1,Fraud confirmed
+APP-00861,0,No fraud found
+APP-00862,1,Fraud confirmed
+APP-00863,1,Fraud confirmed
+APP-00864,1,Fraud confirmed
+APP-00865,1,Fraud confirmed
+APP-00866,0,No fraud found
+APP-00867,1,Fraud confirmed
+APP-00868,1,Fraud confirmed
+APP-00869,0,No fraud found
+APP-00870,1,Fraud confirmed
+APP-00871,1,Fraud confirmed
+APP-00872,1,Fraud confirmed
+APP-00873,0,No fraud found
+APP-00874,1,Fraud confirmed
+APP-00875,1,Fraud confirmed
+APP-00876,0,No fraud found
+APP-00877,1,Fraud confirmed
+APP-00878,1,Fraud confirmed
+APP-00879,1,Fraud confirmed
+APP-00880,1,Fraud confirmed
+APP-00881,0,No fraud found
+APP-00882,1,Fraud confirmed
+APP-00883,1,Fraud confirmed
+APP-00884,1,Fraud confirmed
+APP-00885,1,Fraud confirmed
+APP-00886,1,Fraud confirmed
+APP-00887,1,Fraud confirmed
+APP-00888,1,Fraud confirmed
+APP-00889,0,No fraud found
+APP-00890,1,Fraud confirmed
+APP-00891,0,No fraud found
+APP-00892,1,Fraud confirmed
+APP-00893,0,No fraud found
+APP-00894,1,Fraud confirmed
+APP-00895,1,Fraud confirmed
+APP-00896,1,Fraud confirmed
+APP-00897,1,Fraud confirmed
+APP-00898,1,Fraud confirmed
+APP-00899,1,Fraud confirmed
+APP-00900,1,Fraud confirmed
+APP-00901,0,No fraud found
+APP-00902,1,Fraud confirmed
+APP-00903,1,Fraud confirmed
+APP-00904,1,Fraud confirmed
+APP-00905,1,Fraud confirmed
+APP-00906,1,Fraud confirmed
+APP-00907,1,Fraud confirmed
+APP-00908,1,Fraud confirmed
+APP-00909,1,Fraud confirmed
+APP-00910,1,Fraud confirmed
+APP-00911,1,Fraud confirmed
+APP-00912,1,Fraud confirmed
+APP-00913,0,No fraud found
+APP-00914,0,No fraud found
+APP-00915,1,Fraud confirmed
+APP-00916,0,No fraud found
+APP-00917,0,No fraud found
+APP-00918,1,Fraud confirmed
+APP-00919,1,Fraud confirmed
+APP-00920,0,No fraud found
+APP-00921,1,Fraud confirmed
+APP-00922,0,No fraud found
+APP-00923,1,Fraud confirmed
+APP-00924,1,Fraud confirmed
+APP-00925,1,Fraud confirmed
+APP-00926,0,No fraud found
+APP-00927,0,No fraud found
+APP-00928,1,Fraud confirmed
+APP-00929,1,Fraud confirmed
+APP-00930,0,No fraud found
+APP-00931,1,Fraud confirmed
+APP-00932,1,Fraud confirmed
+APP-00933,0,No fraud found
+APP-00934,0,No fraud found
+APP-00935,1,Fraud confirmed
+APP-00936,0,No fraud found
+APP-00937,1,Fraud confirmed
+APP-00938,1,Fraud confirmed
+APP-00939,1,Fraud confirmed
+APP-00940,1,Fraud confirmed
+APP-00941,1,Fraud confirmed
+APP-00942,1,Fraud confirmed
+APP-00943,0,No fraud found
+APP-00944,1,Fraud confirmed
+APP-00945,1,Fraud confirmed
+APP-00946,1,Fraud confirmed
+APP-00947,1,Fraud confirmed
+APP-00948,0,No fraud found
+APP-00949,0,No fraud found
+APP-00950,1,Fraud confirmed
+APP-00951,1,Fraud confirmed
+APP-00952,1,Fraud confirmed
+APP-00953,1,Fraud confirmed
+APP-00954,1,Fraud confirmed
+APP-00955,1,Fraud confirmed
+APP-00956,1,Fraud confirmed
+APP-00957,0,No fraud found
+APP-00958,0,No fraud found
+APP-00959,1,Fraud confirmed
+APP-00960,1,Fraud confirmed
+APP-00961,0,No fraud found
+APP-00962,0,No fraud found
+APP-00963,0,No fraud found
+APP-00964,0,No fraud found
+APP-00965,0,No fraud found
+APP-00966,1,Fraud confirmed
+APP-00967,1,Fraud confirmed
+APP-00968,1,Fraud confirmed
+APP-00969,1,Fraud confirmed
+APP-00970,0,No fraud found
+APP-00971,1,Fraud confirmed
+APP-00972,1,Fraud confirmed
+APP-00973,1,Fraud confirmed
+APP-00974,0,No fraud found
+APP-00975,1,Fraud confirmed
+APP-00976,1,Fraud confirmed
+APP-00977,0,No fraud found
+APP-00978,1,Fraud confirmed
+APP-00979,0,No fraud found
+APP-00980,1,Fraud confirmed
+APP-00981,0,No fraud found
+APP-00982,1,Fraud confirmed
+APP-00983,0,No fraud found
+APP-00984,1,Fraud confirmed
+APP-00985,1,Fraud confirmed
+APP-00986,1,Fraud confirmed
+APP-00987,1,Fraud confirmed
+APP-00988,0,No fraud found
+APP-00989,0,No fraud found
+APP-00990,0,No fraud found
+APP-00991,1,Fraud confirmed
+APP-00992,1,Fraud confirmed
+APP-00993,0,No fraud found
+APP-00994,0,No fraud found
+APP-00995,0,No fraud found
+APP-00996,0,No fraud found
+APP-00997,1,Fraud confirmed
+APP-00998,0,No fraud found
+APP-00999,1,Fraud confirmed
+APP-01000,1,Fraud confirmed
+APP-01001,0,No fraud found
+APP-01002,1,Fraud confirmed
+APP-01003,0,No fraud found
+APP-01004,1,Fraud confirmed
+APP-01005,0,No fraud found
+APP-01006,1,Fraud confirmed
+APP-01007,1,Fraud confirmed
+APP-01008,0,No fraud found
+APP-01009,1,Fraud confirmed
+APP-01010,1,Fraud confirmed
+APP-01011,1,Fraud confirmed
+APP-01012,1,Fraud confirmed
+APP-01013,1,Fraud confirmed
+APP-01014,0,No fraud found
+APP-01015,1,Fraud confirmed
+APP-01016,1,Fraud confirmed
+APP-01017,0,No fraud found
+APP-01018,0,No fraud found
+APP-01019,1,Fraud confirmed
+APP-01020,1,Fraud confirmed
+APP-01021,1,Fraud confirmed
+APP-01022,1,Fraud confirmed
+APP-01023,1,Fraud confirmed
+APP-01024,1,Fraud confirmed
+APP-01025,0,No fraud found
+APP-01026,1,Fraud confirmed
+APP-01027,1,Fraud confirmed
+APP-01028,0,No fraud found
+APP-01029,0,No fraud found
+APP-01030,0,No fraud found
+APP-01031,0,No fraud found
+APP-01032,1,Fraud confirmed
+APP-01033,1,Fraud confirmed
+APP-01034,1,Fraud confirmed
+APP-01035,1,Fraud confirmed
+APP-01036,1,Fraud confirmed
+APP-01037,1,Fraud confirmed
+APP-01038,0,No fraud found
+APP-01039,1,Fraud confirmed
+APP-01040,1,Fraud confirmed
+APP-01041,1,Fraud confirmed
+APP-01042,0,No fraud found
+APP-01043,1,Fraud confirmed
+APP-01044,1,Fraud confirmed
+APP-01045,0,No fraud found
+APP-01046,0,No fraud found
+APP-01047,1,Fraud confirmed
+APP-01048,1,Fraud confirmed
+APP-01049,1,Fraud confirmed
+APP-01050,0,No fraud found
+APP-01051,1,Fraud confirmed
+APP-01052,1,Fraud confirmed
+APP-01053,1,Fraud confirmed
+APP-01054,1,Fraud confirmed
+APP-01055,1,Fraud confirmed
+APP-01056,0,No fraud found
+APP-01057,1,Fraud confirmed
+APP-01058,1,Fraud confirmed
+APP-01059,1,Fraud confirmed
+APP-01060,1,Fraud confirmed
+APP-01061,1,Fraud confirmed
+APP-01062,0,No fraud found
+APP-01063,0,No fraud found
+APP-01064,0,No fraud found
+APP-01065,0,No fraud found
+APP-01066,1,Fraud confirmed
+APP-01067,1,Fraud confirmed
+APP-01068,1,Fraud confirmed
+APP-01069,1,Fraud confirmed
+APP-01070,1,Fraud confirmed
+APP-01071,1,Fraud confirmed
+APP-01072,1,Fraud confirmed
+APP-01073,1,Fraud confirmed
+APP-01074,1,Fraud confirmed
+APP-01075,1,Fraud confirmed
+APP-01076,0,No fraud found
+APP-01077,0,No fraud found
+APP-01078,1,Fraud confirmed
+APP-01079,0,No fraud found
+APP-01080,0,No fraud found
+APP-01081,1,Fraud confirmed
+APP-01082,1,Fraud confirmed
+APP-01083,1,Fraud confirmed
+APP-01084,1,Fraud confirmed
+APP-01085,1,Fraud confirmed
+APP-01086,0,No fraud found
+APP-01087,0,No fraud found
+APP-01088,1,Fraud confirmed
+APP-01089,1,Fraud confirmed
+APP-01090,1,Fraud confirmed
+APP-01091,1,Fraud confirmed
+APP-01092,0,No fraud found
+APP-01093,0,No fraud found
+APP-01094,1,Fraud confirmed
+APP-01095,1,Fraud confirmed
+APP-01096,1,Fraud confirmed
+APP-01097,1,Fraud confirmed
+APP-01098,1,Fraud confirmed
+APP-01099,1,Fraud confirmed
+APP-01100,0,No fraud found
+APP-01101,1,Fraud confirmed
+APP-01102,0,No fraud found
+APP-01103,1,Fraud confirmed
+APP-01104,1,Fraud confirmed
+APP-01105,1,Fraud confirmed
+APP-01106,1,Fraud confirmed
+APP-01107,1,Fraud confirmed
+APP-01108,1,Fraud confirmed
+APP-01109,1,Fraud confirmed
+APP-01110,0,No fraud found
+APP-01111,1,Fraud confirmed
+APP-01112,1,Fraud confirmed
+APP-01113,1,Fraud confirmed
+APP-01114,0,No fraud found
+APP-01115,1,Fraud confirmed
+APP-01116,1,Fraud confirmed
+APP-01117,0,No fraud found
+APP-01118,1,Fraud confirmed
+APP-01119,0,No fraud found
+APP-01120,1,Fraud confirmed
+APP-01121,0,No fraud found
+APP-01122,1,Fraud confirmed
+APP-01123,1,Fraud confirmed
+APP-01124,1,Fraud confirmed
+APP-01125,1,Fraud confirmed
+APP-01126,0,No fraud found
+APP-01127,1,Fraud confirmed
+APP-01128,0,No fraud found
+APP-01129,1,Fraud confirmed
+APP-01130,1,Fraud confirmed
+APP-01131,1,Fraud confirmed
+APP-01132,1,Fraud confirmed
+APP-01133,1,Fraud confirmed
+APP-01134,0,No fraud found
+APP-01135,1,Fraud confirmed
+APP-01136,0,No fraud found
+APP-01137,0,No fraud found
+APP-01138,0,No fraud found
+APP-01139,1,Fraud confirmed
+APP-01140,1,Fraud confirmed
+APP-01141,1,Fraud confirmed
+APP-01142,0,No fraud found
+APP-01143,0,No fraud found
+APP-01144,0,No fraud found
+APP-01145,1,Fraud confirmed
+APP-01146,1,Fraud confirmed
+APP-01147,0,No fraud found
+APP-01148,0,No fraud found
+APP-01149,1,Fraud confirmed
+APP-01150,0,No fraud found
+APP-01151,1,Fraud confirmed
+APP-01152,1,Fraud confirmed
+APP-01153,1,Fraud confirmed
+APP-01154,1,Fraud confirmed
+APP-01155,1,Fraud confirmed
+APP-01156,1,Fraud confirmed
+APP-01157,1,Fraud confirmed
+APP-01158,0,No fraud found
+APP-01159,1,Fraud confirmed
+APP-01160,1,Fraud confirmed
+APP-01161,1,Fraud confirmed
+APP-01162,1,Fraud confirmed
+APP-01163,1,Fraud confirmed
+APP-01164,1,Fraud confirmed
+APP-01165,1,Fraud confirmed
+APP-01166,0,No fraud found
+APP-01167,1,Fraud confirmed
+APP-01168,0,No fraud found
+APP-01169,1,Fraud confirmed
+APP-01170,1,Fraud confirmed
+APP-01171,0,No fraud found
+APP-01172,0,No fraud found
+APP-01173,0,No fraud found
+APP-01174,1,Fraud confirmed
+APP-01175,1,Fraud confirmed
+APP-01176,0,No fraud found
+APP-01177,0,No fraud found
+APP-01178,1,Fraud confirmed
+APP-01179,1,Fraud confirmed
+APP-01180,0,No fraud found
+APP-01181,1,Fraud confirmed
+APP-01182,0,No fraud found
+APP-01183,1,Fraud confirmed
+APP-01184,1,Fraud confirmed
+APP-01185,0,No fraud found
+APP-01186,1,Fraud confirmed
+APP-01187,0,No fraud found
+APP-01188,1,Fraud confirmed
+APP-01189,1,Fraud confirmed
+APP-01190,0,No fraud found
+APP-01191,0,No fraud found
+APP-01192,0,No fraud found
+APP-01193,0,No fraud found
+APP-01194,1,Fraud confirmed
+APP-01195,0,No fraud found
+APP-01196,1,Fraud confirmed
+APP-01197,1,Fraud confirmed
+APP-01198,0,No fraud found
+APP-01199,1,Fraud confirmed
+APP-01200,1,Fraud confirmed

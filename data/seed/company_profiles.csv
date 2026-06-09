@@ -1,0 +1,1201 @@
+company_id,company_name,industry,region,company_type,annual_revenue,years_in_business,employees
+CO-00001,Company 00001,Retail,Eastern Europe,LLC,2971914.99,1.6,26
+CO-00002,Company 00002,Construction,Latin America,Corporation,774533.27,13.2,4
+CO-00003,Company 00003,Wholesale,Eastern Europe,LLC,4641050.02,1.1,55
+CO-00004,Company 00004,Software,Eastern Europe,Partnership,5612825.0,1.5,32
+CO-00005,Company 00005,Construction,North America,LLC,311440.88,3.3,3
+CO-00006,Company 00006,Software,APAC,LLC,595895.44,4.8,6
+CO-00007,Company 00007,Wholesale,Latin America,Partnership,2490117.37,4.1,17
+CO-00008,Company 00008,Healthcare,North America,LLC,1597191.62,4.8,7
+CO-00009,Company 00009,Healthcare,Western Europe,Sole Proprietorship,2154779.26,8.0,13
+CO-00010,Company 00010,Manufacturing,Middle East,Sole Proprietorship,933742.58,3.4,7
+CO-00011,Company 00011,Retail,APAC,Corporation,5279795.77,8.0,37
+CO-00012,Company 00012,Retail,Western Europe,Corporation,4769690.31,0.6,28
+CO-00013,Company 00013,Wholesale,Western Europe,LLC,2340864.11,3.3,13
+CO-00014,Company 00014,Software,Western Europe,Corporation,6764786.14,1.5,56
+CO-00015,Company 00015,Healthcare,Western Europe,Partnership,3497326.38,13.1,31
+CO-00016,Company 00016,Wholesale,North America,LLC,927926.25,3.7,6
+CO-00017,Company 00017,Software,North America,LLC,3168442.77,9.9,17
+CO-00018,Company 00018,Manufacturing,Western Europe,LLC,839966.59,1.2,4
+CO-00019,Company 00019,Wholesale,Western Europe,Corporation,5274794.62,16.6,31
+CO-00020,Company 00020,Healthcare,Middle East,Corporation,2084571.94,7.1,11
+CO-00021,Company 00021,Construction,Western Europe,LLC,1821439.42,6.5,11
+CO-00022,Company 00022,Retail,Western Europe,LLC,1109112.22,1.8,6
+CO-00023,Company 00023,Manufacturing,Western Europe,Partnership,7441189.99,2.9,42
+CO-00024,Company 00024,Logistics,Middle East,LLC,1877535.4,5.6,16
+CO-00025,Company 00025,Healthcare,Western Europe,LLC,1427838.3,3.0,6
+CO-00026,Company 00026,Retail,Eastern Europe,LLC,1540883.4,12.3,11
+CO-00027,Company 00027,Software,North America,Corporation,3731456.45,6.9,21
+CO-00028,Company 00028,Manufacturing,North America,LLC,3157982.92,3.1,19
+CO-00029,Company 00029,Software,APAC,LLC,3310906.61,11.1,15
+CO-00030,Company 00030,Manufacturing,North America,Corporation,3371340.52,5.0,34
+CO-00031,Company 00031,Logistics,Western Europe,LLC,18655426.01,10.8,87
+CO-00032,Company 00032,Healthcare,North America,Sole Proprietorship,1459471.56,4.4,14
+CO-00033,Company 00033,Logistics,Western Europe,Partnership,1312910.87,9.4,12
+CO-00034,Company 00034,Construction,Latin America,Corporation,971141.31,4.9,4
+CO-00035,Company 00035,Construction,Latin America,Corporation,4057101.75,12.3,34
+CO-00036,Company 00036,Construction,APAC,LLC,6776506.71,1.2,39
+CO-00037,Company 00037,Construction,North America,Corporation,1955296.77,2.3,13
+CO-00038,Company 00038,Software,Western Europe,LLC,945854.02,5.9,4
+CO-00039,Company 00039,Wholesale,APAC,Corporation,960797.34,3.9,4
+CO-00040,Company 00040,Wholesale,Western Europe,LLC,4199990.36,4.8,32
+CO-00041,Company 00041,Manufacturing,Middle East,Corporation,4607768.18,10.1,22
+CO-00042,Company 00042,Wholesale,Eastern Europe,LLC,3772144.64,4.7,33
+CO-00043,Company 00043,Retail,North America,Corporation,1126347.09,8.2,6
+CO-00044,Company 00044,Construction,APAC,LLC,2763922.22,3.3,14
+CO-00045,Company 00045,Wholesale,Western Europe,LLC,2462495.46,1.0,13
+CO-00046,Company 00046,Wholesale,Eastern Europe,Corporation,2726934.38,10.8,15
+CO-00047,Company 00047,Construction,North America,Corporation,5237887.25,19.0,25
+CO-00048,Company 00048,Wholesale,Eastern Europe,Sole Proprietorship,2740348.2,7.7,16
+CO-00049,Company 00049,Wholesale,Eastern Europe,LLC,4320637.69,6.2,19
+CO-00050,Company 00050,Manufacturing,North America,LLC,2344491.45,7.1,23
+CO-00051,Company 00051,Wholesale,APAC,Corporation,2925919.65,15.2,21
+CO-00052,Company 00052,Retail,North America,LLC,4119688.97,7.7,20
+CO-00053,Company 00053,Software,Western Europe,Partnership,510345.99,11.1,4
+CO-00054,Company 00054,Healthcare,North America,LLC,1591724.83,10.8,10
+CO-00055,Company 00055,Healthcare,Latin America,Partnership,1369049.62,13.0,6
+CO-00056,Company 00056,Healthcare,Western Europe,Corporation,1156746.81,6.1,7
+CO-00057,Company 00057,Retail,Eastern Europe,LLC,1664204.43,4.4,15
+CO-00058,Company 00058,Construction,Latin America,LLC,9771116.65,9.5,91
+CO-00059,Company 00059,Logistics,Latin America,Corporation,921878.66,12.4,7
+CO-00060,Company 00060,Wholesale,APAC,Corporation,5770552.31,13.9,45
+CO-00061,Company 00061,Logistics,APAC,LLC,407228.7,16.4,4
+CO-00062,Company 00062,Retail,Western Europe,Corporation,1567691.9,11.7,7
+CO-00063,Company 00063,Healthcare,Latin America,Corporation,2578589.4,4.2,21
+CO-00064,Company 00064,Healthcare,North America,Corporation,3938152.77,7.7,19
+CO-00065,Company 00065,Construction,North America,Corporation,4462530.68,7.2,19
+CO-00066,Company 00066,Software,Western Europe,Partnership,4844464.33,6.7,37
+CO-00067,Company 00067,Software,Western Europe,Corporation,1546144.43,9.5,6
+CO-00068,Company 00068,Manufacturing,Western Europe,LLC,1380074.73,5.7,12
+CO-00069,Company 00069,Manufacturing,Western Europe,LLC,5167894.35,5.7,29
+CO-00070,Company 00070,Healthcare,Eastern Europe,LLC,1809743.49,19.7,7
+CO-00071,Company 00071,Software,APAC,LLC,611893.59,6.3,3
+CO-00072,Company 00072,Logistics,North America,LLC,705535.79,12.9,6
+CO-00073,Company 00073,Software,Western Europe,Partnership,873748.38,13.4,7
+CO-00074,Company 00074,Wholesale,North America,LLC,3602579.75,7.8,30
+CO-00075,Company 00075,Healthcare,North America,Corporation,2526702.72,5.8,11
+CO-00076,Company 00076,Software,APAC,LLC,4370925.61,3.4,37
+CO-00077,Company 00077,Healthcare,North America,LLC,1429374.3,1.6,9
+CO-00078,Company 00078,Manufacturing,North America,LLC,2567747.7,10.0,19
+CO-00079,Company 00079,Logistics,Western Europe,Corporation,4096282.42,8.7,30
+CO-00080,Company 00080,Logistics,Western Europe,LLC,1608244.0,10.9,11
+CO-00081,Company 00081,Manufacturing,Eastern Europe,LLC,3459986.47,4.6,26
+CO-00082,Company 00082,Construction,APAC,Corporation,1130390.9,20.9,6
+CO-00083,Company 00083,Wholesale,Latin America,LLC,1524148.05,9.2,10
+CO-00084,Company 00084,Healthcare,Western Europe,LLC,1495935.18,6.1,10
+CO-00085,Company 00085,Wholesale,Latin America,LLC,662754.79,0.9,4
+CO-00086,Company 00086,Software,APAC,LLC,3566062.06,5.0,26
+CO-00087,Company 00087,Software,North America,LLC,1370378.67,11.3,7
+CO-00088,Company 00088,Manufacturing,Latin America,LLC,2218837.83,16.1,14
+CO-00089,Company 00089,Manufacturing,Eastern Europe,Corporation,3543929.36,6.8,22
+CO-00090,Company 00090,Retail,Latin America,Corporation,3424723.09,17.8,30
+CO-00091,Company 00091,Construction,North America,Partnership,4262579.75,3.2,50
+CO-00092,Company 00092,Wholesale,Latin America,Partnership,1985764.46,8.8,9
+CO-00093,Company 00093,Healthcare,Middle East,LLC,1435037.71,9.0,6
+CO-00094,Company 00094,Retail,Latin America,LLC,2023383.74,10.0,17
+CO-00095,Company 00095,Logistics,North America,Partnership,405414.62,7.5,3
+CO-00096,Company 00096,Software,North America,LLC,515497.39,8.5,3
+CO-00097,Company 00097,Wholesale,Latin America,Corporation,583792.21,3.1,3
+CO-00098,Company 00098,Retail,Eastern Europe,Corporation,808352.23,15.1,7
+CO-00099,Company 00099,Healthcare,APAC,Corporation,3268279.4,12.1,14
+CO-00100,Company 00100,Software,Western Europe,LLC,886043.16,8.3,9
+CO-00101,Company 00101,Wholesale,North America,LLC,1501293.23,12.3,6
+CO-00102,Company 00102,Logistics,Latin America,LLC,8034282.83,15.5,88
+CO-00103,Company 00103,Software,Latin America,LLC,1534532.03,9.9,12
+CO-00104,Company 00104,Manufacturing,Western Europe,LLC,4581401.75,22.3,38
+CO-00105,Company 00105,Retail,Latin America,Corporation,861458.64,10.5,7
+CO-00106,Company 00106,Software,Western Europe,LLC,1784345.86,3.5,7
+CO-00107,Company 00107,Construction,North America,LLC,847442.23,8.0,5
+CO-00108,Company 00108,Software,North America,LLC,1561202.51,12.6,15
+CO-00109,Company 00109,Manufacturing,Western Europe,Sole Proprietorship,5077391.17,15.5,22
+CO-00110,Company 00110,Healthcare,Latin America,LLC,389523.54,7.6,3
+CO-00111,Company 00111,Manufacturing,North America,LLC,3383508.15,3.3,37
+CO-00112,Company 00112,Healthcare,APAC,Corporation,2779372.12,5.7,33
+CO-00113,Company 00113,Logistics,North America,LLC,1209660.19,2.2,8
+CO-00114,Company 00114,Logistics,Latin America,LLC,516041.33,11.2,2
+CO-00115,Company 00115,Healthcare,Western Europe,LLC,2355184.22,5.0,28
+CO-00116,Company 00116,Wholesale,North America,Sole Proprietorship,1290457.4,4.0,6
+CO-00117,Company 00117,Manufacturing,Eastern Europe,Corporation,2765345.7,11.9,23
+CO-00118,Company 00118,Construction,APAC,Corporation,2239699.24,17.5,19
+CO-00119,Company 00119,Construction,APAC,Partnership,10872844.31,3.9,58
+CO-00120,Company 00120,Healthcare,Western Europe,Corporation,1724839.18,7.6,8
+CO-00121,Company 00121,Wholesale,Eastern Europe,LLC,787408.54,5.9,4
+CO-00122,Company 00122,Healthcare,North America,Corporation,2621548.25,15.9,23
+CO-00123,Company 00123,Software,Western Europe,Corporation,2730503.78,6.4,33
+CO-00124,Company 00124,Healthcare,Western Europe,LLC,8530747.74,3.0,44
+CO-00125,Company 00125,Manufacturing,APAC,Corporation,5051072.96,6.6,29
+CO-00126,Company 00126,Logistics,Eastern Europe,LLC,3131025.23,13.9,21
+CO-00127,Company 00127,Software,North America,LLC,9466813.18,5.7,84
+CO-00128,Company 00128,Manufacturing,APAC,LLC,667461.47,4.3,3
+CO-00129,Company 00129,Manufacturing,Latin America,LLC,1155736.62,6.2,12
+CO-00130,Company 00130,Wholesale,North America,Sole Proprietorship,867546.21,3.1,4
+CO-00131,Company 00131,Wholesale,Middle East,Corporation,1483908.73,5.9,8
+CO-00132,Company 00132,Construction,Eastern Europe,LLC,553110.93,4.5,4
+CO-00133,Company 00133,Construction,Western Europe,Corporation,4135632.95,24.9,27
+CO-00134,Company 00134,Wholesale,North America,Partnership,1754645.33,1.2,11
+CO-00135,Company 00135,Software,North America,LLC,503426.85,3.5,2
+CO-00136,Company 00136,Healthcare,North America,Corporation,793668.32,4.3,3
+CO-00137,Company 00137,Construction,Middle East,Corporation,2998173.56,3.1,18
+CO-00138,Company 00138,Software,North America,LLC,5066326.56,8.9,56
+CO-00139,Company 00139,Software,Western Europe,Corporation,16138703.54,3.9,122
+CO-00140,Company 00140,Retail,APAC,Corporation,40380698.38,2.0,231
+CO-00141,Company 00141,Retail,APAC,Partnership,3316463.07,7.2,25
+CO-00142,Company 00142,Construction,Middle East,Partnership,814607.66,5.4,4
+CO-00143,Company 00143,Logistics,Middle East,Sole Proprietorship,259874.4,4.0,2
+CO-00144,Company 00144,Software,APAC,LLC,2863947.46,15.7,28
+CO-00145,Company 00145,Wholesale,Middle East,Partnership,971949.28,9.1,8
+CO-00146,Company 00146,Healthcare,Western Europe,Corporation,1446478.79,8.4,6
+CO-00147,Company 00147,Construction,North America,LLC,1188144.26,9.2,6
+CO-00148,Company 00148,Manufacturing,North America,Sole Proprietorship,1903508.11,8.9,12
+CO-00149,Company 00149,Retail,Western Europe,Partnership,6362807.26,5.6,50
+CO-00150,Company 00150,Software,North America,Partnership,2563921.72,3.9,11
+CO-00151,Company 00151,Wholesale,Western Europe,LLC,1869843.25,7.3,8
+CO-00152,Company 00152,Retail,North America,LLC,777894.54,5.6,5
+CO-00153,Company 00153,Wholesale,Eastern Europe,Sole Proprietorship,410576.3,1.1,2
+CO-00154,Company 00154,Manufacturing,Western Europe,Sole Proprietorship,1347406.36,2.9,6
+CO-00155,Company 00155,Logistics,North America,LLC,2076547.98,5.1,16
+CO-00156,Company 00156,Healthcare,Eastern Europe,LLC,12838126.23,12.0,99
+CO-00157,Company 00157,Wholesale,North America,Corporation,2496185.99,7.3,15
+CO-00158,Company 00158,Wholesale,Western Europe,LLC,5854607.47,3.4,41
+CO-00159,Company 00159,Healthcare,North America,Corporation,1330019.82,2.7,6
+CO-00160,Company 00160,Wholesale,Latin America,Sole Proprietorship,670015.57,13.7,4
+CO-00161,Company 00161,Construction,APAC,LLC,834746.39,5.8,7
+CO-00162,Company 00162,Wholesale,North America,Corporation,1061054.66,0.3,7
+CO-00163,Company 00163,Manufacturing,Middle East,Corporation,18411199.99,6.1,101
+CO-00164,Company 00164,Construction,APAC,LLC,963775.17,10.4,10
+CO-00165,Company 00165,Construction,APAC,LLC,5068164.12,2.6,38
+CO-00166,Company 00166,Software,Middle East,Corporation,888307.12,6.9,10
+CO-00167,Company 00167,Logistics,Eastern Europe,Partnership,5562582.37,7.4,27
+CO-00168,Company 00168,Wholesale,North America,Corporation,3220190.14,2.8,33
+CO-00169,Company 00169,Wholesale,North America,Sole Proprietorship,1873580.95,14.5,20
+CO-00170,Company 00170,Healthcare,North America,LLC,2103761.46,7.5,10
+CO-00171,Company 00171,Software,Western Europe,Sole Proprietorship,1138488.77,5.1,12
+CO-00172,Company 00172,Retail,APAC,Corporation,3423151.59,5.9,18
+CO-00173,Company 00173,Wholesale,North America,LLC,1390281.11,2.3,10
+CO-00174,Company 00174,Software,Eastern Europe,LLC,643317.87,2.3,3
+CO-00175,Company 00175,Manufacturing,APAC,LLC,610517.62,4.7,5
+CO-00176,Company 00176,Manufacturing,North America,Corporation,2604074.57,4.9,28
+CO-00177,Company 00177,Healthcare,North America,Sole Proprietorship,10628942.43,5.6,93
+CO-00178,Company 00178,Construction,North America,Corporation,2571478.58,15.3,11
+CO-00179,Company 00179,Logistics,North America,LLC,1946146.21,10.1,9
+CO-00180,Company 00180,Logistics,Western Europe,LLC,2916299.69,1.3,23
+CO-00181,Company 00181,Healthcare,Western Europe,Corporation,8088887.32,13.5,72
+CO-00182,Company 00182,Wholesale,Eastern Europe,Partnership,2728827.26,4.7,26
+CO-00183,Company 00183,Construction,North America,Partnership,1452900.95,10.7,12
+CO-00184,Company 00184,Manufacturing,Latin America,LLC,6624521.56,5.0,59
+CO-00185,Company 00185,Retail,North America,LLC,3364387.35,7.2,15
+CO-00186,Company 00186,Logistics,Western Europe,LLC,10178172.07,2.5,122
+CO-00187,Company 00187,Logistics,North America,Corporation,2631947.01,8.3,12
+CO-00188,Company 00188,Healthcare,Middle East,LLC,644049.57,11.5,7
+CO-00189,Company 00189,Logistics,Eastern Europe,LLC,557847.44,1.6,2
+CO-00190,Company 00190,Wholesale,North America,Partnership,11420584.38,11.6,79
+CO-00191,Company 00191,Retail,Eastern Europe,LLC,12282250.39,3.9,134
+CO-00192,Company 00192,Wholesale,Western Europe,Sole Proprietorship,1831197.69,18.4,9
+CO-00193,Company 00193,Healthcare,Middle East,Corporation,1493768.5,10.8,12
+CO-00194,Company 00194,Retail,APAC,LLC,9449234.51,9.6,44
+CO-00195,Company 00195,Healthcare,North America,LLC,724295.2,5.9,3
+CO-00196,Company 00196,Retail,Western Europe,Corporation,895621.33,27.6,3
+CO-00197,Company 00197,Wholesale,North America,Corporation,4169583.86,4.7,20
+CO-00198,Company 00198,Healthcare,Latin America,Corporation,1476809.95,3.0,12
+CO-00199,Company 00199,Construction,North America,Partnership,2180093.08,4.0,15
+CO-00200,Company 00200,Logistics,Eastern Europe,Partnership,1860874.51,12.8,10
+CO-00201,Company 00201,Wholesale,APAC,Corporation,3071186.57,7.1,24
+CO-00202,Company 00202,Healthcare,Western Europe,LLC,8952844.5,6.4,55
+CO-00203,Company 00203,Manufacturing,Middle East,LLC,2399053.65,4.8,20
+CO-00204,Company 00204,Construction,North America,Corporation,4172136.42,6.1,23
+CO-00205,Company 00205,Retail,APAC,LLC,282046.69,4.5,2
+CO-00206,Company 00206,Retail,Middle East,Partnership,2087090.6,10.2,23
+CO-00207,Company 00207,Wholesale,Western Europe,Corporation,942951.12,5.5,4
+CO-00208,Company 00208,Wholesale,North America,LLC,647702.61,4.1,3
+CO-00209,Company 00209,Construction,Western Europe,Partnership,910589.65,12.2,7
+CO-00210,Company 00210,Healthcare,Latin America,Corporation,1568886.29,3.0,15
+CO-00211,Company 00211,Retail,North America,LLC,5476093.51,7.1,28
+CO-00212,Company 00212,Wholesale,APAC,Corporation,581640.18,1.1,5
+CO-00213,Company 00213,Logistics,Latin America,Corporation,2259448.9,2.1,13
+CO-00214,Company 00214,Healthcare,APAC,Corporation,1350290.84,5.1,6
+CO-00215,Company 00215,Logistics,Western Europe,LLC,1579038.86,4.4,13
+CO-00216,Company 00216,Software,Western Europe,Corporation,5972987.78,4.4,48
+CO-00217,Company 00217,Software,North America,Corporation,3753185.25,10.9,42
+CO-00218,Company 00218,Software,North America,LLC,8346877.77,11.3,65
+CO-00219,Company 00219,Software,North America,LLC,1877580.09,8.1,11
+CO-00220,Company 00220,Logistics,North America,Corporation,1092585.42,2.9,10
+CO-00221,Company 00221,Manufacturing,Latin America,LLC,1751776.87,6.1,7
+CO-00222,Company 00222,Healthcare,North America,Sole Proprietorship,2792636.78,20.0,14
+CO-00223,Company 00223,Construction,North America,LLC,2614473.66,26.0,23
+CO-00224,Company 00224,Healthcare,Eastern Europe,Corporation,740893.32,12.2,4
+CO-00225,Company 00225,Construction,Latin America,Sole Proprietorship,2398825.45,3.0,17
+CO-00226,Company 00226,Software,Middle East,LLC,2753073.08,6.1,20
+CO-00227,Company 00227,Healthcare,Eastern Europe,Corporation,27165926.33,7.7,165
+CO-00228,Company 00228,Logistics,North America,LLC,14315373.84,7.0,148
+CO-00229,Company 00229,Manufacturing,Eastern Europe,Corporation,933556.39,13.0,8
+CO-00230,Company 00230,Logistics,Eastern Europe,Sole Proprietorship,1643956.9,10.6,16
+CO-00231,Company 00231,Healthcare,North America,Sole Proprietorship,507147.92,2.9,4
+CO-00232,Company 00232,Healthcare,North America,LLC,1213832.16,4.1,6
+CO-00233,Company 00233,Retail,APAC,Partnership,3004449.77,12.2,13
+CO-00234,Company 00234,Wholesale,North America,Partnership,7318043.88,15.6,41
+CO-00235,Company 00235,Construction,North America,LLC,1056969.24,7.8,4
+CO-00236,Company 00236,Healthcare,North America,Partnership,1139219.07,16.8,6
+CO-00237,Company 00237,Wholesale,APAC,LLC,255943.24,7.2,2
+CO-00238,Company 00238,Wholesale,Western Europe,Sole Proprietorship,1862320.93,3.3,8
+CO-00239,Company 00239,Wholesale,APAC,Partnership,757353.64,10.0,8
+CO-00240,Company 00240,Software,Middle East,Corporation,1290526.16,33.0,13
+CO-00241,Company 00241,Construction,Latin America,LLC,911766.51,2.4,4
+CO-00242,Company 00242,Manufacturing,North America,Sole Proprietorship,1994167.93,16.4,11
+CO-00243,Company 00243,Construction,Western Europe,LLC,377857.19,9.6,1
+CO-00244,Company 00244,Software,Middle East,Corporation,505323.83,4.0,5
+CO-00245,Company 00245,Software,APAC,Corporation,18425518.04,1.2,94
+CO-00246,Company 00246,Construction,APAC,LLC,604754.23,0.7,5
+CO-00247,Company 00247,Wholesale,APAC,LLC,731764.79,4.4,5
+CO-00248,Company 00248,Logistics,Eastern Europe,LLC,13755007.92,8.6,64
+CO-00249,Company 00249,Logistics,Western Europe,Sole Proprietorship,40027095.46,11.6,282
+CO-00250,Company 00250,Wholesale,Western Europe,Partnership,679038.68,13.4,3
+CO-00251,Company 00251,Logistics,Western Europe,Partnership,1516250.46,8.1,7
+CO-00252,Company 00252,Retail,North America,Corporation,3083437.34,7.3,14
+CO-00253,Company 00253,Wholesale,Western Europe,Corporation,12344209.5,5.2,151
+CO-00254,Company 00254,Construction,North America,Corporation,816794.59,8.7,7
+CO-00255,Company 00255,Manufacturing,North America,Corporation,1714654.49,4.0,7
+CO-00256,Company 00256,Logistics,Western Europe,Partnership,4767523.64,2.5,29
+CO-00257,Company 00257,Wholesale,Latin America,LLC,3384666.97,7.0,22
+CO-00258,Company 00258,Construction,Eastern Europe,Sole Proprietorship,1504308.57,11.1,16
+CO-00259,Company 00259,Construction,Eastern Europe,Sole Proprietorship,1916817.92,2.0,22
+CO-00260,Company 00260,Software,Latin America,LLC,554102.07,4.4,2
+CO-00261,Company 00261,Construction,Western Europe,Sole Proprietorship,1726878.94,6.8,11
+CO-00262,Company 00262,Wholesale,Western Europe,Partnership,1678838.11,6.7,8
+CO-00263,Company 00263,Software,Western Europe,LLC,2763945.9,9.4,24
+CO-00264,Company 00264,Healthcare,North America,LLC,1257546.03,19.7,10
+CO-00265,Company 00265,Construction,Eastern Europe,Corporation,3511446.16,0.7,21
+CO-00266,Company 00266,Wholesale,Latin America,Partnership,6032763.88,20.2,28
+CO-00267,Company 00267,Logistics,North America,LLC,2559773.48,19.1,20
+CO-00268,Company 00268,Manufacturing,APAC,Corporation,3115052.02,11.8,24
+CO-00269,Company 00269,Retail,North America,Corporation,2310917.86,7.7,14
+CO-00270,Company 00270,Construction,Western Europe,Corporation,2191472.81,4.1,25
+CO-00271,Company 00271,Construction,APAC,LLC,1064953.79,11.7,7
+CO-00272,Company 00272,Logistics,Latin America,LLC,3007122.69,8.0,18
+CO-00273,Company 00273,Retail,Eastern Europe,Partnership,1988146.59,5.3,24
+CO-00274,Company 00274,Construction,Eastern Europe,LLC,17772596.54,11.5,101
+CO-00275,Company 00275,Software,North America,Corporation,10568145.6,12.8,120
+CO-00276,Company 00276,Retail,Latin America,Corporation,3223075.39,15.5,17
+CO-00277,Company 00277,Manufacturing,Eastern Europe,Sole Proprietorship,1021663.55,3.7,5
+CO-00278,Company 00278,Manufacturing,North America,Sole Proprietorship,720419.19,14.3,3
+CO-00279,Company 00279,Retail,North America,Sole Proprietorship,7211178.53,5.4,39
+CO-00280,Company 00280,Healthcare,APAC,Corporation,2849771.08,7.7,17
+CO-00281,Company 00281,Logistics,North America,LLC,3541792.11,8.8,28
+CO-00282,Company 00282,Manufacturing,APAC,LLC,382855.92,13.6,2
+CO-00283,Company 00283,Retail,North America,Corporation,5539631.17,10.7,59
+CO-00284,Company 00284,Wholesale,Western Europe,LLC,3451848.14,5.2,18
+CO-00285,Company 00285,Manufacturing,Eastern Europe,LLC,721847.6,0.9,8
+CO-00286,Company 00286,Software,Eastern Europe,LLC,1367473.17,9.4,9
+CO-00287,Company 00287,Logistics,Western Europe,LLC,2852530.93,7.5,18
+CO-00288,Company 00288,Software,Western Europe,Corporation,2309327.23,2.3,13
+CO-00289,Company 00289,Retail,Western Europe,Sole Proprietorship,1636104.74,8.1,12
+CO-00290,Company 00290,Healthcare,Latin America,LLC,1975854.92,6.7,13
+CO-00291,Company 00291,Wholesale,Western Europe,LLC,1703205.5,15.5,10
+CO-00292,Company 00292,Software,Eastern Europe,Corporation,2552445.59,21.1,11
+CO-00293,Company 00293,Healthcare,Western Europe,LLC,9544655.98,12.6,52
+CO-00294,Company 00294,Wholesale,Western Europe,Partnership,168272.77,6.5,1
+CO-00295,Company 00295,Construction,Western Europe,Corporation,1729165.94,7.2,8
+CO-00296,Company 00296,Retail,North America,LLC,2614314.35,3.6,29
+CO-00297,Company 00297,Construction,Latin America,Corporation,2946103.45,4.2,24
+CO-00298,Company 00298,Logistics,APAC,Corporation,1510702.63,6.2,15
+CO-00299,Company 00299,Retail,North America,Corporation,378237.74,5.8,2
+CO-00300,Company 00300,Retail,North America,LLC,3041907.93,2.2,17
+CO-00301,Company 00301,Software,APAC,LLC,12327587.74,15.6,77
+CO-00302,Company 00302,Software,Western Europe,LLC,472663.31,16.9,2
+CO-00303,Company 00303,Logistics,Western Europe,Corporation,5198226.22,15.2,31
+CO-00304,Company 00304,Manufacturing,Latin America,LLC,1577693.89,17.3,13
+CO-00305,Company 00305,Retail,Western Europe,LLC,2060945.99,24.8,12
+CO-00306,Company 00306,Logistics,Western Europe,Corporation,764594.95,3.7,4
+CO-00307,Company 00307,Manufacturing,APAC,Corporation,1568364.36,24.2,10
+CO-00308,Company 00308,Retail,Eastern Europe,LLC,8040843.87,5.2,54
+CO-00309,Company 00309,Manufacturing,Latin America,Sole Proprietorship,3924130.05,10.3,24
+CO-00310,Company 00310,Construction,North America,Corporation,12388901.7,1.7,76
+CO-00311,Company 00311,Healthcare,North America,Sole Proprietorship,7112838.08,4.7,56
+CO-00312,Company 00312,Manufacturing,APAC,LLC,3399322.41,12.8,16
+CO-00313,Company 00313,Healthcare,APAC,Corporation,12533736.99,10.6,112
+CO-00314,Company 00314,Healthcare,Middle East,LLC,3399004.52,5.1,40
+CO-00315,Company 00315,Healthcare,North America,LLC,5015221.65,7.2,26
+CO-00316,Company 00316,Manufacturing,Middle East,LLC,1628922.07,4.3,7
+CO-00317,Company 00317,Wholesale,North America,LLC,2342070.24,12.8,13
+CO-00318,Company 00318,Manufacturing,Eastern Europe,Partnership,1090968.27,16.2,7
+CO-00319,Company 00319,Retail,Latin America,Partnership,5894816.33,3.7,26
+CO-00320,Company 00320,Software,Western Europe,LLC,674479.38,6.7,4
+CO-00321,Company 00321,Manufacturing,Western Europe,LLC,4791482.13,2.1,34
+CO-00322,Company 00322,Retail,Latin America,LLC,1810926.12,8.0,10
+CO-00323,Company 00323,Software,APAC,Corporation,7069123.77,9.6,48
+CO-00324,Company 00324,Logistics,North America,LLC,4642989.42,8.4,28
+CO-00325,Company 00325,Software,North America,Partnership,13533060.26,9.1,60
+CO-00326,Company 00326,Retail,Eastern Europe,LLC,4550622.94,6.2,39
+CO-00327,Company 00327,Logistics,North America,Corporation,454957.71,6.3,4
+CO-00328,Company 00328,Construction,North America,Partnership,2049377.87,6.1,14
+CO-00329,Company 00329,Logistics,North America,LLC,678739.59,4.6,4
+CO-00330,Company 00330,Wholesale,North America,Partnership,1305008.56,5.0,6
+CO-00331,Company 00331,Healthcare,Western Europe,Sole Proprietorship,9931563.08,9.3,44
+CO-00332,Company 00332,Construction,APAC,Corporation,4145499.35,15.6,22
+CO-00333,Company 00333,Logistics,Middle East,LLC,1089325.84,3.2,4
+CO-00334,Company 00334,Logistics,Eastern Europe,Corporation,795147.28,6.3,6
+CO-00335,Company 00335,Manufacturing,North America,LLC,2264313.3,2.6,20
+CO-00336,Company 00336,Healthcare,Latin America,Sole Proprietorship,649163.47,4.7,5
+CO-00337,Company 00337,Logistics,Western Europe,Corporation,1120022.94,5.3,5
+CO-00338,Company 00338,Wholesale,Middle East,Partnership,2993666.57,7.6,27
+CO-00339,Company 00339,Software,Western Europe,Corporation,6957369.64,7.4,63
+CO-00340,Company 00340,Logistics,Latin America,LLC,4027923.22,6.6,28
+CO-00341,Company 00341,Wholesale,North America,Corporation,221618.01,8.8,1
+CO-00342,Company 00342,Healthcare,Middle East,Partnership,2970873.96,3.4,16
+CO-00343,Company 00343,Manufacturing,Middle East,LLC,2354958.29,7.6,11
+CO-00344,Company 00344,Healthcare,Western Europe,LLC,3314741.78,10.8,32
+CO-00345,Company 00345,Software,APAC,Sole Proprietorship,11030885.64,3.4,68
+CO-00346,Company 00346,Healthcare,North America,LLC,278385.39,1.4,2
+CO-00347,Company 00347,Retail,North America,Partnership,1213351.08,12.7,10
+CO-00348,Company 00348,Healthcare,Latin America,LLC,3956642.31,2.7,31
+CO-00349,Company 00349,Manufacturing,Eastern Europe,Partnership,450631.68,4.5,2
+CO-00350,Company 00350,Retail,North America,Corporation,9587292.18,10.6,58
+CO-00351,Company 00351,Logistics,North America,LLC,3167194.1,3.3,17
+CO-00352,Company 00352,Healthcare,North America,LLC,5109356.3,12.2,25
+CO-00353,Company 00353,Manufacturing,North America,LLC,1238060.18,4.0,11
+CO-00354,Company 00354,Retail,Western Europe,Corporation,4944387.68,3.6,25
+CO-00355,Company 00355,Retail,North America,LLC,6378678.84,2.6,35
+CO-00356,Company 00356,Retail,Western Europe,LLC,2765903.82,4.0,30
+CO-00357,Company 00357,Manufacturing,Eastern Europe,Corporation,2770119.15,9.7,21
+CO-00358,Company 00358,Retail,Latin America,Sole Proprietorship,2871494.66,4.5,34
+CO-00359,Company 00359,Healthcare,APAC,LLC,924173.16,12.7,9
+CO-00360,Company 00360,Construction,North America,Corporation,1890725.77,6.8,15
+CO-00361,Company 00361,Retail,North America,Sole Proprietorship,1881307.3,7.2,16
+CO-00362,Company 00362,Logistics,North America,Corporation,3215179.88,3.5,14
+CO-00363,Company 00363,Logistics,Western Europe,Sole Proprietorship,5955491.23,13.9,27
+CO-00364,Company 00364,Manufacturing,Western Europe,Corporation,760296.61,10.9,4
+CO-00365,Company 00365,Software,North America,Corporation,1933787.3,10.7,10
+CO-00366,Company 00366,Construction,Latin America,Partnership,9640230.22,5.9,41
+CO-00367,Company 00367,Manufacturing,APAC,LLC,1041749.19,2.4,7
+CO-00368,Company 00368,Logistics,North America,Corporation,962943.47,7.5,6
+CO-00369,Company 00369,Wholesale,North America,Corporation,2682624.57,9.5,15
+CO-00370,Company 00370,Wholesale,Latin America,LLC,5098134.21,9.5,23
+CO-00371,Company 00371,Healthcare,Middle East,Corporation,2216469.24,8.7,11
+CO-00372,Company 00372,Healthcare,North America,Partnership,8276747.13,8.5,92
+CO-00373,Company 00373,Software,Eastern Europe,LLC,5161790.03,4.0,27
+CO-00374,Company 00374,Software,North America,LLC,5085073.63,4.1,43
+CO-00375,Company 00375,Construction,Eastern Europe,LLC,3813723.25,2.7,32
+CO-00376,Company 00376,Manufacturing,Latin America,LLC,22469133.94,12.8,138
+CO-00377,Company 00377,Software,North America,Corporation,1784838.18,20.5,9
+CO-00378,Company 00378,Retail,North America,LLC,295515.84,32.7,2
+CO-00379,Company 00379,Construction,Eastern Europe,Corporation,10899793.06,7.9,85
+CO-00380,Company 00380,Software,Eastern Europe,LLC,1386510.29,8.5,7
+CO-00381,Company 00381,Wholesale,APAC,Sole Proprietorship,2440907.48,6.1,23
+CO-00382,Company 00382,Software,Western Europe,Partnership,8117645.32,7.8,39
+CO-00383,Company 00383,Logistics,Middle East,LLC,441414.87,3.3,2
+CO-00384,Company 00384,Construction,Latin America,LLC,626781.19,6.0,3
+CO-00385,Company 00385,Wholesale,Latin America,LLC,441848.38,3.6,4
+CO-00386,Company 00386,Retail,North America,LLC,990399.53,5.5,4
+CO-00387,Company 00387,Software,North America,Corporation,3401192.3,3.9,15
+CO-00388,Company 00388,Construction,Eastern Europe,Corporation,3701274.74,9.5,34
+CO-00389,Company 00389,Retail,North America,Corporation,2888575.93,10.2,16
+CO-00390,Company 00390,Software,North America,Partnership,533510.55,8.3,2
+CO-00391,Company 00391,Logistics,North America,Partnership,217487.48,4.2,2
+CO-00392,Company 00392,Construction,APAC,LLC,2313688.55,2.5,13
+CO-00393,Company 00393,Logistics,Latin America,Corporation,1367129.67,10.3,6
+CO-00394,Company 00394,Wholesale,Middle East,Corporation,3469030.69,6.8,22
+CO-00395,Company 00395,Manufacturing,APAC,Corporation,4421341.11,1.4,20
+CO-00396,Company 00396,Manufacturing,Latin America,LLC,2516152.31,7.5,28
+CO-00397,Company 00397,Healthcare,Western Europe,LLC,4686202.38,8.5,21
+CO-00398,Company 00398,Software,Western Europe,LLC,2755780.8,1.8,12
+CO-00399,Company 00399,Wholesale,Latin America,LLC,3723090.67,9.6,36
+CO-00400,Company 00400,Retail,APAC,LLC,1083087.96,2.1,7
+CO-00401,Company 00401,Healthcare,Middle East,Corporation,1831028.86,3.8,10
+CO-00402,Company 00402,Healthcare,Western Europe,LLC,2667830.35,2.1,12
+CO-00403,Company 00403,Software,Middle East,Sole Proprietorship,4977948.79,3.5,47
+CO-00404,Company 00404,Software,Western Europe,LLC,1478086.39,2.5,11
+CO-00405,Company 00405,Software,Western Europe,Sole Proprietorship,3690111.59,12.8,18
+CO-00406,Company 00406,Manufacturing,Western Europe,LLC,1679759.54,5.7,11
+CO-00407,Company 00407,Healthcare,North America,LLC,1948280.67,4.9,11
+CO-00408,Company 00408,Retail,North America,LLC,5022905.16,13.5,30
+CO-00409,Company 00409,Software,Latin America,LLC,298623.73,13.1,1
+CO-00410,Company 00410,Manufacturing,North America,LLC,599306.04,5.2,5
+CO-00411,Company 00411,Healthcare,APAC,Corporation,497730.78,8.2,2
+CO-00412,Company 00412,Retail,North America,LLC,212433.42,4.4,1
+CO-00413,Company 00413,Healthcare,North America,LLC,1112072.07,6.3,5
+CO-00414,Company 00414,Software,Western Europe,LLC,4636331.1,2.9,47
+CO-00415,Company 00415,Retail,North America,Corporation,1648070.77,9.0,9
+CO-00416,Company 00416,Manufacturing,North America,Corporation,2670536.86,13.9,12
+CO-00417,Company 00417,Manufacturing,North America,LLC,6512392.75,12.4,32
+CO-00418,Company 00418,Manufacturing,Western Europe,LLC,8266205.48,7.0,101
+CO-00419,Company 00419,Manufacturing,North America,Corporation,2044905.36,1.2,13
+CO-00420,Company 00420,Healthcare,Eastern Europe,Corporation,8483094.76,4.2,87
+CO-00421,Company 00421,Logistics,North America,Corporation,2402755.25,6.3,23
+CO-00422,Company 00422,Retail,North America,Corporation,948466.53,2.3,5
+CO-00423,Company 00423,Healthcare,North America,LLC,1209357.33,1.9,5
+CO-00424,Company 00424,Healthcare,North America,Corporation,498552.16,16.3,2
+CO-00425,Company 00425,Retail,Middle East,Corporation,901545.82,11.5,9
+CO-00426,Company 00426,Retail,Western Europe,Partnership,1531844.79,9.5,13
+CO-00427,Company 00427,Construction,Eastern Europe,LLC,4894315.66,10.6,35
+CO-00428,Company 00428,Retail,APAC,Corporation,12246733.8,2.6,123
+CO-00429,Company 00429,Retail,North America,Corporation,550079.72,3.4,2
+CO-00430,Company 00430,Manufacturing,APAC,Corporation,3245654.13,7.9,29
+CO-00431,Company 00431,Wholesale,Latin America,Corporation,774099.78,8.3,7
+CO-00432,Company 00432,Logistics,Latin America,Corporation,3522554.83,2.1,18
+CO-00433,Company 00433,Retail,APAC,LLC,1922070.12,7.5,19
+CO-00434,Company 00434,Healthcare,North America,LLC,351194.04,6.4,2
+CO-00435,Company 00435,Healthcare,Eastern Europe,LLC,5544389.05,12.1,35
+CO-00436,Company 00436,Wholesale,Western Europe,Corporation,1196605.42,8.3,13
+CO-00437,Company 00437,Retail,Latin America,Corporation,1284782.19,17.4,7
+CO-00438,Company 00438,Software,North America,Corporation,751816.52,5.2,4
+CO-00439,Company 00439,Construction,North America,Corporation,1139063.19,2.8,6
+CO-00440,Company 00440,Wholesale,APAC,Corporation,3361475.06,17.1,29
+CO-00441,Company 00441,Retail,Western Europe,Corporation,1813475.38,8.6,13
+CO-00442,Company 00442,Healthcare,North America,LLC,3043936.09,6.4,17
+CO-00443,Company 00443,Manufacturing,North America,LLC,3146879.4,3.5,36
+CO-00444,Company 00444,Logistics,Eastern Europe,LLC,8208343.18,5.2,84
+CO-00445,Company 00445,Construction,North America,Partnership,1555354.18,5.0,12
+CO-00446,Company 00446,Software,North America,LLC,500389.55,2.7,5
+CO-00447,Company 00447,Healthcare,APAC,LLC,6370715.96,0.9,74
+CO-00448,Company 00448,Logistics,North America,LLC,1573026.18,4.9,6
+CO-00449,Company 00449,Healthcare,North America,Corporation,6679758.85,10.8,45
+CO-00450,Company 00450,Healthcare,Latin America,Sole Proprietorship,3215126.02,14.6,20
+CO-00451,Company 00451,Logistics,North America,Partnership,1921972.33,12.4,16
+CO-00452,Company 00452,Wholesale,North America,LLC,3105781.38,12.9,38
+CO-00453,Company 00453,Logistics,Eastern Europe,Corporation,15417481.1,2.9,80
+CO-00454,Company 00454,Software,Latin America,LLC,17487213.75,8.0,92
+CO-00455,Company 00455,Construction,Western Europe,Partnership,2348720.18,9.5,10
+CO-00456,Company 00456,Manufacturing,Middle East,LLC,2571990.3,9.9,30
+CO-00457,Company 00457,Software,Middle East,LLC,6428425.24,6.3,63
+CO-00458,Company 00458,Healthcare,Eastern Europe,Corporation,940661.82,7.3,5
+CO-00459,Company 00459,Construction,Eastern Europe,Corporation,3057384.51,12.2,23
+CO-00460,Company 00460,Software,Middle East,Sole Proprietorship,2135341.52,9.3,23
+CO-00461,Company 00461,Construction,North America,LLC,2999356.16,10.4,23
+CO-00462,Company 00462,Logistics,Western Europe,Sole Proprietorship,952296.0,4.8,10
+CO-00463,Company 00463,Construction,North America,LLC,447053.03,10.1,2
+CO-00464,Company 00464,Wholesale,North America,LLC,275685.65,7.3,1
+CO-00465,Company 00465,Manufacturing,APAC,Corporation,716845.69,11.4,4
+CO-00466,Company 00466,Wholesale,North America,Corporation,1385157.92,4.0,10
+CO-00467,Company 00467,Retail,Western Europe,Partnership,1634436.11,10.9,8
+CO-00468,Company 00468,Logistics,North America,Corporation,15206464.06,5.3,87
+CO-00469,Company 00469,Manufacturing,Eastern Europe,Corporation,6622565.36,10.9,33
+CO-00470,Company 00470,Manufacturing,Middle East,LLC,837275.87,8.0,5
+CO-00471,Company 00471,Logistics,Western Europe,Sole Proprietorship,3102467.91,6.9,13
+CO-00472,Company 00472,Manufacturing,Middle East,Corporation,1458503.93,5.5,11
+CO-00473,Company 00473,Software,Western Europe,Corporation,1648928.37,6.5,9
+CO-00474,Company 00474,Wholesale,APAC,Partnership,2637456.73,4.9,13
+CO-00475,Company 00475,Healthcare,Middle East,LLC,4070071.47,5.4,19
+CO-00476,Company 00476,Logistics,North America,Partnership,1560850.65,9.1,7
+CO-00477,Company 00477,Wholesale,APAC,Corporation,6349277.17,1.6,45
+CO-00478,Company 00478,Logistics,North America,Partnership,699458.52,10.8,3
+CO-00479,Company 00479,Construction,Western Europe,Corporation,2205222.71,10.9,17
+CO-00480,Company 00480,Logistics,North America,Corporation,29434373.81,5.6,165
+CO-00481,Company 00481,Software,Western Europe,Partnership,2738935.07,7.5,25
+CO-00482,Company 00482,Healthcare,APAC,Corporation,9186214.61,3.2,64
+CO-00483,Company 00483,Construction,Latin America,LLC,2401298.47,8.7,11
+CO-00484,Company 00484,Healthcare,Eastern Europe,Corporation,3916766.88,3.6,19
+CO-00485,Company 00485,Construction,APAC,Corporation,2070326.34,0.3,13
+CO-00486,Company 00486,Manufacturing,Western Europe,Partnership,1847959.14,14.3,18
+CO-00487,Company 00487,Healthcare,North America,Partnership,1005019.6,2.9,7
+CO-00488,Company 00488,Retail,Middle East,LLC,3369589.08,6.4,33
+CO-00489,Company 00489,Retail,North America,LLC,935150.55,7.7,10
+CO-00490,Company 00490,Logistics,Middle East,LLC,4263432.89,9.1,19
+CO-00491,Company 00491,Wholesale,North America,Corporation,6486846.08,6.8,42
+CO-00492,Company 00492,Software,North America,Partnership,3161418.59,8.1,33
+CO-00493,Company 00493,Manufacturing,Western Europe,Corporation,1645823.24,5.5,8
+CO-00494,Company 00494,Logistics,Western Europe,Partnership,3450278.74,1.9,37
+CO-00495,Company 00495,Wholesale,North America,Corporation,1609327.49,6.6,11
+CO-00496,Company 00496,Manufacturing,North America,Corporation,5584732.68,9.9,48
+CO-00497,Company 00497,Logistics,North America,Sole Proprietorship,351018.4,3.1,3
+CO-00498,Company 00498,Software,Middle East,LLC,1566559.91,7.7,9
+CO-00499,Company 00499,Retail,Western Europe,Corporation,299295.9,19.6,1
+CO-00500,Company 00500,Wholesale,North America,LLC,491363.36,6.3,3
+CO-00501,Company 00501,Logistics,North America,LLC,8570719.39,6.5,42
+CO-00502,Company 00502,Retail,North America,Corporation,5363809.36,1.7,24
+CO-00503,Company 00503,Construction,Western Europe,LLC,1067168.85,2.8,5
+CO-00504,Company 00504,Healthcare,Western Europe,Corporation,487719.9,3.6,2
+CO-00505,Company 00505,Software,North America,LLC,113037.08,9.7,1
+CO-00506,Company 00506,Construction,APAC,LLC,1272513.32,3.3,6
+CO-00507,Company 00507,Healthcare,North America,LLC,24653144.4,1.2,198
+CO-00508,Company 00508,Manufacturing,Western Europe,Partnership,3385067.05,8.6,31
+CO-00509,Company 00509,Healthcare,Latin America,Corporation,1252218.97,3.8,6
+CO-00510,Company 00510,Healthcare,Western Europe,Partnership,3488841.22,1.8,16
+CO-00511,Company 00511,Wholesale,North America,Corporation,460027.54,10.4,2
+CO-00512,Company 00512,Construction,Western Europe,LLC,1627696.91,5.1,9
+CO-00513,Company 00513,Manufacturing,Eastern Europe,Corporation,2420482.54,9.2,11
+CO-00514,Company 00514,Wholesale,Middle East,LLC,2010510.74,1.7,10
+CO-00515,Company 00515,Manufacturing,Western Europe,LLC,4832169.62,0.8,26
+CO-00516,Company 00516,Retail,APAC,Corporation,3092978.89,7.2,35
+CO-00517,Company 00517,Healthcare,Eastern Europe,Partnership,4275134.06,2.7,28
+CO-00518,Company 00518,Manufacturing,Latin America,Partnership,1100888.04,7.2,12
+CO-00519,Company 00519,Healthcare,North America,LLC,5377937.04,7.3,57
+CO-00520,Company 00520,Wholesale,APAC,Corporation,11172175.87,6.7,69
+CO-00521,Company 00521,Wholesale,North America,Corporation,830555.87,12.8,9
+CO-00522,Company 00522,Construction,Western Europe,Partnership,901940.96,29.8,4
+CO-00523,Company 00523,Manufacturing,Western Europe,Sole Proprietorship,8333418.69,8.5,56
+CO-00524,Company 00524,Healthcare,APAC,Corporation,1809671.71,19.6,9
+CO-00525,Company 00525,Logistics,Western Europe,LLC,8920132.8,5.2,87
+CO-00526,Company 00526,Logistics,North America,Partnership,1407695.16,2.3,6
+CO-00527,Company 00527,Wholesale,APAC,Corporation,9388964.58,4.0,61
+CO-00528,Company 00528,Healthcare,Middle East,Partnership,2499211.44,5.4,15
+CO-00529,Company 00529,Logistics,Latin America,Corporation,2836918.04,20.6,16
+CO-00530,Company 00530,Retail,Western Europe,Sole Proprietorship,10477262.82,6.9,65
+CO-00531,Company 00531,Wholesale,Western Europe,LLC,1526105.35,13.1,9
+CO-00532,Company 00532,Construction,APAC,Corporation,855018.09,4.9,4
+CO-00533,Company 00533,Logistics,North America,LLC,1399234.41,4.4,6
+CO-00534,Company 00534,Wholesale,Latin America,Corporation,3444653.75,1.7,27
+CO-00535,Company 00535,Wholesale,Eastern Europe,Sole Proprietorship,457824.37,20.2,2
+CO-00536,Company 00536,Wholesale,APAC,Corporation,4145238.58,15.9,31
+CO-00537,Company 00537,Healthcare,Eastern Europe,Corporation,1278539.13,7.8,10
+CO-00538,Company 00538,Manufacturing,North America,LLC,6905388.87,5.6,54
+CO-00539,Company 00539,Retail,Middle East,LLC,199933.42,7.1,1
+CO-00540,Company 00540,Construction,APAC,Corporation,997925.82,2.2,7
+CO-00541,Company 00541,Retail,APAC,Corporation,405765.97,9.1,1
+CO-00542,Company 00542,Manufacturing,Western Europe,LLC,959119.1,15.1,5
+CO-00543,Company 00543,Logistics,Western Europe,Corporation,2807109.6,15.5,12
+CO-00544,Company 00544,Software,Latin America,Corporation,1831733.56,1.7,19
+CO-00545,Company 00545,Logistics,Eastern Europe,LLC,1700822.36,13.0,9
+CO-00546,Company 00546,Wholesale,North America,LLC,1868815.06,2.2,19
+CO-00547,Company 00547,Wholesale,North America,LLC,2685528.88,0.8,18
+CO-00548,Company 00548,Retail,North America,Corporation,799277.89,13.4,5
+CO-00549,Company 00549,Construction,North America,Partnership,4443041.14,4.6,24
+CO-00550,Company 00550,Retail,Western Europe,Corporation,4251004.94,12.2,22
+CO-00551,Company 00551,Healthcare,APAC,LLC,3220470.22,11.5,27
+CO-00552,Company 00552,Logistics,Latin America,Partnership,3822951.95,10.6,35
+CO-00553,Company 00553,Manufacturing,North America,LLC,2947352.89,7.0,20
+CO-00554,Company 00554,Retail,Eastern Europe,Corporation,16769516.51,2.5,144
+CO-00555,Company 00555,Construction,Western Europe,LLC,2008514.25,5.4,11
+CO-00556,Company 00556,Healthcare,Latin America,Partnership,1611888.1,15.7,10
+CO-00557,Company 00557,Wholesale,APAC,Corporation,1031446.17,12.4,5
+CO-00558,Company 00558,Manufacturing,North America,LLC,780536.93,5.6,3
+CO-00559,Company 00559,Construction,APAC,LLC,631294.79,5.6,4
+CO-00560,Company 00560,Logistics,North America,LLC,900947.88,10.0,4
+CO-00561,Company 00561,Wholesale,Latin America,LLC,2041753.63,7.4,10
+CO-00562,Company 00562,Construction,APAC,LLC,3061131.35,5.8,29
+CO-00563,Company 00563,Manufacturing,Latin America,Corporation,2306270.0,9.5,11
+CO-00564,Company 00564,Logistics,North America,Partnership,1019134.94,9.3,6
+CO-00565,Company 00565,Retail,North America,LLC,5390693.31,4.1,28
+CO-00566,Company 00566,Software,North America,Corporation,4590101.4,8.4,24
+CO-00567,Company 00567,Manufacturing,North America,Partnership,1867949.18,8.9,8
+CO-00568,Company 00568,Healthcare,North America,Corporation,1140621.51,6.7,5
+CO-00569,Company 00569,Software,North America,Corporation,3792090.17,3.8,18
+CO-00570,Company 00570,Manufacturing,Eastern Europe,Partnership,2644449.8,5.3,20
+CO-00571,Company 00571,Software,North America,Corporation,514974.54,3.2,2
+CO-00572,Company 00572,Healthcare,Western Europe,Corporation,2047274.07,8.5,11
+CO-00573,Company 00573,Healthcare,Latin America,Sole Proprietorship,2847738.74,1.8,14
+CO-00574,Company 00574,Retail,North America,LLC,891183.13,16.7,4
+CO-00575,Company 00575,Manufacturing,Eastern Europe,LLC,2649399.03,14.6,26
+CO-00576,Company 00576,Construction,Latin America,Corporation,511538.19,9.0,3
+CO-00577,Company 00577,Logistics,Eastern Europe,LLC,8336767.42,11.9,40
+CO-00578,Company 00578,Manufacturing,Western Europe,LLC,7632683.04,11.4,34
+CO-00579,Company 00579,Construction,Latin America,LLC,1702286.09,7.5,8
+CO-00580,Company 00580,Wholesale,Western Europe,Corporation,3151705.64,5.9,20
+CO-00581,Company 00581,Logistics,Western Europe,Corporation,196826.52,5.5,1
+CO-00582,Company 00582,Retail,Middle East,Partnership,689451.99,17.1,4
+CO-00583,Company 00583,Manufacturing,Middle East,LLC,1633476.43,3.7,11
+CO-00584,Company 00584,Logistics,Western Europe,Corporation,750028.87,3.8,3
+CO-00585,Company 00585,Wholesale,Western Europe,LLC,4476698.91,12.6,27
+CO-00586,Company 00586,Construction,Middle East,LLC,16147834.8,11.9,116
+CO-00587,Company 00587,Software,Eastern Europe,Corporation,675619.47,5.7,4
+CO-00588,Company 00588,Healthcare,Latin America,LLC,948404.71,9.7,4
+CO-00589,Company 00589,Wholesale,North America,Corporation,2773022.31,10.5,16
+CO-00590,Company 00590,Logistics,North America,Corporation,10974842.31,2.4,95
+CO-00591,Company 00591,Healthcare,Eastern Europe,Corporation,645400.08,15.2,4
+CO-00592,Company 00592,Construction,Middle East,Corporation,2810958.6,10.5,18
+CO-00593,Company 00593,Manufacturing,Western Europe,Partnership,13541896.08,9.1,106
+CO-00594,Company 00594,Retail,APAC,LLC,420096.97,10.5,2
+CO-00595,Company 00595,Manufacturing,Latin America,Sole Proprietorship,608608.69,8.4,5
+CO-00596,Company 00596,Healthcare,Middle East,LLC,1434595.37,6.4,9
+CO-00597,Company 00597,Healthcare,Middle East,Corporation,1301999.33,1.2,8
+CO-00598,Company 00598,Construction,North America,Sole Proprietorship,4938643.66,7.5,32
+CO-00599,Company 00599,Retail,Western Europe,LLC,2790300.13,2.2,16
+CO-00600,Company 00600,Retail,North America,Partnership,371401.12,21.3,2
+CO-00601,Company 00601,Healthcare,Western Europe,Corporation,3668929.19,6.3,36
+CO-00602,Company 00602,Wholesale,North America,Partnership,1229921.76,21.1,9
+CO-00603,Company 00603,Software,Latin America,LLC,7837631.3,7.6,40
+CO-00604,Company 00604,Construction,Middle East,Corporation,1169880.85,4.4,5
+CO-00605,Company 00605,Logistics,North America,LLC,1159366.99,14.9,13
+CO-00606,Company 00606,Manufacturing,Western Europe,LLC,3764522.6,8.9,41
+CO-00607,Company 00607,Healthcare,Latin America,Corporation,4699311.1,26.0,21
+CO-00608,Company 00608,Construction,Latin America,Corporation,3430097.91,4.3,33
+CO-00609,Company 00609,Retail,APAC,Corporation,406119.48,15.3,1
+CO-00610,Company 00610,Logistics,North America,Corporation,3752881.26,15.8,18
+CO-00611,Company 00611,Wholesale,North America,Partnership,778942.06,11.1,7
+CO-00612,Company 00612,Manufacturing,APAC,Corporation,2772544.67,15.9,29
+CO-00613,Company 00613,Healthcare,North America,LLC,527690.68,6.4,2
+CO-00614,Company 00614,Wholesale,Middle East,Partnership,3424007.3,3.7,28
+CO-00615,Company 00615,Manufacturing,North America,Corporation,978133.16,4.7,6
+CO-00616,Company 00616,Retail,Western Europe,LLC,607656.69,7.2,5
+CO-00617,Company 00617,Retail,Eastern Europe,Corporation,4474119.53,11.4,26
+CO-00618,Company 00618,Manufacturing,Latin America,LLC,2790257.72,3.9,13
+CO-00619,Company 00619,Logistics,North America,Partnership,1185912.64,5.5,6
+CO-00620,Company 00620,Manufacturing,Middle East,LLC,9352730.11,4.1,107
+CO-00621,Company 00621,Wholesale,APAC,Corporation,1410348.76,12.7,8
+CO-00622,Company 00622,Manufacturing,Middle East,Corporation,2262786.72,21.0,12
+CO-00623,Company 00623,Construction,APAC,Sole Proprietorship,2867391.95,3.2,26
+CO-00624,Company 00624,Software,APAC,Corporation,1179184.98,10.0,6
+CO-00625,Company 00625,Wholesale,Latin America,Partnership,3510034.04,13.7,20
+CO-00626,Company 00626,Wholesale,Eastern Europe,Corporation,1285357.76,6.0,15
+CO-00627,Company 00627,Healthcare,Middle East,LLC,1451868.17,2.3,6
+CO-00628,Company 00628,Construction,APAC,LLC,8560273.0,14.9,58
+CO-00629,Company 00629,Retail,Eastern Europe,LLC,774067.18,2.2,6
+CO-00630,Company 00630,Retail,North America,LLC,196264.73,17.6,2
+CO-00631,Company 00631,Manufacturing,North America,Corporation,10972876.3,4.1,80
+CO-00632,Company 00632,Wholesale,Middle East,LLC,28045197.2,1.9,222
+CO-00633,Company 00633,Construction,APAC,Partnership,1461144.71,5.0,11
+CO-00634,Company 00634,Retail,North America,LLC,315893.99,6.9,1
+CO-00635,Company 00635,Logistics,APAC,LLC,1606415.77,7.9,9
+CO-00636,Company 00636,Healthcare,North America,Corporation,1645865.68,10.5,16
+CO-00637,Company 00637,Construction,Western Europe,Partnership,1812243.54,8.3,9
+CO-00638,Company 00638,Software,APAC,Sole Proprietorship,719715.99,19.9,3
+CO-00639,Company 00639,Logistics,APAC,Partnership,3912007.17,6.6,24
+CO-00640,Company 00640,Construction,Eastern Europe,Partnership,3702457.61,8.6,16
+CO-00641,Company 00641,Construction,APAC,LLC,491685.41,8.2,4
+CO-00642,Company 00642,Retail,Middle East,Corporation,4409168.72,1.7,49
+CO-00643,Company 00643,Construction,APAC,LLC,17067471.9,2.7,202
+CO-00644,Company 00644,Manufacturing,APAC,Sole Proprietorship,2602440.8,7.3,20
+CO-00645,Company 00645,Construction,Western Europe,LLC,1563871.19,9.3,10
+CO-00646,Company 00646,Construction,North America,Corporation,1901201.83,1.1,20
+CO-00647,Company 00647,Software,North America,LLC,4054170.92,20.5,24
+CO-00648,Company 00648,Software,North America,Partnership,388220.36,9.8,1
+CO-00649,Company 00649,Manufacturing,North America,LLC,2582815.66,7.0,12
+CO-00650,Company 00650,Wholesale,North America,Partnership,1482938.35,9.5,8
+CO-00651,Company 00651,Wholesale,North America,Sole Proprietorship,13905917.31,4.8,77
+CO-00652,Company 00652,Manufacturing,Eastern Europe,LLC,1841014.37,7.9,9
+CO-00653,Company 00653,Software,North America,Corporation,11615925.6,8.8,75
+CO-00654,Company 00654,Healthcare,Western Europe,LLC,726692.94,15.0,5
+CO-00655,Company 00655,Logistics,North America,LLC,3942238.1,6.2,31
+CO-00656,Company 00656,Construction,North America,LLC,3015874.1,2.2,31
+CO-00657,Company 00657,Construction,Latin America,Corporation,918918.53,3.6,5
+CO-00658,Company 00658,Wholesale,APAC,LLC,2616625.62,5.9,17
+CO-00659,Company 00659,Wholesale,Latin America,Corporation,7366983.14,2.4,75
+CO-00660,Company 00660,Logistics,Latin America,Partnership,1585179.64,3.3,13
+CO-00661,Company 00661,Retail,APAC,LLC,403542.61,3.6,2
+CO-00662,Company 00662,Manufacturing,Latin America,LLC,2153138.65,5.6,18
+CO-00663,Company 00663,Manufacturing,North America,LLC,888755.02,9.8,6
+CO-00664,Company 00664,Logistics,North America,LLC,1556046.8,5.4,14
+CO-00665,Company 00665,Construction,Eastern Europe,Sole Proprietorship,2019604.44,10.2,19
+CO-00666,Company 00666,Software,Eastern Europe,LLC,398055.92,7.0,2
+CO-00667,Company 00667,Construction,Middle East,Corporation,435539.89,3.4,4
+CO-00668,Company 00668,Manufacturing,North America,Sole Proprietorship,3548611.06,8.9,28
+CO-00669,Company 00669,Retail,APAC,LLC,1299228.65,8.0,5
+CO-00670,Company 00670,Manufacturing,Western Europe,Corporation,168595.17,10.4,1
+CO-00671,Company 00671,Software,APAC,Partnership,4803445.53,11.8,28
+CO-00672,Company 00672,Wholesale,Western Europe,Corporation,2877319.69,15.3,16
+CO-00673,Company 00673,Software,North America,LLC,1073167.57,10.0,9
+CO-00674,Company 00674,Manufacturing,Western Europe,Partnership,587228.79,7.8,4
+CO-00675,Company 00675,Wholesale,North America,Partnership,5054593.02,10.4,36
+CO-00676,Company 00676,Construction,North America,Partnership,3107566.87,5.0,27
+CO-00677,Company 00677,Manufacturing,APAC,Corporation,23738346.22,4.8,206
+CO-00678,Company 00678,Healthcare,Western Europe,Corporation,3335684.95,16.6,19
+CO-00679,Company 00679,Construction,North America,Corporation,3229064.88,4.7,33
+CO-00680,Company 00680,Wholesale,Western Europe,LLC,1854400.59,3.7,18
+CO-00681,Company 00681,Manufacturing,Eastern Europe,Sole Proprietorship,4959303.51,10.0,29
+CO-00682,Company 00682,Software,North America,LLC,4094213.53,5.1,27
+CO-00683,Company 00683,Healthcare,North America,Partnership,7661551.05,11.7,44
+CO-00684,Company 00684,Construction,APAC,LLC,1301043.36,14.6,15
+CO-00685,Company 00685,Construction,North America,Corporation,1417765.4,4.1,7
+CO-00686,Company 00686,Construction,APAC,Partnership,1357149.13,10.7,6
+CO-00687,Company 00687,Manufacturing,North America,Partnership,4832148.36,4.6,30
+CO-00688,Company 00688,Wholesale,Latin America,LLC,9804719.8,6.0,47
+CO-00689,Company 00689,Construction,Latin America,Corporation,1384929.1,8.6,9
+CO-00690,Company 00690,Logistics,North America,LLC,1432922.0,4.8,15
+CO-00691,Company 00691,Healthcare,Latin America,LLC,2999863.13,8.1,21
+CO-00692,Company 00692,Healthcare,Western Europe,Corporation,1713825.39,6.3,11
+CO-00693,Company 00693,Retail,Western Europe,Sole Proprietorship,5677682.25,11.8,27
+CO-00694,Company 00694,Healthcare,APAC,Sole Proprietorship,230549.92,11.9,1
+CO-00695,Company 00695,Retail,APAC,Corporation,958663.07,4.8,7
+CO-00696,Company 00696,Retail,North America,Partnership,1002075.26,8.7,4
+CO-00697,Company 00697,Software,Latin America,LLC,215269.06,13.0,1
+CO-00698,Company 00698,Manufacturing,North America,LLC,835981.33,3.3,4
+CO-00699,Company 00699,Construction,North America,Corporation,877510.22,6.3,6
+CO-00700,Company 00700,Construction,North America,Partnership,1792094.03,8.5,8
+CO-00701,Company 00701,Retail,Eastern Europe,Corporation,6668902.7,3.1,61
+CO-00702,Company 00702,Retail,Latin America,LLC,1715026.94,5.2,9
+CO-00703,Company 00703,Manufacturing,Western Europe,LLC,781668.71,18.7,4
+CO-00704,Company 00704,Software,APAC,LLC,2069971.63,4.7,9
+CO-00705,Company 00705,Logistics,Latin America,Partnership,6256763.66,5.0,27
+CO-00706,Company 00706,Construction,North America,LLC,825744.91,9.9,4
+CO-00707,Company 00707,Healthcare,North America,Corporation,881539.52,2.8,9
+CO-00708,Company 00708,Construction,Eastern Europe,Corporation,3830664.94,6.4,25
+CO-00709,Company 00709,Construction,Western Europe,LLC,1755850.45,3.7,8
+CO-00710,Company 00710,Logistics,North America,LLC,4186956.65,8.1,23
+CO-00711,Company 00711,Construction,North America,Corporation,2161586.95,0.4,10
+CO-00712,Company 00712,Manufacturing,Western Europe,LLC,4420059.2,7.4,22
+CO-00713,Company 00713,Software,Western Europe,Corporation,778342.46,8.6,6
+CO-00714,Company 00714,Healthcare,Latin America,Sole Proprietorship,2164966.29,5.3,19
+CO-00715,Company 00715,Construction,Latin America,LLC,1774998.23,5.5,13
+CO-00716,Company 00716,Wholesale,APAC,LLC,649598.06,4.8,3
+CO-00717,Company 00717,Retail,Middle East,Corporation,458869.92,6.3,3
+CO-00718,Company 00718,Retail,Western Europe,Corporation,4350272.46,16.7,50
+CO-00719,Company 00719,Retail,Eastern Europe,Sole Proprietorship,1542704.52,12.1,8
+CO-00720,Company 00720,Logistics,North America,LLC,788367.57,6.3,9
+CO-00721,Company 00721,Logistics,APAC,Partnership,1990350.0,5.2,14
+CO-00722,Company 00722,Software,Eastern Europe,Corporation,6770048.83,11.4,45
+CO-00723,Company 00723,Retail,North America,LLC,223968.83,7.8,1
+CO-00724,Company 00724,Construction,Latin America,Corporation,490588.67,3.1,4
+CO-00725,Company 00725,Retail,Western Europe,LLC,870752.93,5.8,4
+CO-00726,Company 00726,Healthcare,APAC,LLC,9446726.78,15.6,45
+CO-00727,Company 00727,Construction,North America,LLC,2906868.62,9.6,15
+CO-00728,Company 00728,Retail,Western Europe,LLC,4719990.01,5.3,21
+CO-00729,Company 00729,Construction,APAC,Corporation,700702.78,2.1,5
+CO-00730,Company 00730,Construction,Western Europe,LLC,715304.87,8.1,6
+CO-00731,Company 00731,Manufacturing,Western Europe,LLC,3429118.25,7.0,38
+CO-00732,Company 00732,Logistics,Eastern Europe,LLC,2322777.74,6.2,12
+CO-00733,Company 00733,Manufacturing,Latin America,Corporation,3793269.31,11.5,36
+CO-00734,Company 00734,Wholesale,North America,Sole Proprietorship,1816330.85,9.7,8
+CO-00735,Company 00735,Healthcare,North America,LLC,2893981.31,2.1,17
+CO-00736,Company 00736,Logistics,Western Europe,Sole Proprietorship,2566667.92,7.0,12
+CO-00737,Company 00737,Construction,North America,Corporation,4769573.23,2.6,32
+CO-00738,Company 00738,Software,Western Europe,Partnership,4911098.89,4.9,25
+CO-00739,Company 00739,Manufacturing,Western Europe,Corporation,433708.53,2.5,2
+CO-00740,Company 00740,Healthcare,Latin America,Corporation,231591.76,2.5,1
+CO-00741,Company 00741,Manufacturing,Eastern Europe,Partnership,5966943.62,8.7,30
+CO-00742,Company 00742,Software,Western Europe,Corporation,7186573.8,8.2,62
+CO-00743,Company 00743,Wholesale,North America,Partnership,789675.18,6.7,3
+CO-00744,Company 00744,Wholesale,Western Europe,Partnership,341179.7,4.6,1
+CO-00745,Company 00745,Construction,North America,Corporation,2419411.34,2.3,12
+CO-00746,Company 00746,Software,APAC,Corporation,5558496.56,4.9,48
+CO-00747,Company 00747,Software,North America,Corporation,13224669.2,8.2,141
+CO-00748,Company 00748,Healthcare,APAC,Corporation,3672185.59,8.1,40
+CO-00749,Company 00749,Healthcare,Eastern Europe,Corporation,1511001.6,15.4,8
+CO-00750,Company 00750,Construction,Middle East,Corporation,897052.24,14.1,8
+CO-00751,Company 00751,Manufacturing,APAC,LLC,2216525.18,6.9,9
+CO-00752,Company 00752,Retail,Middle East,Sole Proprietorship,1624540.06,4.9,7
+CO-00753,Company 00753,Manufacturing,Eastern Europe,LLC,794074.13,3.8,9
+CO-00754,Company 00754,Construction,North America,LLC,17000539.74,2.0,90
+CO-00755,Company 00755,Software,Latin America,LLC,13061354.66,2.8,109
+CO-00756,Company 00756,Construction,North America,LLC,6824629.99,8.2,52
+CO-00757,Company 00757,Healthcare,Western Europe,Corporation,872527.63,10.2,7
+CO-00758,Company 00758,Software,APAC,LLC,5152637.74,5.6,25
+CO-00759,Company 00759,Software,Eastern Europe,LLC,4154183.3,25.5,19
+CO-00760,Company 00760,Construction,North America,LLC,3411100.84,2.9,39
+CO-00761,Company 00761,Retail,APAC,LLC,7645786.48,1.8,63
+CO-00762,Company 00762,Construction,North America,Sole Proprietorship,4136543.7,25.2,28
+CO-00763,Company 00763,Software,APAC,Corporation,4592863.47,2.2,29
+CO-00764,Company 00764,Construction,Latin America,LLC,4142898.76,5.6,44
+CO-00765,Company 00765,Logistics,North America,Corporation,3081082.05,4.0,15
+CO-00766,Company 00766,Retail,North America,Corporation,368202.7,8.6,1
+CO-00767,Company 00767,Wholesale,APAC,Corporation,2382405.09,5.3,16
+CO-00768,Company 00768,Construction,North America,LLC,1256459.05,10.2,6
+CO-00769,Company 00769,Construction,APAC,Corporation,609356.67,11.6,3
+CO-00770,Company 00770,Manufacturing,Western Europe,LLC,11778856.02,2.0,69
+CO-00771,Company 00771,Manufacturing,Western Europe,LLC,12347884.87,3.7,60
+CO-00772,Company 00772,Wholesale,Latin America,Sole Proprietorship,8531029.47,10.7,56
+CO-00773,Company 00773,Logistics,Western Europe,LLC,2828376.46,13.1,17
+CO-00774,Company 00774,Manufacturing,Western Europe,LLC,8458015.43,7.6,69
+CO-00775,Company 00775,Healthcare,Eastern Europe,LLC,2217859.68,9.0,11
+CO-00776,Company 00776,Manufacturing,Western Europe,Corporation,2683942.29,16.0,25
+CO-00777,Company 00777,Manufacturing,North America,LLC,734194.04,5.3,6
+CO-00778,Company 00778,Retail,Middle East,LLC,3259196.68,7.6,21
+CO-00779,Company 00779,Software,Western Europe,LLC,2327687.7,14.1,16
+CO-00780,Company 00780,Software,Latin America,LLC,595613.88,14.6,5
+CO-00781,Company 00781,Manufacturing,Eastern Europe,Corporation,2081923.72,6.4,19
+CO-00782,Company 00782,Retail,Eastern Europe,LLC,2023360.77,3.8,9
+CO-00783,Company 00783,Manufacturing,North America,Corporation,13224228.09,6.3,78
+CO-00784,Company 00784,Software,APAC,LLC,5358600.13,6.7,39
+CO-00785,Company 00785,Software,Western Europe,Sole Proprietorship,2216512.2,3.7,10
+CO-00786,Company 00786,Manufacturing,APAC,Corporation,2810259.29,4.1,13
+CO-00787,Company 00787,Healthcare,Middle East,LLC,2290343.53,14.7,23
+CO-00788,Company 00788,Wholesale,Latin America,LLC,1788854.48,9.3,10
+CO-00789,Company 00789,Manufacturing,Western Europe,Corporation,742347.55,5.6,5
+CO-00790,Company 00790,Logistics,North America,Corporation,1884076.09,3.0,11
+CO-00791,Company 00791,Healthcare,Western Europe,LLC,1039137.65,4.2,5
+CO-00792,Company 00792,Manufacturing,Latin America,LLC,627616.42,1.7,7
+CO-00793,Company 00793,Healthcare,Western Europe,Corporation,3653593.69,7.8,23
+CO-00794,Company 00794,Healthcare,North America,LLC,3240585.75,4.0,26
+CO-00795,Company 00795,Retail,Western Europe,LLC,367064.36,8.2,2
+CO-00796,Company 00796,Construction,North America,LLC,1938287.41,10.7,20
+CO-00797,Company 00797,Logistics,Western Europe,Corporation,5930988.11,8.2,29
+CO-00798,Company 00798,Healthcare,Western Europe,LLC,6319961.91,5.1,39
+CO-00799,Company 00799,Manufacturing,North America,LLC,6112441.5,3.6,54
+CO-00800,Company 00800,Manufacturing,North America,LLC,2278238.71,2.7,11
+CO-00801,Company 00801,Healthcare,North America,Corporation,941241.17,13.8,10
+CO-00802,Company 00802,Logistics,Eastern Europe,Corporation,741404.15,8.0,4
+CO-00803,Company 00803,Logistics,APAC,Corporation,3092854.18,5.3,19
+CO-00804,Company 00804,Retail,North America,Corporation,3201980.35,9.8,37
+CO-00805,Company 00805,Manufacturing,Latin America,Corporation,7939263.82,12.4,67
+CO-00806,Company 00806,Wholesale,North America,Corporation,6582858.62,4.1,71
+CO-00807,Company 00807,Construction,Eastern Europe,Sole Proprietorship,1919876.35,7.8,10
+CO-00808,Company 00808,Construction,North America,Partnership,631462.68,8.0,3
+CO-00809,Company 00809,Logistics,Middle East,LLC,1592623.8,15.6,17
+CO-00810,Company 00810,Wholesale,Latin America,Corporation,2722963.03,5.3,28
+CO-00811,Company 00811,Construction,Latin America,LLC,1790341.16,3.5,8
+CO-00812,Company 00812,Manufacturing,North America,LLC,1229484.94,8.4,11
+CO-00813,Company 00813,Wholesale,Middle East,LLC,2821797.96,10.3,22
+CO-00814,Company 00814,Logistics,North America,Corporation,1323833.51,7.4,7
+CO-00815,Company 00815,Construction,Eastern Europe,Sole Proprietorship,1169321.14,16.3,13
+CO-00816,Company 00816,Retail,Middle East,Corporation,2992000.65,5.2,13
+CO-00817,Company 00817,Retail,Eastern Europe,Corporation,1465940.27,7.6,17
+CO-00818,Company 00818,Retail,Middle East,LLC,2797129.83,2.1,13
+CO-00819,Company 00819,Wholesale,Latin America,Sole Proprietorship,2879721.15,3.3,21
+CO-00820,Company 00820,Software,Latin America,LLC,701215.82,4.1,6
+CO-00821,Company 00821,Construction,Western Europe,Sole Proprietorship,1354250.71,5.9,9
+CO-00822,Company 00822,Software,Western Europe,LLC,9228221.86,2.4,40
+CO-00823,Company 00823,Software,Western Europe,LLC,685511.45,9.7,4
+CO-00824,Company 00824,Wholesale,Eastern Europe,Corporation,263905.29,3.8,2
+CO-00825,Company 00825,Logistics,Latin America,LLC,340494.7,22.8,1
+CO-00826,Company 00826,Retail,Eastern Europe,LLC,2256013.66,3.9,22
+CO-00827,Company 00827,Wholesale,Latin America,Corporation,2260094.71,7.0,25
+CO-00828,Company 00828,Logistics,North America,Corporation,1948146.85,6.5,22
+CO-00829,Company 00829,Manufacturing,Western Europe,LLC,7379303.6,3.1,36
+CO-00830,Company 00830,Wholesale,APAC,Corporation,151322.04,5.9,1
+CO-00831,Company 00831,Healthcare,North America,Corporation,3255752.12,5.8,30
+CO-00832,Company 00832,Retail,North America,LLC,10442955.58,11.6,47
+CO-00833,Company 00833,Logistics,Latin America,Corporation,709431.51,8.6,4
+CO-00834,Company 00834,Logistics,North America,Corporation,1498827.19,9.6,12
+CO-00835,Company 00835,Logistics,Western Europe,Partnership,1032102.03,11.4,6
+CO-00836,Company 00836,Wholesale,Latin America,LLC,895962.6,9.7,7
+CO-00837,Company 00837,Wholesale,Western Europe,Corporation,1581268.6,7.8,10
+CO-00838,Company 00838,Software,APAC,Corporation,9133735.22,4.0,70
+CO-00839,Company 00839,Healthcare,APAC,Corporation,13761517.61,7.5,79
+CO-00840,Company 00840,Wholesale,Western Europe,Partnership,1566040.12,3.5,8
+CO-00841,Company 00841,Construction,APAC,Corporation,14725043.09,6.2,111
+CO-00842,Company 00842,Wholesale,Western Europe,LLC,2270649.51,5.7,22
+CO-00843,Company 00843,Logistics,North America,Partnership,12656620.89,5.9,94
+CO-00844,Company 00844,Wholesale,Latin America,Corporation,1996091.05,2.4,10
+CO-00845,Company 00845,Software,Eastern Europe,Corporation,2498142.03,0.4,12
+CO-00846,Company 00846,Healthcare,North America,Corporation,3158078.95,5.0,15
+CO-00847,Company 00847,Wholesale,Western Europe,LLC,52632990.63,13.1,232
+CO-00848,Company 00848,Manufacturing,North America,Corporation,5133434.95,7.0,25
+CO-00849,Company 00849,Construction,North America,Corporation,1080285.02,12.5,4
+CO-00850,Company 00850,Construction,Western Europe,LLC,5774705.81,3.5,33
+CO-00851,Company 00851,Software,APAC,LLC,1526010.64,4.8,13
+CO-00852,Company 00852,Manufacturing,Middle East,Partnership,1342776.2,23.6,7
+CO-00853,Company 00853,Retail,Western Europe,Corporation,5436257.16,3.7,49
+CO-00854,Company 00854,Wholesale,Western Europe,Corporation,2260475.14,9.5,24
+CO-00855,Company 00855,Manufacturing,North America,LLC,2895232.32,9.5,23
+CO-00856,Company 00856,Logistics,Western Europe,Corporation,2222148.82,8.8,16
+CO-00857,Company 00857,Wholesale,Eastern Europe,LLC,3068143.23,9.6,16
+CO-00858,Company 00858,Logistics,Middle East,Corporation,3351658.64,3.6,24
+CO-00859,Company 00859,Construction,Western Europe,Corporation,315853.28,5.1,3
+CO-00860,Company 00860,Construction,APAC,Corporation,4267644.82,0.6,19
+CO-00861,Company 00861,Retail,Middle East,Sole Proprietorship,820755.54,15.9,4
+CO-00862,Company 00862,Wholesale,North America,LLC,517984.64,9.5,4
+CO-00863,Company 00863,Construction,APAC,Corporation,2066958.49,4.1,17
+CO-00864,Company 00864,Wholesale,North America,Corporation,2383262.73,3.5,24
+CO-00865,Company 00865,Manufacturing,APAC,Corporation,1095250.69,13.3,5
+CO-00866,Company 00866,Logistics,Eastern Europe,Corporation,5030509.64,3.9,43
+CO-00867,Company 00867,Software,Western Europe,Sole Proprietorship,572532.53,4.1,2
+CO-00868,Company 00868,Software,Western Europe,Corporation,1458700.1,3.0,12
+CO-00869,Company 00869,Manufacturing,Eastern Europe,LLC,1220932.98,10.7,6
+CO-00870,Company 00870,Wholesale,Middle East,LLC,2091543.21,12.4,25
+CO-00871,Company 00871,Construction,Middle East,Partnership,2896067.34,5.7,18
+CO-00872,Company 00872,Wholesale,Western Europe,LLC,799792.06,12.5,5
+CO-00873,Company 00873,Construction,Middle East,Corporation,4521175.92,8.4,34
+CO-00874,Company 00874,Construction,Western Europe,Partnership,2333785.93,2.9,10
+CO-00875,Company 00875,Manufacturing,Western Europe,Partnership,330398.16,15.2,1
+CO-00876,Company 00876,Healthcare,North America,LLC,309096.42,3.0,2
+CO-00877,Company 00877,Software,Middle East,Corporation,2164458.36,6.0,11
+CO-00878,Company 00878,Manufacturing,Eastern Europe,LLC,1756849.46,5.7,17
+CO-00879,Company 00879,Manufacturing,Western Europe,Partnership,1975989.58,5.0,9
+CO-00880,Company 00880,Healthcare,Latin America,Corporation,2130820.22,1.2,14
+CO-00881,Company 00881,Healthcare,APAC,Corporation,2745736.33,20.7,25
+CO-00882,Company 00882,Healthcare,North America,LLC,5652732.47,1.4,46
+CO-00883,Company 00883,Wholesale,Western Europe,LLC,721361.08,15.8,6
+CO-00884,Company 00884,Construction,Western Europe,LLC,678763.75,3.5,3
+CO-00885,Company 00885,Logistics,North America,Corporation,734302.35,4.4,5
+CO-00886,Company 00886,Manufacturing,Western Europe,Corporation,2925326.53,14.9,28
+CO-00887,Company 00887,Wholesale,Latin America,Partnership,7609799.47,8.9,37
+CO-00888,Company 00888,Retail,North America,LLC,1423544.66,2.2,12
+CO-00889,Company 00889,Wholesale,Middle East,LLC,179566.37,2.2,1
+CO-00890,Company 00890,Wholesale,APAC,Corporation,398716.99,8.1,2
+CO-00891,Company 00891,Software,North America,Corporation,952612.3,2.9,11
+CO-00892,Company 00892,Logistics,Western Europe,Corporation,1254529.44,9.2,6
+CO-00893,Company 00893,Wholesale,North America,LLC,1456593.97,9.8,8
+CO-00894,Company 00894,Logistics,Latin America,LLC,2277482.27,3.7,19
+CO-00895,Company 00895,Manufacturing,Western Europe,Corporation,1604389.18,4.5,10
+CO-00896,Company 00896,Wholesale,Eastern Europe,Partnership,6257802.3,8.3,52
+CO-00897,Company 00897,Healthcare,Middle East,Partnership,1114573.85,3.6,6
+CO-00898,Company 00898,Software,Middle East,Corporation,925123.06,7.0,5
+CO-00899,Company 00899,Construction,Western Europe,Corporation,3537304.44,24.4,18
+CO-00900,Company 00900,Construction,APAC,Partnership,471822.4,8.5,3
+CO-00901,Company 00901,Retail,APAC,Partnership,3235492.47,5.1,16
+CO-00902,Company 00902,Wholesale,Eastern Europe,LLC,2427938.7,22.0,26
+CO-00903,Company 00903,Construction,North America,LLC,1890888.74,11.2,8
+CO-00904,Company 00904,Healthcare,Middle East,Partnership,10727017.39,3.0,99
+CO-00905,Company 00905,Manufacturing,APAC,Partnership,1176191.88,3.4,5
+CO-00906,Company 00906,Retail,Eastern Europe,Corporation,17197905.66,1.6,111
+CO-00907,Company 00907,Retail,Latin America,LLC,1749024.13,8.2,18
+CO-00908,Company 00908,Construction,Western Europe,Partnership,611080.24,1.0,4
+CO-00909,Company 00909,Wholesale,Western Europe,LLC,2349985.18,21.9,10
+CO-00910,Company 00910,Healthcare,Middle East,LLC,746950.95,5.5,3
+CO-00911,Company 00911,Manufacturing,APAC,Corporation,1033275.23,11.6,5
+CO-00912,Company 00912,Construction,North America,Corporation,3259333.55,5.2,23
+CO-00913,Company 00913,Logistics,North America,LLC,3819316.69,8.1,22
+CO-00914,Company 00914,Healthcare,Western Europe,Corporation,1176238.63,6.0,10
+CO-00915,Company 00915,Retail,Western Europe,Corporation,5881986.75,6.9,33
+CO-00916,Company 00916,Manufacturing,Middle East,LLC,6972662.88,13.9,58
+CO-00917,Company 00917,Software,North America,LLC,9214618.58,18.1,45
+CO-00918,Company 00918,Logistics,Latin America,Corporation,3720666.61,17.2,20
+CO-00919,Company 00919,Healthcare,Eastern Europe,Sole Proprietorship,8567004.64,36.0,62
+CO-00920,Company 00920,Retail,Latin America,Partnership,334101.99,3.9,1
+CO-00921,Company 00921,Software,Western Europe,LLC,1594536.17,8.6,12
+CO-00922,Company 00922,Healthcare,Middle East,Corporation,920796.88,4.0,8
+CO-00923,Company 00923,Software,Western Europe,Partnership,2468758.28,13.5,21
+CO-00924,Company 00924,Wholesale,Western Europe,LLC,1237434.42,3.1,10
+CO-00925,Company 00925,Software,Eastern Europe,Corporation,1855829.19,14.0,16
+CO-00926,Company 00926,Retail,Western Europe,Corporation,14391882.35,7.6,79
+CO-00927,Company 00927,Retail,Western Europe,Corporation,1849230.57,6.3,9
+CO-00928,Company 00928,Wholesale,APAC,LLC,3314417.06,6.8,22
+CO-00929,Company 00929,Manufacturing,Latin America,LLC,1737105.31,2.7,7
+CO-00930,Company 00930,Healthcare,North America,LLC,2363639.83,2.9,11
+CO-00931,Company 00931,Construction,Latin America,LLC,2204511.9,7.7,23
+CO-00932,Company 00932,Healthcare,North America,LLC,3430868.75,7.7,23
+CO-00933,Company 00933,Wholesale,Western Europe,Corporation,7027260.74,4.1,32
+CO-00934,Company 00934,Software,North America,Corporation,11380296.01,5.5,100
+CO-00935,Company 00935,Healthcare,North America,LLC,2986522.07,9.1,21
+CO-00936,Company 00936,Manufacturing,Western Europe,LLC,3951267.16,3.6,17
+CO-00937,Company 00937,Construction,Eastern Europe,LLC,693242.74,1.4,3
+CO-00938,Company 00938,Healthcare,Western Europe,Sole Proprietorship,2006943.06,16.3,9
+CO-00939,Company 00939,Logistics,North America,LLC,5611280.28,8.0,26
+CO-00940,Company 00940,Healthcare,North America,Corporation,5209365.59,4.7,49
+CO-00941,Company 00941,Construction,North America,LLC,2707698.94,4.0,14
+CO-00942,Company 00942,Logistics,Eastern Europe,LLC,5316862.65,3.6,26
+CO-00943,Company 00943,Software,North America,Partnership,3579618.22,13.5,31
+CO-00944,Company 00944,Retail,Eastern Europe,Corporation,7277560.43,2.3,84
+CO-00945,Company 00945,Manufacturing,Western Europe,Corporation,2926621.25,8.6,27
+CO-00946,Company 00946,Wholesale,North America,LLC,1535400.3,8.6,8
+CO-00947,Company 00947,Healthcare,Latin America,LLC,3065867.92,10.8,16
+CO-00948,Company 00948,Wholesale,Latin America,LLC,116938.76,5.0,1
+CO-00949,Company 00949,Retail,Latin America,Corporation,3213546.57,15.4,25
+CO-00950,Company 00950,Healthcare,Western Europe,Sole Proprietorship,80000.0,11.0,1
+CO-00951,Company 00951,Retail,Western Europe,LLC,391028.84,4.9,4
+CO-00952,Company 00952,Wholesale,Eastern Europe,LLC,3442706.87,3.8,15
+CO-00953,Company 00953,Construction,APAC,LLC,3532545.72,6.0,21
+CO-00954,Company 00954,Software,Western Europe,LLC,685272.07,4.8,3
+CO-00955,Company 00955,Manufacturing,Latin America,LLC,1075071.75,3.4,8
+CO-00956,Company 00956,Manufacturing,Western Europe,LLC,8628152.74,7.0,93
+CO-00957,Company 00957,Wholesale,APAC,Sole Proprietorship,1350478.95,5.5,15
+CO-00958,Company 00958,Manufacturing,North America,Corporation,20643691.05,17.7,102
+CO-00959,Company 00959,Retail,Western Europe,LLC,2187084.96,4.8,21
+CO-00960,Company 00960,Healthcare,Western Europe,LLC,3295393.61,3.8,16
+CO-00961,Company 00961,Construction,Latin America,Corporation,11038220.49,6.7,92
+CO-00962,Company 00962,Retail,Latin America,LLC,2498065.31,7.9,15
+CO-00963,Company 00963,Logistics,Latin America,Partnership,804242.42,8.3,6
+CO-00964,Company 00964,Healthcare,Latin America,Corporation,1963565.57,8.2,22
+CO-00965,Company 00965,Manufacturing,Western Europe,Corporation,2114627.57,6.8,13
+CO-00966,Company 00966,Construction,North America,Corporation,559757.17,6.5,4
+CO-00967,Company 00967,Manufacturing,APAC,LLC,1696652.8,9.9,11
+CO-00968,Company 00968,Manufacturing,Western Europe,LLC,1043204.63,3.1,6
+CO-00969,Company 00969,Construction,North America,Corporation,5522591.36,3.8,43
+CO-00970,Company 00970,Software,North America,LLC,2268460.29,1.8,13
+CO-00971,Company 00971,Retail,Western Europe,LLC,1651516.06,3.2,9
+CO-00972,Company 00972,Retail,Western Europe,Sole Proprietorship,1970539.79,12.7,21
+CO-00973,Company 00973,Wholesale,Latin America,Partnership,2739050.86,9.6,20
+CO-00974,Company 00974,Healthcare,Eastern Europe,LLC,4060489.94,19.2,43
+CO-00975,Company 00975,Logistics,North America,Partnership,806361.77,16.4,9
+CO-00976,Company 00976,Healthcare,Western Europe,LLC,773292.28,9.6,8
+CO-00977,Company 00977,Software,APAC,Partnership,6613868.0,7.3,39
+CO-00978,Company 00978,Manufacturing,Latin America,LLC,1450854.32,6.7,15
+CO-00979,Company 00979,Wholesale,APAC,Corporation,531340.27,1.0,2
+CO-00980,Company 00980,Logistics,North America,Corporation,3415425.73,6.2,17
+CO-00981,Company 00981,Healthcare,APAC,LLC,3482878.99,4.4,42
+CO-00982,Company 00982,Logistics,APAC,Partnership,474152.72,3.3,2
+CO-00983,Company 00983,Manufacturing,Western Europe,LLC,2756525.91,8.7,33
+CO-00984,Company 00984,Construction,Latin America,Sole Proprietorship,4572556.85,5.7,47
+CO-00985,Company 00985,Healthcare,North America,LLC,3186349.47,7.0,13
+CO-00986,Company 00986,Construction,Latin America,LLC,4122545.97,2.9,27
+CO-00987,Company 00987,Logistics,Middle East,LLC,538062.98,11.3,6
+CO-00988,Company 00988,Healthcare,Western Europe,LLC,3051183.65,4.8,14
+CO-00989,Company 00989,Logistics,North America,Corporation,1619098.77,8.4,7
+CO-00990,Company 00990,Logistics,Western Europe,Corporation,1352154.55,5.1,8
+CO-00991,Company 00991,Wholesale,Latin America,Partnership,5233315.69,0.8,28
+CO-00992,Company 00992,Wholesale,Latin America,Corporation,9619227.43,8.9,48
+CO-00993,Company 00993,Software,Western Europe,Corporation,13182095.36,6.0,69
+CO-00994,Company 00994,Retail,APAC,LLC,8160433.67,1.7,52
+CO-00995,Company 00995,Wholesale,North America,Corporation,1963552.36,2.6,9
+CO-00996,Company 00996,Wholesale,North America,Partnership,3118055.61,11.5,19
+CO-00997,Company 00997,Manufacturing,North America,LLC,4717657.17,1.8,39
+CO-00998,Company 00998,Healthcare,Middle East,LLC,2473582.22,4.7,30
+CO-00999,Company 00999,Construction,Latin America,LLC,2497408.59,20.2,18
+CO-01000,Company 01000,Software,Middle East,LLC,4994026.88,9.0,54
+CO-01001,Company 01001,Construction,APAC,Corporation,2065158.12,10.5,23
+CO-01002,Company 01002,Software,Western Europe,LLC,1056754.59,5.4,7
+CO-01003,Company 01003,Construction,Western Europe,Partnership,1447758.32,1.6,6
+CO-01004,Company 01004,Software,Eastern Europe,LLC,4130505.6,7.5,43
+CO-01005,Company 01005,Retail,Western Europe,LLC,2197856.86,2.8,18
+CO-01006,Company 01006,Software,Western Europe,LLC,3079291.13,2.6,15
+CO-01007,Company 01007,Retail,North America,LLC,4282635.9,6.9,30
+CO-01008,Company 01008,Logistics,Western Europe,Corporation,1506287.45,3.0,7
+CO-01009,Company 01009,Healthcare,Western Europe,Sole Proprietorship,4668032.17,6.4,28
+CO-01010,Company 01010,Healthcare,North America,Corporation,3200580.01,3.9,18
+CO-01011,Company 01011,Construction,APAC,LLC,637421.82,6.2,6
+CO-01012,Company 01012,Retail,North America,Corporation,9270100.61,4.5,69
+CO-01013,Company 01013,Healthcare,APAC,Corporation,1328093.82,6.4,7
+CO-01014,Company 01014,Manufacturing,North America,Corporation,418697.78,15.6,4
+CO-01015,Company 01015,Wholesale,APAC,Corporation,770624.34,10.7,7
+CO-01016,Company 01016,Healthcare,Eastern Europe,Corporation,789341.9,5.9,5
+CO-01017,Company 01017,Retail,North America,LLC,2308649.59,14.1,12
+CO-01018,Company 01018,Wholesale,North America,LLC,1666355.55,8.4,10
+CO-01019,Company 01019,Retail,Western Europe,Sole Proprietorship,1564642.67,13.5,8
+CO-01020,Company 01020,Logistics,Middle East,LLC,4072232.63,2.0,21
+CO-01021,Company 01021,Software,North America,LLC,3078260.93,3.0,36
+CO-01022,Company 01022,Construction,North America,LLC,3005780.63,7.4,13
+CO-01023,Company 01023,Construction,Latin America,LLC,3301305.18,5.8,16
+CO-01024,Company 01024,Healthcare,Eastern Europe,Sole Proprietorship,4057731.65,6.4,33
+CO-01025,Company 01025,Wholesale,Western Europe,LLC,266211.57,9.4,1
+CO-01026,Company 01026,Manufacturing,North America,Corporation,1522039.47,7.5,12
+CO-01027,Company 01027,Healthcare,Eastern Europe,Partnership,247654.51,11.3,1
+CO-01028,Company 01028,Wholesale,North America,LLC,2271747.52,11.1,16
+CO-01029,Company 01029,Manufacturing,Eastern Europe,LLC,2181159.18,3.1,15
+CO-01030,Company 01030,Manufacturing,North America,LLC,6234022.04,0.8,28
+CO-01031,Company 01031,Manufacturing,APAC,LLC,7185922.0,2.9,42
+CO-01032,Company 01032,Healthcare,Eastern Europe,LLC,2683882.63,2.8,26
+CO-01033,Company 01033,Wholesale,Eastern Europe,Corporation,1328603.47,6.7,7
+CO-01034,Company 01034,Retail,Middle East,LLC,3559608.46,6.6,17
+CO-01035,Company 01035,Software,APAC,Corporation,1292491.57,5.5,9
+CO-01036,Company 01036,Construction,Middle East,Sole Proprietorship,2188238.3,8.7,13
+CO-01037,Company 01037,Logistics,Eastern Europe,LLC,5874528.25,25.7,33
+CO-01038,Company 01038,Wholesale,APAC,LLC,1254476.18,5.5,8
+CO-01039,Company 01039,Wholesale,North America,LLC,4904573.23,7.6,21
+CO-01040,Company 01040,Healthcare,Latin America,LLC,4314108.98,6.4,27
+CO-01041,Company 01041,Wholesale,Latin America,LLC,843409.75,4.2,4
+CO-01042,Company 01042,Logistics,Eastern Europe,Corporation,5803049.59,9.4,29
+CO-01043,Company 01043,Wholesale,APAC,LLC,4406390.12,5.3,43
+CO-01044,Company 01044,Manufacturing,Latin America,LLC,2426416.14,3.5,28
+CO-01045,Company 01045,Healthcare,Latin America,LLC,1022413.47,3.7,4
+CO-01046,Company 01046,Healthcare,APAC,Corporation,928006.47,11.6,4
+CO-01047,Company 01047,Construction,Latin America,LLC,1279957.49,9.3,9
+CO-01048,Company 01048,Retail,North America,Corporation,3770033.57,4.5,45
+CO-01049,Company 01049,Healthcare,North America,Corporation,842707.19,8.6,8
+CO-01050,Company 01050,Wholesale,Western Europe,LLC,3393974.63,6.4,41
+CO-01051,Company 01051,Construction,North America,Corporation,633011.88,7.7,4
+CO-01052,Company 01052,Logistics,Latin America,LLC,1786790.26,4.1,10
+CO-01053,Company 01053,Healthcare,Middle East,Corporation,2445225.13,2.9,23
+CO-01054,Company 01054,Construction,Western Europe,LLC,25270042.09,5.2,143
+CO-01055,Company 01055,Manufacturing,APAC,Corporation,552762.85,3.3,2
+CO-01056,Company 01056,Retail,Latin America,Corporation,9549645.26,3.1,41
+CO-01057,Company 01057,Construction,APAC,Corporation,2545512.12,2.1,12
+CO-01058,Company 01058,Software,North America,Corporation,3305743.33,0.8,22
+CO-01059,Company 01059,Wholesale,Western Europe,LLC,2466591.79,4.6,15
+CO-01060,Company 01060,Logistics,Eastern Europe,Corporation,3418549.23,13.0,21
+CO-01061,Company 01061,Software,Latin America,LLC,1879121.42,11.0,18
+CO-01062,Company 01062,Retail,APAC,LLC,9379623.5,17.1,45
+CO-01063,Company 01063,Healthcare,APAC,LLC,1388214.37,3.0,7
+CO-01064,Company 01064,Wholesale,North America,Corporation,6798649.67,9.8,38
+CO-01065,Company 01065,Construction,Western Europe,Corporation,1150414.51,5.9,10
+CO-01066,Company 01066,Software,Latin America,Partnership,2063157.54,3.7,20
+CO-01067,Company 01067,Healthcare,North America,Corporation,750156.74,12.0,3
+CO-01068,Company 01068,Software,APAC,Corporation,3453931.55,5.9,32
+CO-01069,Company 01069,Retail,Latin America,Partnership,9296290.03,1.4,102
+CO-01070,Company 01070,Software,Middle East,LLC,2028168.69,10.9,11
+CO-01071,Company 01071,Logistics,APAC,Corporation,1799670.77,8.2,9
+CO-01072,Company 01072,Healthcare,North America,LLC,718832.06,7.0,7
+CO-01073,Company 01073,Healthcare,Western Europe,LLC,1742283.81,2.5,15
+CO-01074,Company 01074,Wholesale,Latin America,Sole Proprietorship,445612.82,7.5,2
+CO-01075,Company 01075,Manufacturing,Middle East,LLC,879511.58,15.6,4
+CO-01076,Company 01076,Construction,Latin America,Sole Proprietorship,2749105.23,8.0,18
+CO-01077,Company 01077,Manufacturing,North America,Partnership,8194823.22,1.8,41
+CO-01078,Company 01078,Wholesale,Eastern Europe,Partnership,36368401.37,8.4,284
+CO-01079,Company 01079,Retail,Western Europe,Corporation,1218845.81,8.1,6
+CO-01080,Company 01080,Retail,Western Europe,Corporation,9205393.84,10.3,56
+CO-01081,Company 01081,Software,APAC,LLC,2796145.67,7.9,13
+CO-01082,Company 01082,Manufacturing,North America,LLC,1883707.29,3.1,9
+CO-01083,Company 01083,Construction,North America,Partnership,3377324.72,6.7,27
+CO-01084,Company 01084,Logistics,Western Europe,LLC,2331253.08,5.3,22
+CO-01085,Company 01085,Construction,APAC,Corporation,2447054.77,7.3,12
+CO-01086,Company 01086,Construction,North America,Sole Proprietorship,1456674.76,12.3,17
+CO-01087,Company 01087,Wholesale,North America,LLC,541387.38,3.9,2
+CO-01088,Company 01088,Logistics,Western Europe,Partnership,468070.78,18.7,3
+CO-01089,Company 01089,Software,Eastern Europe,LLC,4211143.92,8.4,46
+CO-01090,Company 01090,Manufacturing,North America,LLC,1661613.89,11.0,9
+CO-01091,Company 01091,Software,Middle East,Corporation,1207317.0,10.0,7
+CO-01092,Company 01092,Logistics,Middle East,Corporation,2210005.64,8.2,10
+CO-01093,Company 01093,Retail,Western Europe,Partnership,4852148.98,9.2,43
+CO-01094,Company 01094,Manufacturing,North America,LLC,2624402.85,0.2,32
+CO-01095,Company 01095,Manufacturing,Western Europe,LLC,1137046.95,10.0,11
+CO-01096,Company 01096,Construction,North America,Partnership,7469158.91,3.3,62
+CO-01097,Company 01097,Wholesale,Western Europe,Corporation,10629944.22,6.2,59
+CO-01098,Company 01098,Construction,Latin America,Corporation,3593210.52,8.2,26
+CO-01099,Company 01099,Wholesale,North America,LLC,5801711.46,12.7,59
+CO-01100,Company 01100,Retail,North America,Sole Proprietorship,7587100.02,3.3,33
+CO-01101,Company 01101,Logistics,North America,Sole Proprietorship,6784148.3,4.7,70
+CO-01102,Company 01102,Healthcare,North America,Corporation,4049480.57,5.1,30
+CO-01103,Company 01103,Manufacturing,North America,LLC,3986192.4,7.3,18
+CO-01104,Company 01104,Healthcare,Western Europe,Sole Proprietorship,3684555.95,5.3,20
+CO-01105,Company 01105,Logistics,Middle East,Partnership,731360.9,9.2,5
+CO-01106,Company 01106,Retail,North America,Corporation,4415904.13,1.5,19
+CO-01107,Company 01107,Software,Western Europe,Corporation,564776.88,5.8,3
+CO-01108,Company 01108,Logistics,APAC,Corporation,989940.92,16.6,12
+CO-01109,Company 01109,Software,Eastern Europe,LLC,8069201.33,5.4,99
+CO-01110,Company 01110,Healthcare,Middle East,Corporation,5076944.5,8.4,22
+CO-01111,Company 01111,Retail,Western Europe,Corporation,9697690.18,11.5,79
+CO-01112,Company 01112,Logistics,North America,Corporation,1669985.69,8.3,8
+CO-01113,Company 01113,Software,North America,Partnership,692283.73,19.7,8
+CO-01114,Company 01114,Wholesale,Latin America,Corporation,1722974.65,6.8,16
+CO-01115,Company 01115,Wholesale,APAC,Partnership,2426671.92,9.5,11
+CO-01116,Company 01116,Manufacturing,Western Europe,LLC,2371394.45,7.5,10
+CO-01117,Company 01117,Software,Western Europe,Sole Proprietorship,6808486.99,14.6,77
+CO-01118,Company 01118,Retail,Western Europe,LLC,1526868.67,4.8,14
+CO-01119,Company 01119,Manufacturing,North America,LLC,3115918.32,20.7,16
+CO-01120,Company 01120,Logistics,North America,Corporation,815350.08,4.0,5
+CO-01121,Company 01121,Logistics,APAC,LLC,3437714.02,17.6,24
+CO-01122,Company 01122,Wholesale,North America,LLC,2198110.2,3.0,20
+CO-01123,Company 01123,Logistics,Western Europe,Corporation,1035284.33,9.7,4
+CO-01124,Company 01124,Software,Latin America,LLC,1730932.15,6.4,16
+CO-01125,Company 01125,Software,Western Europe,Partnership,1822690.48,11.3,15
+CO-01126,Company 01126,Construction,APAC,LLC,1672524.75,8.6,13
+CO-01127,Company 01127,Manufacturing,North America,LLC,12881996.09,10.9,127
+CO-01128,Company 01128,Healthcare,APAC,LLC,1985842.86,2.9,12
+CO-01129,Company 01129,Healthcare,North America,Corporation,1717025.33,1.7,13
+CO-01130,Company 01130,Healthcare,North America,LLC,269022.16,2.5,1
+CO-01131,Company 01131,Software,Western Europe,LLC,896086.88,2.5,6
+CO-01132,Company 01132,Manufacturing,APAC,LLC,1684411.12,2.9,17
+CO-01133,Company 01133,Logistics,Western Europe,LLC,1103665.34,4.2,5
+CO-01134,Company 01134,Wholesale,Western Europe,Corporation,8725039.85,4.2,55
+CO-01135,Company 01135,Software,Western Europe,Corporation,1858094.81,6.5,14
+CO-01136,Company 01136,Logistics,North America,LLC,7948106.24,3.5,96
+CO-01137,Company 01137,Manufacturing,Middle East,LLC,2330759.26,3.7,13
+CO-01138,Company 01138,Software,APAC,Partnership,2274402.27,5.6,11
+CO-01139,Company 01139,Retail,Latin America,LLC,2005098.11,12.3,11
+CO-01140,Company 01140,Retail,Western Europe,Sole Proprietorship,2199622.37,4.8,11
+CO-01141,Company 01141,Construction,Eastern Europe,LLC,12222572.47,6.2,118
+CO-01142,Company 01142,Software,Eastern Europe,Sole Proprietorship,215429.56,6.9,1
+CO-01143,Company 01143,Logistics,North America,LLC,296100.52,3.1,2
+CO-01144,Company 01144,Construction,Western Europe,Corporation,1272926.54,5.1,10
+CO-01145,Company 01145,Manufacturing,Latin America,LLC,2223355.02,3.9,14
+CO-01146,Company 01146,Wholesale,Middle East,Sole Proprietorship,4369260.91,11.6,54
+CO-01147,Company 01147,Wholesale,Western Europe,LLC,3516888.47,11.0,24
+CO-01148,Company 01148,Healthcare,Middle East,Corporation,1492188.04,3.6,13
+CO-01149,Company 01149,Manufacturing,Latin America,LLC,6071059.49,6.2,31
+CO-01150,Company 01150,Healthcare,APAC,Corporation,6139141.09,9.5,31
+CO-01151,Company 01151,Software,APAC,Corporation,2634115.03,8.0,15
+CO-01152,Company 01152,Construction,North America,Corporation,5738208.28,8.5,40
+CO-01153,Company 01153,Software,Western Europe,Corporation,2878112.52,3.2,22
+CO-01154,Company 01154,Construction,Middle East,Partnership,1249828.59,17.2,6
+CO-01155,Company 01155,Construction,Middle East,Corporation,4403088.74,4.1,28
+CO-01156,Company 01156,Construction,North America,LLC,2447586.81,4.1,15
+CO-01157,Company 01157,Construction,Eastern Europe,LLC,2194225.83,2.3,22
+CO-01158,Company 01158,Manufacturing,APAC,Corporation,9558616.65,5.8,84
+CO-01159,Company 01159,Software,North America,LLC,188929.25,13.1,1
+CO-01160,Company 01160,Healthcare,Western Europe,Corporation,530893.03,7.9,2
+CO-01161,Company 01161,Logistics,Western Europe,LLC,668592.19,6.1,3
+CO-01162,Company 01162,Retail,Western Europe,Sole Proprietorship,1523832.88,10.5,6
+CO-01163,Company 01163,Logistics,Eastern Europe,Corporation,1698730.61,12.9,11
+CO-01164,Company 01164,Construction,North America,Corporation,485373.68,11.0,3
+CO-01165,Company 01165,Construction,Middle East,Partnership,818183.54,1.3,4
+CO-01166,Company 01166,Logistics,North America,Partnership,926489.81,10.5,7
+CO-01167,Company 01167,Wholesale,Middle East,LLC,25582628.17,8.8,158
+CO-01168,Company 01168,Manufacturing,North America,LLC,13279631.43,3.6,73
+CO-01169,Company 01169,Manufacturing,Middle East,Corporation,1451706.88,8.8,12
+CO-01170,Company 01170,Manufacturing,Western Europe,LLC,1523341.31,13.1,12
+CO-01171,Company 01171,Retail,Latin America,LLC,694394.83,4.3,5
+CO-01172,Company 01172,Construction,North America,LLC,325093.98,11.5,1
+CO-01173,Company 01173,Construction,Eastern Europe,LLC,1949570.82,8.0,16
+CO-01174,Company 01174,Manufacturing,Western Europe,LLC,807863.2,0.3,7
+CO-01175,Company 01175,Software,North America,LLC,2013025.69,6.4,19
+CO-01176,Company 01176,Wholesale,Latin America,LLC,442322.33,7.8,2
+CO-01177,Company 01177,Wholesale,North America,Corporation,1022770.36,5.2,4
+CO-01178,Company 01178,Software,APAC,LLC,2542420.39,8.2,11
+CO-01179,Company 01179,Healthcare,Eastern Europe,LLC,3160401.38,5.9,15
+CO-01180,Company 01180,Healthcare,North America,Partnership,3326635.39,23.2,33
+CO-01181,Company 01181,Healthcare,APAC,Corporation,585084.18,5.0,6
+CO-01182,Company 01182,Healthcare,North America,Partnership,5150919.14,3.6,33
+CO-01183,Company 01183,Logistics,Middle East,Sole Proprietorship,984400.69,11.1,6
+CO-01184,Company 01184,Logistics,Western Europe,Corporation,4126160.68,5.4,21
+CO-01185,Company 01185,Software,Eastern Europe,Partnership,2168099.04,6.1,19
+CO-01186,Company 01186,Manufacturing,Middle East,LLC,553276.14,5.8,2
+CO-01187,Company 01187,Manufacturing,North America,Corporation,1597263.32,10.7,12
+CO-01188,Company 01188,Wholesale,Latin America,Corporation,3157729.27,2.9,18
+CO-01189,Company 01189,Software,North America,Corporation,4044891.89,11.5,19
+CO-01190,Company 01190,Construction,Latin America,LLC,1903133.13,9.2,12
+CO-01191,Company 01191,Wholesale,North America,Sole Proprietorship,10137772.84,18.7,52
+CO-01192,Company 01192,Wholesale,North America,LLC,6001444.64,7.4,31
+CO-01193,Company 01193,Manufacturing,North America,Partnership,1695258.65,3.0,8
+CO-01194,Company 01194,Wholesale,Eastern Europe,Sole Proprietorship,4639521.58,7.5,23
+CO-01195,Company 01195,Logistics,APAC,Partnership,15154278.89,8.1,109
+CO-01196,Company 01196,Retail,APAC,LLC,15564209.92,13.9,115
+CO-01197,Company 01197,Manufacturing,Latin America,LLC,641779.53,3.0,3
+CO-01198,Company 01198,Retail,Middle East,Corporation,867583.37,1.8,5
+CO-01199,Company 01199,Manufacturing,APAC,Corporation,9673674.52,7.6,56
+CO-01200,Company 01200,Software,Western Europe,LLC,760490.54,19.2,5
