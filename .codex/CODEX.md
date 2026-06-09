@@ -295,3 +295,39 @@ Create or update `README.md` with:
 - A-F risk grade mapping
 
 Never include secrets or real customer data.
+
+## Investor Demo Enhancements
+
+Keep these MVP demo workflows available and maintained:
+
+- `pages/Loan_Intake.py` must include a top-right demo generator with preset B2B borrower scenarios for reliable investor demos.
+- After scoring an application, Loan Intake must show similar historical synthetic applications with their fraud probability, grade, decision, and historical fraud outcome.
+- Loan Intake must provide a case review pop-up or fallback review panel where analysts can choose an action, add notes, prepare an email-ready case analysis, and save the review to session audit history.
+- Manual score adjustment is only allowed for approve/reject review outcomes and must require explicit supervisor approval plus a supervisor or review mailbox.
+- Any manual adjustment must store the final probability, grade, decision, manual-adjustment flag, supervisor email, and analyst note in the session audit trail.
+- Loan Intake must offer a downloadable case summary for the latest scored application.
+- `pages/Risk_Dashboard.py` must include portfolio filters, a manual review queue for C-D grades, a compliance review queue for E-F grades, live session decisions, and analyst review audit history.
+- Deterministic explanations must remain structured for analyst use, including decision, top risk drivers, mitigating factors, recommended analyst action, and compliance note.
+- `README.md` must include a short demo script suitable for grading and investor presentation.
+
+## Final Decision Review Behavior
+
+Append and preserve these Loan Intake review rules:
+
+- After a case review is saved, the selected analyst action must be reflected on the page as the case `Final Decision`.
+- The score output should keep the model result visible as `Model Recommendation` while showing the analyst outcome separately as `Final Decision`.
+- Do not show `Manual Adjustment` as the primary score output metric; manual adjustment should remain an audit detail only.
+- Saving a case review from the pop-up must trigger a page refresh or rerun so the updated final decision is immediately visible.
+- Live session decision tables should include `final_decision` so reviewed cases clearly show the analyst outcome.
+- Case summaries should include both the final decision and the original model recommendation.
+
+## First-Time User Launcher
+
+Append and preserve these launcher rules:
+
+- The repository should include a double-clickable Windows launcher named `Run_App.bat`.
+- The launcher must run from the project root, create a local `.venv` when needed, install dependencies from `requirements.txt`, and start the app with `streamlit run Home.py`.
+- The launcher must not require users to run terminal commands manually for first-time setup.
+- The launcher should provide clear error messages when Python 3.10+ is missing or dependency installation fails.
+- Generated local environments such as `.venv/` must remain ignored by git.
+- `README.md` should mention the double-click launcher before the manual Streamlit command.

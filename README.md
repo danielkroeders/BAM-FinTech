@@ -8,17 +8,44 @@ This is not a production underwriting, compliance, or legal decision system. Hig
 
 Python 3.10+ is recommended.
 
-```bash
-pip install -r requirements.txt
-```
-
-## Run
+## Run manually through a terminal
 
 ```bash
 streamlit run Home.py
 ```
 
+```bash
+pip install -r requirements.txt
+```
+
+
+## Run automatically (only available on Windows 11)
+
+For Windows users, double-click:
+
+```text
+Run_App.bat
+```
+
+The launcher creates a local `.venv`, installs dependencies from `requirements.txt`, and starts the Streamlit app.
+
+Or run manually:
+
+
+
 The app generates synthetic seed CSV files under `data/seed/` automatically on first run.
+
+## Demo Script
+
+For a full presentation runbook, see `DEMO.md`.
+
+1. Start on `Home.py` and introduce the app as synthetic decision support for B2B loan fraud triage.
+2. Open `Loan Intake` and choose a demo generator scenario such as `Low-risk established borrower`, `Credit stacking case`, or `Suspicious transfers`.
+3. Score the application, then point out the A-F grade, recommended action, risk flags, structured explanation, similar historical applications, and downloadable case summary.
+4. Click `Open Case Review`, choose an analyst action, optionally prepare the email-ready analysis, and save the review to the audit trail.
+5. For approve/reject outcomes, demonstrate that manual score adjustment requires supervisor approval and supervisor email routing.
+6. Open `Risk Dashboard` to show filtered portfolio monitoring, the manual review queue, the compliance review queue, live session decisions, and the analyst review audit trail.
+7. Open `Model Insights` and `AI Explainability` to discuss model metrics, grading thresholds, feature importance, and SHAP driver analysis.
 
 ## Optional OpenAI Key
 

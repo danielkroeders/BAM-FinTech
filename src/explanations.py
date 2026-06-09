@@ -15,16 +15,30 @@ def _api_key():
 def deterministic_explanation(application, prediction):
     probability = prediction["fraud_probability"]
     flags = prediction.get("flags", [])
-    drivers = "; ".join(flags) if flags else "no deterministic risk flags were triggered"
     amount = float(application.get("requested_amount", 0))
-    context = (
-        f"{application.get('company_type', 'The applicant')} in {application.get('industry', 'unknown industry')} "
-        f"requested ${amount:,.0f}."
-    )
+    drivers = "\n".join(f"- {flag}" for flag in flags) if flags else "- No elevated deterministic risk flags were triggered."
+    mitigants = []
+    if float(application.get("collateral_ratio", 0)) >= 0.8:
+        mitigants.append("Collateral coverage is relatively strong.")
+    if float(application.get("years_in_business", 0)) >= 5:
+        mitigants.append("Operating history is established.")
+    if float(application.get("late_payment_ratio", 0)) < 0.1:
+        mitigants.append("Late payment behavior is limited.")
+    mitigant_text = "\n".join(f"- {item}" for item in mitigants) if mitigants else "- No major mitigating factor was identified in the deterministic checks."
+    next_step = {
+        "Approve": "Proceed with standard analyst sign-off and retain the case summary.",
+        "Manual Review": "Route to an analyst for document verification and risk-factor review.",
+        "Reject": "Route to compliance review before any final adverse action is communicated.",
+    }[prediction["decision"]]
     return (
-        f"Recommended action is {prediction['decision']} with grade {prediction['grade']} and fraud probability "
-        f"{probability:.1%}. {context} Main risk drivers: {drivers}. This is decision support for analyst review; "
-        "high-risk cases require human compliance review and this output does not establish legal certainty."
+        f"Decision: {prediction['decision']} | Grade {prediction['grade']} | Fraud probability {probability:.1%}\n\n"
+        f"Applicant context: {application.get('company_type', 'The applicant')} in "
+        f"{application.get('industry', 'unknown industry')} requested ${amount:,.0f}.\n\n"
+        f"Top risk drivers:\n{drivers}\n\n"
+        f"Mitigating factors:\n{mitigant_text}\n\n"
+        f"Recommended analyst action: {next_step}\n\n"
+        "Compliance note: This is decision support for analyst review; high-risk cases require human compliance review "
+        "and this output does not establish legal certainty."
     )
 
 
@@ -39,7 +53,10 @@ def llm_explanation(application, prediction, model):
         prompt = {
             "application": application,
             "prediction": prediction,
-            "instruction": "Explain the result concisely for a lending fraud analyst. Do not invent facts or claim legal certainty.",
+            "instruction": (
+                "Explain the result concisely for a lending fraud analyst using sections for Decision, Top risk drivers, "
+                "Mitigating factors, Recommended analyst action, and Compliance note. Do not invent facts or claim legal certainty."
+            ),
         }
         response = client.responses.create(
             model=model,
