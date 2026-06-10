@@ -31,9 +31,19 @@ def _format_value(application, feature):
     value = application.get(feature, "")
     if feature.endswith("_uploaded"):
         return "Yes" if float(value or 0) >= 0.5 else "No"
-    if feature in {"requested_amount", "annual_revenue", "existing_debt", "free_cash_flow", "monthly_burn_rate"}:
+    if feature in {
+        "requested_amount",
+        "annual_revenue",
+        "existing_debt",
+        "free_cash_flow",
+        "monthly_burn_rate",
+        "annual_interest_expense",
+        "annual_debt_service",
+        "stressed_annual_debt_service",
+    }:
         return format_currency(value)
     if feature in {
+        "interest_rate",
         "late_payment_ratio",
         "suspicious_transfer_ratio",
         "collateral_ratio",
@@ -52,6 +62,8 @@ def _format_value(application, feature):
         return format_months(value, 1)
     if feature in {"receivables_days", "payables_days", "inventory_days", "cash_conversion_cycle_days"}:
         return f"{format_score(value, 0)} days"
+    if feature in {"debt_service_coverage_ratio", "stressed_debt_service_coverage_ratio"}:
+        return format_score(value)
     if feature.endswith("_score") or feature == "external_financing_pressure":
         return format_score(value)
     if isinstance(value, float):

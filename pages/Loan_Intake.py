@@ -1,4 +1,5 @@
 from datetime import datetime
+from html import escape
 
 import pandas as pd
 import streamlit as st
@@ -30,6 +31,57 @@ st.set_page_config(page_title="Loan Intake", layout="wide")
 bootstrap_state()
 render_sidebar()
 
+st.markdown(
+    """
+    <style>
+    .score-panel {
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-left: 6px solid #64748b;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        margin: 0.35rem 0 0.8rem;
+        background: rgba(15, 23, 42, 0.22);
+    }
+    .score-panel.low { border-left-color: #22c55e; }
+    .score-panel.medium { border-left-color: #eab308; }
+    .score-panel.high { border-left-color: #ef4444; }
+    .score-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    .score-item {
+        min-width: 0;
+        padding-right: 0.5rem;
+    }
+    .score-label {
+        color: rgba(226, 232, 240, 0.72);
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.1;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+    }
+    .score-value {
+        color: #f8fafc;
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+    .score-value.primary {
+        font-size: 1.7rem;
+    }
+    @media (max-width: 900px) {
+        .score-strip {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 applications = st.session_state.seed_data["applications"]
 industries = sorted(applications["industry"].unique())
 regions = sorted(applications["region"].unique())
@@ -44,6 +96,7 @@ FIELD_HELP = {
     "employees": "Reported employee count, used to compare company scale with revenue and requested exposure.",
     "requested_amount": "Loan principal requested by the applicant.",
     "term_months": "Requested duration of the loan in months.",
+    "interest_rate": "Offered annual interest rate used to estimate debt service, interest expense, and DSCR stress.",
     "collateral_ratio": "Estimated collateral value divided by requested loan amount.",
     "existing_debt": "Reported outstanding business debt at application date.",
     "num_recent_loans": "Number of recent loans in the last 12 months. High values can indicate credit stacking.",
@@ -114,6 +167,18 @@ def _days(value):
 
 def _yes_no(value):
     return "Yes" if float(value or 0) >= 0.5 else "No"
+
+
+def _risk_tone(probability):
+    if probability >= 0.58:
+        return "high"
+    if probability >= 0.28:
+        return "medium"
+    return "low"
+
+
+def _summary_table(rows):
+    return pd.DataFrame(rows, columns=["Metric", "Value"])
 
 
 def _parse_money(label, raw_value, errors, min_value=None, max_value=None):
@@ -339,6 +404,15 @@ with st.form("loan_intake_form"):
             value=int(_scenario_value(scenario, "term_months", 36)),
             step=6,
             help=FIELD_HELP["term_months"],
+        )
+        interest_rate_pct = st.slider(
+            "Interest rate",
+            min_value=0.0,
+            max_value=30.0,
+            value=float(_scenario_value(scenario, "interest_rate", 0.085)) * 100,
+            step=0.25,
+            format="%.2f%%",
+            help=FIELD_HELP["interest_rate"],
         )
         collateral_ratio = st.slider(
             "Collateral coverage",
@@ -719,6 +793,7 @@ if submitted:
     existing_debt = _parse_money("Existing debt", existing_debt_text, errors, 0, 20000000)
     free_cash_flow = _parse_money("Free cash flow", free_cash_flow_text, errors, -20000000, 50000000)
     monthly_burn_rate = _parse_money("Monthly burn rate", monthly_burn_rate_text, errors, 0, 5000000)
+    interest_rate = interest_rate_pct / 100
     cash_flow_to_revenue_ratio = free_cash_flow / max(float(annual_revenue), 1)
 
     if errors:
@@ -732,6 +807,7 @@ if submitted:
             "company_type": company_type,
             "requested_amount": requested_amount,
             "term_months": term_months,
+            "interest_rate": interest_rate,
             "annual_revenue": annual_revenue,
             "years_in_business": years_in_business,
             "existing_debt": existing_debt,
@@ -800,38 +876,86 @@ if st.session_state.last_prediction:
     signals = calculated.iloc[0]
 
     st.subheader("Score Output")
-    cols = st.columns(4)
-    cols[0].metric("Fraud Probability", _ratio(prediction["fraud_probability"]))
-    cols[1].metric("Risk Grade", prediction["grade"])
-    cols[2].metric("Model Recommendation", prediction["decision"])
-    cols[3].metric("Final Decision", final_decision)
+    st.markdown(
+        f"""
+        <div class="score-panel {_risk_tone(prediction["fraud_probability"])}">
+            <div class="score-strip">
+                <div class="score-item">
+                    <div class="score-label">Fraud probability</div>
+                    <div class="score-value primary">{escape(_ratio(prediction["fraud_probability"]))}</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Risk grade</div>
+                    <div class="score-value">{escape(prediction["grade"])}</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Model recommendation</div>
+                    <div class="score-value">{escape(prediction["decision"])}</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Final decision</div>
+                    <div class="score-value">{escape(final_decision)}</div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    cash_cols = st.columns(4)
-    cash_cols[0].metric("Free Cash Flow", _money(application.get("free_cash_flow", 0)))
-    cash_cols[1].metric("Monthly Burn", _money(application.get("monthly_burn_rate", 0)))
-    cash_cols[2].metric("Cash Flow / Revenue", _ratio(application.get("cash_flow_to_revenue_ratio", 0)))
-    cash_cols[3].metric("Expected Runway", format_months(application.get("expected_runway_months", 0)))
-
-    plan_cols = st.columns(5)
-    plan_cols[0].metric("Revenue CAGR", _ratio(application.get("forecast_revenue_cagr", 0)))
-    plan_cols[1].metric("Employee CAGR", _ratio(application.get("forecast_employee_cagr", 0)))
-    plan_cols[2].metric("Y5 FCF Margin", _ratio(application.get("forecast_fcf_margin_year5", 0)))
-    plan_cols[3].metric("Debt Reduction", _ratio(application.get("planned_debt_reduction_pct", 0)))
-    plan_cols[4].metric("Plan Confidence", _score(application.get("forecast_plan_confidence_score", 0)))
-
-    verification_cols = st.columns(5)
-    verification_cols[0].metric("Document Complete", _score(signals["document_completeness_score"]))
-    verification_cols[1].metric("Document Risk", _score(signals["document_quality_risk_score"]))
-    verification_cols[2].metric("Identity Risk", _score(signals["identity_verification_risk_score"]))
-    verification_cols[3].metric("Working Capital Risk", _score(signals["working_capital_pressure_score"]))
-    verification_cols[4].metric("Network Risk", _score(signals["related_party_network_risk_score"]))
-
-    capital_cols = st.columns(4)
-    capital_cols[0].metric("Current Ratio", _score(application.get("current_ratio", 0)))
-    capital_cols[1].metric("Quick Ratio", _score(application.get("quick_ratio", 0)))
-    capital_cols[2].metric("Cash Conversion Cycle", _days(signals["cash_conversion_cycle_days"]))
-    capital_cols[3].metric("Statement Anomaly", _score(signals["financial_statement_anomaly_score"]))
-    st.metric("Applicant Narrative", _context_completeness(application))
+    snapshot_left, snapshot_middle, snapshot_right = st.columns(3)
+    with snapshot_left:
+        st.dataframe(
+            _summary_table(
+                [
+                    ("Interest rate", _ratio(application.get("interest_rate", 0))),
+                    ("Annual interest", _money(signals["annual_interest_expense"])),
+                    ("Annual debt service", _money(signals["annual_debt_service"])),
+                    ("DSCR", _score(signals["debt_service_coverage_ratio"])),
+                    ("Stress DSCR (+2%)", _score(signals["stressed_debt_service_coverage_ratio"])),
+                    ("Free cash flow", _money(application.get("free_cash_flow", 0))),
+                    ("Monthly burn", _money(application.get("monthly_burn_rate", 0))),
+                    ("Cash flow / revenue", _ratio(application.get("cash_flow_to_revenue_ratio", 0))),
+                    ("Expected runway", format_months(application.get("expected_runway_months", 0))),
+                    ("Current ratio", _score(application.get("current_ratio", 0))),
+                    ("Quick ratio", _score(application.get("quick_ratio", 0))),
+                    ("Cash conversion cycle", _days(signals["cash_conversion_cycle_days"])),
+                ]
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+    with snapshot_middle:
+        st.dataframe(
+            _summary_table(
+                [
+                    ("Revenue CAGR", _ratio(application.get("forecast_revenue_cagr", 0))),
+                    ("Employee CAGR", _ratio(application.get("forecast_employee_cagr", 0))),
+                    ("Y5 FCF margin", _ratio(application.get("forecast_fcf_margin_year5", 0))),
+                    ("Debt reduction", _ratio(application.get("planned_debt_reduction_pct", 0))),
+                    ("Plan confidence", _score(application.get("forecast_plan_confidence_score", 0))),
+                    ("Applicant narrative", _context_completeness(application)),
+                    ("Statement anomaly", _score(signals["financial_statement_anomaly_score"])),
+                ]
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+    with snapshot_right:
+        st.dataframe(
+            _summary_table(
+                [
+                    ("Document complete", _score(signals["document_completeness_score"])),
+                    ("Document risk", _score(signals["document_quality_risk_score"])),
+                    ("Process risk", _score(signals["process_integrity_risk_score"])),
+                    ("Identity risk", _score(signals["identity_verification_risk_score"])),
+                    ("Working capital risk", _score(signals["working_capital_pressure_score"])),
+                    ("Network risk", _score(signals["related_party_network_risk_score"])),
+                    ("Narrative risk", _score(signals["narrative_consistency_risk_score"])),
+                ]
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
 
     forecast = build_forecast_table(pd.DataFrame([application]))
     display_forecast = forecast.rename(
@@ -912,6 +1036,8 @@ if st.session_state.last_prediction:
         {"Signal": "Forecast execution risk", "Value": _score(signals["forecast_execution_risk_score"]), "What it tells the banker": "Risk that the forecast is hard to execute."},
         {"Signal": "Hiring efficiency risk", "Value": _score(signals["forecast_hiring_efficiency_risk_score"]), "What it tells the banker": "Revenue growth that may be under-supported by headcount growth."},
         {"Signal": "Debt service plan risk", "Value": _score(signals["forecast_debt_service_risk_score"]), "What it tells the banker": "Debt reduction strain under current cash-flow pressure."},
+        {"Signal": "Interest rate risk", "Value": _score(signals["interest_rate_risk_score"]), "What it tells the banker": "Pricing level that can increase repayment burden."},
+        {"Signal": "Debt service stress", "Value": _score(signals["debt_service_stress_score"]), "What it tells the banker": "Coverage pressure from DSCR and the +2% rate stress test."},
         {"Signal": "Cash conversion cycle", "Value": _days(signals["cash_conversion_cycle_days"]), "What it tells the banker": "Working-capital timing pressure across receivables, inventory, and payables."},
         {"Signal": "Document completeness", "Value": _score(signals["document_completeness_score"]), "What it tells the banker": "How much of the expected application package is present."},
         {"Signal": "Document quality risk", "Value": _score(signals["document_quality_risk_score"]), "What it tells the banker": "Missing documents, edits, and late-stage changes."},
@@ -983,9 +1109,11 @@ if st.session_state.last_prediction:
         display_similar["expected_runway_months"] = display_similar["expected_runway_months"].apply(format_months)
     if "document_completeness_score" in display_similar:
         display_similar["document_completeness_score"] = display_similar["document_completeness_score"].apply(_score)
-    for column in ["forecast_revenue_cagr", "fraud_probability"]:
+    for column in ["interest_rate", "forecast_revenue_cagr", "fraud_probability"]:
         if column in display_similar:
             display_similar[column] = display_similar[column].apply(_ratio)
+    if "debt_service_coverage_ratio" in display_similar:
+        display_similar["debt_service_coverage_ratio"] = display_similar["debt_service_coverage_ratio"].apply(_score)
     st.dataframe(display_similar, use_container_width=True, hide_index=True)
 else:
     st.info("Submit the form to score an application.")

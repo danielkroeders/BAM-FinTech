@@ -9,6 +9,7 @@ SEED_DIR = Path(__file__).resolve().parents[1] / "data" / "seed"
 BASE_NUMERIC_COLUMNS = [
     "requested_amount",
     "term_months",
+    "interest_rate",
     "annual_revenue",
     "years_in_business",
     "existing_debt",
@@ -69,6 +70,13 @@ DERIVED_NUMERIC_COLUMNS = [
     "forecast_execution_risk_score",
     "forecast_hiring_efficiency_risk_score",
     "forecast_debt_service_risk_score",
+    "annual_interest_expense",
+    "annual_debt_service",
+    "debt_service_coverage_ratio",
+    "stressed_annual_debt_service",
+    "stressed_debt_service_coverage_ratio",
+    "interest_rate_risk_score",
+    "debt_service_stress_score",
     "cash_conversion_cycle_days",
     "document_completeness_score",
     "document_quality_risk_score",
@@ -105,6 +113,22 @@ def _combined_text(frame, columns):
     return text.str.lower()
 
 
+def _annual_debt_service(principal, annual_rate, term_months):
+    months = term_months.clip(lower=1)
+    monthly_rate = annual_rate.clip(lower=0) / 12
+    payment_months = months.clip(upper=12)
+    zero_rate_payment = principal / months
+    compound_factor = (1 + monthly_rate) ** months
+    denominator = (compound_factor - 1).replace(0, np.nan)
+    amortizing_payment = principal * (monthly_rate * compound_factor) / denominator
+    monthly_payment = pd.Series(
+        np.where(monthly_rate > 0, amortizing_payment, zero_rate_payment),
+        index=principal.index,
+        dtype="float64",
+    ).replace([np.inf, -np.inf], 0)
+    return (monthly_payment * payment_months).fillna(0).clip(lower=0)
+
+
 def add_derived_features(frame):
     enriched = frame.copy()
     if enriched.empty:
@@ -114,6 +138,8 @@ def add_derived_features(frame):
 
     revenue = _numeric(enriched, "annual_revenue", 1).clip(lower=1)
     requested_amount = _numeric(enriched, "requested_amount", 0).clip(lower=0)
+    term_months = _numeric(enriched, "term_months", 36).clip(lower=1)
+    interest_rate = _numeric(enriched, "interest_rate", 0.085).clip(0, 0.35)
     existing_debt = _numeric(enriched, "existing_debt", 0).clip(lower=0)
     recent_loans = _numeric(enriched, "num_recent_loans", 0).clip(lower=0)
     late_payment_ratio = _numeric(enriched, "late_payment_ratio", 0).clip(0, 1)
@@ -199,6 +225,18 @@ def add_derived_features(frame):
         + 0.20 * runway_risk
         + 0.20 * (1 - forecast_confidence)
     ).clip(0, 1)
+
+    annual_interest_expense = (requested_amount * interest_rate * (term_months.clip(upper=12) / 12)).clip(lower=0)
+    annual_debt_service = _annual_debt_service(requested_amount, interest_rate, term_months)
+    stressed_interest_rate = (interest_rate + 0.02).clip(0, 0.40)
+    stressed_annual_debt_service = _annual_debt_service(requested_amount, stressed_interest_rate, term_months)
+    debt_service_coverage = (free_cash_flow / annual_debt_service.clip(lower=1)).clip(-5, 10)
+    stressed_debt_service_coverage = (free_cash_flow / stressed_annual_debt_service.clip(lower=1)).clip(-5, 10)
+    dscr_risk = ((1.25 - debt_service_coverage).clip(lower=0) / 1.25).clip(0, 1)
+    stressed_dscr_risk = ((1.10 - stressed_debt_service_coverage).clip(lower=0) / 1.10).clip(0, 1)
+    interest_rate_risk = ((interest_rate - 0.10).clip(lower=0) / 0.14).clip(0, 1)
+    debt_service_stress = (0.45 * dscr_risk + 0.40 * stressed_dscr_risk + 0.15 * interest_rate_risk).clip(0, 1)
+    debt_reduction_strain = (0.65 * debt_reduction_strain + 0.35 * debt_service_stress).clip(0, 1)
 
     cash_conversion_cycle = (receivables_days + inventory_days - payables_days).clip(-60, 240)
     document_completeness = (
@@ -292,6 +330,7 @@ def add_derived_features(frame):
     ).max(axis=1).clip(0, 1)
 
     enriched["forecast_revenue_cagr"] = forecast_revenue_cagr.round(4)
+    enriched["interest_rate"] = interest_rate.round(4)
     enriched["forecast_employee_cagr"] = forecast_employee_cagr.round(4)
     enriched["forecast_fcf_margin_year5"] = forecast_fcf_margin_year5.round(4)
     enriched["planned_debt_reduction_pct"] = planned_debt_reduction.round(4)
@@ -314,6 +353,13 @@ def add_derived_features(frame):
     enriched["forecast_execution_risk_score"] = forecast_execution_risk.round(4)
     enriched["forecast_hiring_efficiency_risk_score"] = hiring_growth_gap.round(4)
     enriched["forecast_debt_service_risk_score"] = debt_reduction_strain.round(4)
+    enriched["annual_interest_expense"] = annual_interest_expense.round(2)
+    enriched["annual_debt_service"] = annual_debt_service.round(2)
+    enriched["debt_service_coverage_ratio"] = debt_service_coverage.round(4)
+    enriched["stressed_annual_debt_service"] = stressed_annual_debt_service.round(2)
+    enriched["stressed_debt_service_coverage_ratio"] = stressed_debt_service_coverage.round(4)
+    enriched["interest_rate_risk_score"] = interest_rate_risk.round(4)
+    enriched["debt_service_stress_score"] = debt_service_stress.round(4)
     enriched["current_ratio"] = current_ratio.round(4)
     enriched["quick_ratio"] = quick_ratio.round(4)
     enriched["receivables_days"] = receivables_days.round(1)
@@ -407,6 +453,18 @@ def generate_seed_data(rows=1200, seed=42):
 
     debt_pressure = existing_debt / np.maximum(annual_revenue, 1)
     request_pressure = requested_amount / np.maximum(annual_revenue, 1)
+    collateral_gap = np.maximum(1 - collateral_ratio, 0)
+    interest_rate = (
+        0.055
+        + 0.035 * debt_pressure
+        + 0.030 * request_pressure
+        + 0.045 * late_payment_ratio
+        + 0.030 * suspicious_transfer_ratio
+        + 0.025 * country_risk_score
+        + 0.025 * collateral_gap
+        + 0.015 * (years_in_business < 2)
+        + rng.normal(0, 0.012, rows)
+    ).clip(0.035, 0.24)
     industry_cash_margin = {
         "Software": 0.14,
         "Healthcare": 0.08,
@@ -419,10 +477,11 @@ def generate_seed_data(rows=1200, seed=42):
     base_cash_margin = np.array([industry_cash_margin[item] for item in industry])
     cash_flow_margin = (
         base_cash_margin
+        + 0.06
         + rng.normal(0, 0.08, rows)
-        - 0.10 * debt_pressure
-        - 0.10 * request_pressure
-        - 0.10 * late_payment_ratio
+        - 0.08 * debt_pressure
+        - 0.08 * request_pressure
+        - 0.08 * late_payment_ratio
         - 0.04 * np.minimum(num_recent_loans / 6, 1)
         - 0.04 * country_risk_score
     ).clip(-0.45, 0.35)
@@ -625,6 +684,7 @@ def generate_seed_data(rows=1200, seed=42):
             "company_type": company_type,
             "requested_amount": requested_amount.round(2),
             "term_months": term_months,
+            "interest_rate": interest_rate.round(4),
             "annual_revenue": annual_revenue.round(2),
             "years_in_business": years_in_business.round(1),
             "existing_debt": existing_debt.round(2),
@@ -672,7 +732,7 @@ def generate_seed_data(rows=1200, seed=42):
     region_risk = np.isin(region, ["Eastern Europe", "Latin America", "Middle East"]).astype(float)
     industry_risk = np.isin(industry, ["Construction", "Wholesale", "Logistics"]).astype(float)
     risk_score = (
-        -4.20
+        -6.75
         + 1.15 * applications["debt_to_revenue_ratio"]
         + 1.25 * applications["request_to_revenue_ratio"]
         + 0.90 * applications["loan_velocity_score"]
@@ -689,6 +749,8 @@ def generate_seed_data(rows=1200, seed=42):
         + 0.70 * applications["forecast_plan_aggressiveness_score"]
         + 1.05 * applications["forecast_execution_risk_score"]
         + 0.45 * applications["forecast_debt_service_risk_score"]
+        + 0.35 * applications["interest_rate_risk_score"]
+        + 0.85 * applications["debt_service_stress_score"]
         + 0.65 * applications["document_quality_risk_score"]
         + 0.50 * applications["process_integrity_risk_score"]
         + 0.55 * applications["identity_verification_risk_score"]
@@ -720,6 +782,13 @@ def generate_seed_data(rows=1200, seed=42):
             "cash_flow_pressure_score",
             "runway_risk_score",
             "cash_conversion_risk_score",
+            "interest_rate",
+            "annual_interest_expense",
+            "annual_debt_service",
+            "debt_service_coverage_ratio",
+            "stressed_annual_debt_service",
+            "stressed_debt_service_coverage_ratio",
+            "debt_service_stress_score",
         ]
     ].copy()
     cash_flows["cash_balance_at_application"] = cash_balance.round(2)

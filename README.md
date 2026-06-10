@@ -60,6 +60,7 @@ The app works without an OpenAI API key by using deterministic explanations. If 
 - `pages/Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, and live session decisions.
 - `pages/Model_Insights.py`: model metrics, confusion matrix, feature importances, and grading thresholds.
 - `pages/LLM_Chat.py`: explainability view for the latest scored loan request.
+- `pages/Support.py`: representative contact details, support request form, scripted demo live chat, and FAQ.
 
 ## A-F Risk Grade Mapping
 

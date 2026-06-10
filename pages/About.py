@@ -44,6 +44,11 @@ dimensions = [
         "Why it matters": "Loan duration shapes exposure time and can interact with cash-flow risk.",
     },
     {
+        "Dimension": "Interest rate",
+        "Definition": "The offered annual interest rate for the requested facility.",
+        "Why it matters": "Higher pricing can materially increase debt-service burden and reduce repayment coverage.",
+    },
+    {
         "Dimension": "Annual revenue",
         "Definition": "The applicant's reported yearly business revenue.",
         "Why it matters": "Revenue is used to assess business scale and whether the requested amount is proportionate.",
@@ -239,6 +244,26 @@ derived_dimensions = [
         "Signal": "Forecast debt service risk score",
         "Definition": "Measures debt reduction ambition under current debt and cash-flow pressure.",
         "Why it matters": "Debt plans may be less credible when cash flow is weak.",
+    },
+    {
+        "Signal": "Annual debt service",
+        "Definition": "Estimated first-year principal and interest payments based on requested amount, term, and interest rate.",
+        "Why it matters": "Shows whether the new loan is affordable under current cash flow.",
+    },
+    {
+        "Signal": "Debt service coverage ratio",
+        "Definition": "Free cash flow divided by estimated annual debt service.",
+        "Why it matters": "A DSCR below 1.0 means free cash flow does not cover estimated debt service.",
+    },
+    {
+        "Signal": "Stressed DSCR",
+        "Definition": "Debt service coverage recomputed after adding two percentage points to the interest rate.",
+        "Why it matters": "Stress testing shows whether the applicant remains resilient if pricing or rates move against them.",
+    },
+    {
+        "Signal": "Debt service stress score",
+        "Definition": "Combines DSCR weakness, stressed DSCR weakness, and elevated interest-rate pricing.",
+        "Why it matters": "Helps analysts see repayment sensitivity from the loan terms themselves.",
     },
     {
         "Signal": "Cash conversion cycle days",

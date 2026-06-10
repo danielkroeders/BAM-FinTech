@@ -79,6 +79,7 @@ The newer papers in `docs/` expand the demo beyond classic transaction and ratio
 | --- | --- |
 | Business-process fraud metrics | Document edit count, late-stage changes, process deviation score, document quality risk, and process integrity risk. |
 | Liquidity and working-capital analysis | Current ratio, quick ratio, receivables days, payables days, inventory days, cash conversion cycle, and working-capital pressure score. |
+| Debt-service and rate sensitivity | Offered interest rate, annual interest expense, annual debt service, DSCR, stressed DSCR under +2 percentage points, and debt-service stress score. |
 | E-commerce and application-channel fraud | Email domain age, website age, bank-account age, location mismatch, duplicate contact score, and identity verification risk. |
 | Financial-statement fraud analytics | Revenue/cash-flow mismatch, receivables pressure, FCF improvement need, and financial statement anomaly score. |
 | Network and related-party review | Related-party exposure, counterparty concentration, shared identifiers, and related-party network risk. |

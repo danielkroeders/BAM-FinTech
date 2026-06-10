@@ -54,6 +54,7 @@ Point out:
 - Final decision status
 - Risk flags
 - Cash-flow snapshot: FCF, monthly burn, cash-flow-to-revenue, and expected runway
+- Loan pricing: offered interest rate, annual debt service, DSCR, and +2% stressed DSCR
 - Generated five-year forecast: annual revenue, employees, FCF, and debt
 - Applicant narrative: loan purpose, current business context, and future business context
 - CEO, CFO, and COO context notes when using a demo scenario

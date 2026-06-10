@@ -35,6 +35,10 @@ def deterministic_explanation(application, prediction):
         mitigants.append("Expected runway is at least 12 months.")
     if float(application.get("forecast_plan_confidence_score", 0)) >= 0.7:
         mitigants.append("Five-year plan confidence is relatively strong.")
+    if float(derived.get("debt_service_coverage_ratio", 0)) >= 1.25:
+        mitigants.append("Free cash flow covers estimated annual debt service.")
+    if float(derived.get("stressed_debt_service_coverage_ratio", 0)) >= 1.0:
+        mitigants.append("Debt-service coverage remains above 1.0 under a +2% rate stress.")
     if float(derived.get("document_completeness_score", 0)) >= 0.95:
         mitigants.append("Expected application documents are complete.")
     if float(application.get("current_ratio", 0)) >= 1.5 and float(application.get("quick_ratio", 0)) >= 1.0:

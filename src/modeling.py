@@ -190,6 +190,14 @@ def rule_flags(application):
         flags.append("Revenue growth plan may be under-supported by employee growth.")
     if float(derived["forecast_debt_service_risk_score"]) >= 0.45:
         flags.append("Debt reduction plan may be strained by current cash-flow pressure.")
+    if float(derived["interest_rate"]) >= 0.14:
+        flags.append("Offered interest rate is elevated, increasing debt-service burden.")
+    if float(derived["debt_service_coverage_ratio"]) < 1.0:
+        flags.append("Free cash flow does not cover estimated annual debt service.")
+    if float(derived["stressed_debt_service_coverage_ratio"]) < 1.0:
+        flags.append("Debt-service coverage falls below 1.0 under a +2% rate stress.")
+    if float(derived["debt_service_stress_score"]) >= 0.55:
+        flags.append("Debt-service stress score is elevated.")
     if float(derived["document_completeness_score"]) < 0.80:
         flags.append("Document checklist is incomplete for the requested review.")
     if float(derived["document_quality_risk_score"]) >= 0.45:
