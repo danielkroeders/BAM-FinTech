@@ -2,6 +2,8 @@ import os
 
 import streamlit as st
 
+from src.formatting import format_currency, format_percent
+
 
 def _api_key():
     try:
@@ -24,6 +26,12 @@ def deterministic_explanation(application, prediction):
         mitigants.append("Operating history is established.")
     if float(application.get("late_payment_ratio", 0)) < 0.1:
         mitigants.append("Late payment behavior is limited.")
+    if float(application.get("free_cash_flow", 0)) > 0:
+        mitigants.append("Free cash flow is positive.")
+    if float(application.get("expected_runway_months", 0)) >= 12:
+        mitigants.append("Expected runway is at least 12 months.")
+    if float(application.get("forecast_plan_confidence_score", 0)) >= 0.7:
+        mitigants.append("Five-year plan confidence is relatively strong.")
     mitigant_text = "\n".join(f"- {item}" for item in mitigants) if mitigants else "- No major mitigating factor was identified in the deterministic checks."
     next_step = {
         "Approve": "Proceed with standard analyst sign-off and retain the case summary.",
@@ -31,9 +39,9 @@ def deterministic_explanation(application, prediction):
         "Reject": "Route to compliance review before any final adverse action is communicated.",
     }[prediction["decision"]]
     return (
-        f"Decision: {prediction['decision']} | Grade {prediction['grade']} | Fraud probability {probability:.1%}\n\n"
+        f"Decision: {prediction['decision']} | Grade {prediction['grade']} | Fraud probability {format_percent(probability)}\n\n"
         f"Applicant context: {application.get('company_type', 'The applicant')} in "
-        f"{application.get('industry', 'unknown industry')} requested ${amount:,.0f}.\n\n"
+        f"{application.get('industry', 'unknown industry')} requested {format_currency(amount)}.\n\n"
         f"Top risk drivers:\n{drivers}\n\n"
         f"Mitigating factors:\n{mitigant_text}\n\n"
         f"Recommended analyst action: {next_step}\n\n"

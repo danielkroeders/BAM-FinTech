@@ -1,6 +1,7 @@
 import streamlit as st
 
 from src.explanations import explain_prediction
+from src.formatting import format_percent, format_score
 from src.runtime import bootstrap_state
 from src.shap_explanations import shap_driver_table
 from src.ui import render_sidebar
@@ -19,7 +20,7 @@ prediction = st.session_state.last_prediction
 if not application or not prediction:
     st.info("No application has been scored yet. Use the Loan Intake page to create the first decision.")
 else:
-    st.metric("Latest Fraud Probability", f"{prediction['fraud_probability']:.1%}")
+    st.metric("Latest Fraud Probability", format_percent(prediction["fraud_probability"]))
     st.write(f"Grade: **{prediction['grade']}**")
     st.write(f"Recommended action: **{prediction['decision']}**")
 
@@ -38,8 +39,8 @@ else:
         top_drivers = shap_table.head(8).copy()
 
         summary_cols = st.columns(3)
-        summary_cols[0].metric("Baseline Fraud Risk", f"{baseline_probability:.1%}")
-        summary_cols[1].metric("Application Fraud Risk", f"{predicted_probability:.1%}")
+        summary_cols[0].metric("Baseline Fraud Risk", format_percent(baseline_probability))
+        summary_cols[1].metric("Application Fraud Risk", format_percent(predicted_probability))
         summary_cols[2].metric("Largest Driver", top_drivers.iloc[0]["driver"].replace("_", " ").title())
 
         chart_data = top_drivers.set_index("driver")["contribution"].sort_values()
@@ -53,6 +54,7 @@ else:
                 "impact": "Impact",
             }
         )[["Driver", "Application value", "SHAP contribution", "Impact"]]
+        display_table["SHAP contribution"] = display_table["SHAP contribution"].apply(lambda value: format_score(value, 4))
         st.dataframe(display_table, use_container_width=True, hide_index=True)
         st.caption(
             "Positive SHAP contributions push the fraud score higher for this application. Negative contributions push it lower. "

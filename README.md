@@ -38,6 +38,7 @@ The app generates synthetic seed CSV files under `data/seed/` automatically on f
 ## Demo Script
 
 For a full presentation runbook, see `DEMO.md`.
+For the research grounding behind the fraud ratios, cash-flow signals, and detection measures, see `docs/fraud_research.md`.
 
 1. Start on `Home.py` and introduce the app as synthetic decision support for B2B loan fraud triage.
 2. Open `Loan Intake` and choose a demo generator scenario such as `Low-risk established borrower`, `Credit stacking case`, or `Suspicious transfers`.

@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 
+from src.formatting import format_currency, format_integer, format_percent
 from src.modeling import score_portfolio
 from src.runtime import bootstrap_state
 from src.ui import render_sidebar
@@ -14,6 +15,15 @@ st.title("Risk Dashboard")
 st.caption("Portfolio-level fraud monitoring for lending analysts.")
 
 portfolio = score_portfolio(st.session_state.model_bundle, st.session_state.seed_data["applications"])
+
+
+def _display_table(frame, columns):
+    display = frame[columns].copy()
+    if "requested_amount" in display:
+        display["requested_amount"] = display["requested_amount"].apply(format_currency)
+    if "fraud_probability" in display:
+        display["fraud_probability"] = display["fraud_probability"].apply(format_percent)
+    return display
 
 with st.expander("Portfolio Filters", expanded=True):
     filter_cols = st.columns(5)
@@ -48,10 +58,10 @@ high_risk = filtered[filtered["grade"].isin(["E", "F"])]
 manual_review = filtered[filtered["grade"].isin(["C", "D"])]
 
 metric_cols = st.columns(4)
-metric_cols[0].metric("Filtered Applications", f"{len(filtered):,}")
-metric_cols[1].metric("Filtered Exposure", f"${total_exposure:,.0f}")
-metric_cols[2].metric("Manual Review Queue", f"{len(manual_review):,}")
-metric_cols[3].metric("Compliance Queue", f"{len(high_risk):,}")
+metric_cols[0].metric("Filtered Applications", format_integer(len(filtered)))
+metric_cols[1].metric("Filtered Exposure", format_currency(total_exposure))
+metric_cols[2].metric("Manual Review Queue", format_integer(len(manual_review)))
+metric_cols[3].metric("Compliance Queue", format_integer(len(high_risk)))
 
 left, right = st.columns(2)
 with left:
@@ -65,7 +75,8 @@ with right:
 st.subheader("Compliance Review Queue")
 st.caption("High-risk E/F outcomes require human compliance review before final action.")
 st.dataframe(
-    high_risk.sort_values("fraud_probability", ascending=False)[
+    _display_table(
+        high_risk.sort_values("fraud_probability", ascending=False).head(20),
         [
             "application_id",
             "company_name",
@@ -75,15 +86,16 @@ st.dataframe(
             "fraud_probability",
             "grade",
             "decision",
-        ]
-    ].head(20),
+        ],
+    ),
     use_container_width=True,
     hide_index=True,
 )
 
 st.subheader("Manual Review Queue")
 st.dataframe(
-    manual_review.sort_values("fraud_probability", ascending=False)[
+    _display_table(
+        manual_review.sort_values("fraud_probability", ascending=False).head(20),
         [
             "application_id",
             "company_name",
@@ -93,17 +105,18 @@ st.dataframe(
             "fraud_probability",
             "grade",
             "decision",
-        ]
-    ].head(20),
+        ],
+    ),
     use_container_width=True,
     hide_index=True,
 )
 
 st.subheader("Highest-Risk Applications")
 st.dataframe(
-    filtered.sort_values("fraud_probability", ascending=False)[
-        ["application_id", "company_name", "industry", "region", "requested_amount", "fraud_probability", "grade", "decision"]
-    ].head(25),
+    _display_table(
+        filtered.sort_values("fraud_probability", ascending=False).head(25),
+        ["application_id", "company_name", "industry", "region", "requested_amount", "fraud_probability", "grade", "decision"],
+    ),
     use_container_width=True,
     hide_index=True,
 )
@@ -122,13 +135,21 @@ if st.session_state.portfolio_history:
         "final_decision",
     ]
     available_columns = [column for column in visible_columns if column in history.columns]
-    st.dataframe(history[available_columns], use_container_width=True, hide_index=True)
+    display_history = history[available_columns].copy()
+    if "requested_amount" in display_history:
+        display_history["requested_amount"] = display_history["requested_amount"].apply(format_currency)
+    if "fraud_probability" in display_history:
+        display_history["fraud_probability"] = display_history["fraud_probability"].apply(format_percent)
+    st.dataframe(display_history, use_container_width=True, hide_index=True)
 else:
     st.info("No applications have been scored in this session yet.")
 
 st.subheader("Analyst Review Audit Trail")
 if st.session_state.review_history:
     reviews = pd.DataFrame(st.session_state.review_history)
-    st.dataframe(reviews, use_container_width=True, hide_index=True)
+    display_reviews = reviews.copy()
+    if "final_probability" in display_reviews:
+        display_reviews["final_probability"] = display_reviews["final_probability"].apply(format_percent)
+    st.dataframe(display_reviews, use_container_width=True, hide_index=True)
 else:
     st.info("No analyst reviews have been saved in this session yet.")

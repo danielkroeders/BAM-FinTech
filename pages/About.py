@@ -88,10 +88,125 @@ dimensions = [
         "Definition": "A synthetic score from 0 to 1 representing jurisdictional or country-level risk.",
         "Why it matters": "Higher values indicate greater contextual risk in the demo's synthetic assumptions.",
     },
+    {
+        "Dimension": "Free cash flow",
+        "Definition": "Synthetic annual cash generated after operating and investment needs.",
+        "Why it matters": "Positive free cash flow can mitigate risk, while negative cash flow can indicate liquidity pressure.",
+    },
+    {
+        "Dimension": "Monthly burn rate",
+        "Definition": "Estimated monthly cash consumption at application date.",
+        "Why it matters": "High burn can shorten runway and increase pressure to obtain external financing.",
+    },
+    {
+        "Dimension": "Cash flow / revenue",
+        "Definition": "Free cash flow divided by annual revenue.",
+        "Why it matters": "Shows whether reported revenue is converting into usable cash.",
+    },
+    {
+        "Dimension": "Expected runway months",
+        "Definition": "Estimated months cash reserves can support the current burn rate.",
+        "Why it matters": "Short runway can raise liquidity risk and review priority.",
+    },
+    {
+        "Dimension": "Expected annual revenue growth",
+        "Definition": "Applicant's expected compound annual revenue growth over five years.",
+        "Why it matters": "Aggressive growth assumptions can increase execution risk when unsupported by current signals.",
+    },
+    {
+        "Dimension": "Expected annual employee growth",
+        "Definition": "Applicant's expected compound annual employee growth over five years.",
+        "Why it matters": "Employee growth helps assess whether revenue growth is operationally supported.",
+    },
+    {
+        "Dimension": "Year 5 FCF margin target",
+        "Definition": "Target free-cash-flow margin at the end of the five-year plan.",
+        "Why it matters": "Large margin improvement from weak current cash flow can signal plan risk.",
+    },
+    {
+        "Dimension": "Planned debt reduction",
+        "Definition": "Share of existing debt management expects to reduce over five years.",
+        "Why it matters": "Debt reduction plans can be strained when current cash-flow pressure is high.",
+    },
+    {
+        "Dimension": "Plan confidence score",
+        "Definition": "Synthetic banker-assessed confidence in the five-year plan from 0 to 1.",
+        "Why it matters": "Lower confidence increases execution risk and supports manual review.",
+    },
 ]
 
 st.subheader("Scoring Dimensions")
 st.dataframe(pd.DataFrame(dimensions), use_container_width=True, hide_index=True)
+
+st.subheader("Derived Risk Signals")
+derived_dimensions = [
+    {
+        "Signal": "Debt-to-revenue ratio",
+        "Definition": "Existing debt divided by annual revenue.",
+        "Why it matters": "Higher debt pressure can indicate financial distress or incentive pressure.",
+    },
+    {
+        "Signal": "Request-to-revenue ratio",
+        "Definition": "Requested loan amount divided by annual revenue.",
+        "Why it matters": "Large exposure relative to business scale can merit closer review.",
+    },
+    {
+        "Signal": "Loan velocity score",
+        "Definition": "Normalized count of recent loans.",
+        "Why it matters": "Rapid borrowing can suggest credit stacking or liquidity stress.",
+    },
+    {
+        "Signal": "Payment stress score",
+        "Definition": "Combined late-payment behavior and debt pressure.",
+        "Why it matters": "Payment stress is a practical early warning signal for risk triage.",
+    },
+    {
+        "Signal": "Transaction anomaly score",
+        "Definition": "Combined suspicious transfer ratio, payment behavior, country risk, and borrowing velocity.",
+        "Why it matters": "Fraud literature emphasizes unusual transaction patterns and behavioral anomalies.",
+    },
+    {
+        "Signal": "Financial distress score",
+        "Definition": "Combined debt, late payments, collateral gap, and short operating history.",
+        "Why it matters": "Fraud-triangle research highlights financial pressure and distress as important risk factors.",
+    },
+    {
+        "Signal": "Cash-flow pressure score",
+        "Definition": "Combined negative free cash flow and burn intensity.",
+        "Why it matters": "Weak liquidity can create pressure to seek financing or misstate business health.",
+    },
+    {
+        "Signal": "Runway risk score",
+        "Definition": "A normalized short-runway measure based on expected runway months.",
+        "Why it matters": "Applicants with limited runway may require closer analyst review.",
+    },
+    {
+        "Signal": "Cash conversion risk score",
+        "Definition": "Measures weak free-cash-flow conversion relative to revenue, adjusted by payment stress.",
+        "Why it matters": "Revenue that does not convert to cash can signal fragility or documentation concerns.",
+    },
+    {
+        "Signal": "Forecast plan aggressiveness score",
+        "Definition": "Combines aggressive revenue growth, hiring gap, FCF improvement need, and low confidence.",
+        "Why it matters": "Ambitious plans can be risky when current operating signals do not support them.",
+    },
+    {
+        "Signal": "Forecast execution risk score",
+        "Definition": "Combines plan aggressiveness, cash conversion risk, runway risk, and plan confidence.",
+        "Why it matters": "Helps analysts judge whether the five-year plan is credible.",
+    },
+    {
+        "Signal": "Forecast hiring efficiency risk score",
+        "Definition": "Measures revenue growth that may be under-supported by employee growth.",
+        "Why it matters": "Growth without capacity can indicate execution or documentation risk.",
+    },
+    {
+        "Signal": "Forecast debt service risk score",
+        "Definition": "Measures debt reduction ambition under current debt and cash-flow pressure.",
+        "Why it matters": "Debt plans may be less credible when cash flow is weak.",
+    },
+]
+st.dataframe(pd.DataFrame(derived_dimensions), use_container_width=True, hide_index=True)
 
 st.subheader("How To Read The Score")
 grade_rows = [

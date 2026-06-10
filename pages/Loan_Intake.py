@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pandas as pd
 import streamlit as st
 
 from src.case_workflow import (
@@ -10,7 +11,17 @@ from src.case_workflow import (
     mailto_link,
     similar_applications,
 )
+from src.data_pipeline import add_derived_features, build_forecast_table
 from src.explanations import explain_prediction
+from src.formatting import (
+    format_currency,
+    format_currency_input,
+    format_integer,
+    format_months,
+    format_percent,
+    format_score,
+    parse_eu_number,
+)
 from src.runtime import bootstrap_state
 from src.ui import render_sidebar
 
@@ -24,10 +35,85 @@ industries = sorted(applications["industry"].unique())
 regions = sorted(applications["region"].unique())
 company_types = sorted(applications["company_type"].unique())
 
+FIELD_HELP = {
+    "company_name": "Applicant company name used for the session case record and downloadable summary.",
+    "industry": "Primary business sector. Sector patterns can affect fraud exposure and cash-flow volatility.",
+    "region": "Applicant operating region. Regional context contributes to the synthetic risk profile.",
+    "company_type": "Legal or operating structure, such as LLC, corporation, partnership, or sole proprietorship.",
+    "years_in_business": "How long the company has operated. Short histories can reduce verification depth.",
+    "employees": "Reported employee count, used to compare company scale with revenue and requested exposure.",
+    "requested_amount": "Loan principal requested by the applicant.",
+    "term_months": "Requested duration of the loan in months.",
+    "collateral_ratio": "Estimated collateral value divided by requested loan amount.",
+    "existing_debt": "Reported outstanding business debt at application date.",
+    "num_recent_loans": "Number of recent loans in the last 12 months. High values can indicate credit stacking.",
+    "annual_revenue": "Reported yearly business revenue.",
+    "free_cash_flow": "Annual cash generated after operating and investment needs.",
+    "monthly_burn_rate": "Estimated monthly cash consumption at application date.",
+    "expected_runway_months": "Estimated months the applicant can sustain current burn with available cash.",
+    "cash_flow_to_revenue_ratio": "Free cash flow divided by annual revenue, calculated automatically.",
+    "late_payment_ratio": "Share of observed payments that were late in the synthetic transaction profile.",
+    "suspicious_transfer_ratio": "Share of transfers flagged as unusual in the synthetic transaction profile.",
+    "country_risk_score": "Synthetic jurisdictional risk score from 0 to 1.",
+    "forecast_revenue_cagr": "Expected average annual revenue growth over the next five years.",
+    "forecast_employee_cagr": "Expected average annual employee growth over the next five years.",
+    "forecast_fcf_margin_year5": "Target free-cash-flow margin by year five.",
+    "planned_debt_reduction_pct": "Planned reduction in existing debt over the five-year forecast horizon.",
+    "forecast_plan_confidence_score": "Banker-assessed confidence in the applicant's five-year plan from 0 to 1.",
+    "loan_purpose_context": "Applicant-provided reason for the loan and intended use of funds.",
+    "current_business_context": "Applicant-provided context for current operating conditions, recent performance, and key constraints.",
+    "future_business_context": "Applicant-provided context for expected changes after funding, outside the formal five-year forecast table.",
+    "ceo_context": "CEO narrative context for strategy, market demand, and growth plan.",
+    "cfo_context": "CFO narrative context for liquidity, debt, cash flow, and funding need.",
+    "coo_context": "COO narrative context for operations, capacity, staffing, and execution risk.",
+}
+
 
 def _scenario_value(scenario, key, default):
     values = DEMO_SCENARIOS.get(scenario) or {}
     return values.get(key, default)
+
+
+def _money(value):
+    return format_currency(value)
+
+
+def _ratio(value):
+    return format_percent(value)
+
+
+def _score(value):
+    return format_score(value)
+
+
+def _parse_money(label, raw_value, errors, min_value=None, max_value=None):
+    try:
+        value = parse_eu_number(raw_value)
+    except ValueError:
+        errors.append(f"{label} must be a valid amount, for example €1.000.000,00.")
+        return 0
+    if min_value is not None and value < min_value:
+        errors.append(f"{label} must be at least {format_currency_input(min_value)}.")
+    if max_value is not None and value > max_value:
+        errors.append(f"{label} must be no more than {format_currency_input(max_value)}.")
+    return value
+
+
+def _preview_money(raw_value, default):
+    try:
+        return parse_eu_number(raw_value)
+    except ValueError:
+        return float(default)
+
+
+def _context_completeness(application):
+    fields = ["loan_purpose_context", "current_business_context", "future_business_context"]
+    completed = sum(bool(str(application.get(field, "")).strip()) for field in fields)
+    if completed == len(fields):
+        return "Complete"
+    if completed:
+        return "Partial"
+    return "Missing"
 
 
 def _rerun_after_review():
@@ -160,33 +246,35 @@ with header_right:
 scenario_values = DEMO_SCENARIOS.get(scenario) or {}
 
 with st.form("loan_intake_form"):
-    left, middle, right = st.columns(3)
-    with left:
+    st.subheader("Company Profile")
+    profile_left, profile_right = st.columns(2)
+    with profile_left:
+        company_name = st.text_input(
+            "Company name",
+            value="Session Applicant" if scenario == "Custom application" else scenario,
+            help=FIELD_HELP["company_name"],
+        )
         industry_default = _scenario_value(scenario, "industry", "Construction")
         region_default = _scenario_value(scenario, "region", regions[0])
         type_default = _scenario_value(scenario, "company_type", company_types[0])
-        industry = st.selectbox("Industry", industries, index=industries.index(industry_default) if industry_default in industries else 0)
-        region = st.selectbox("Region", regions, index=regions.index(region_default) if region_default in regions else 0)
+        industry = st.selectbox(
+            "Industry",
+            industries,
+            index=industries.index(industry_default) if industry_default in industries else 0,
+            help=FIELD_HELP["industry"],
+        )
+        region = st.selectbox(
+            "Region",
+            regions,
+            index=regions.index(region_default) if region_default in regions else 0,
+            help=FIELD_HELP["region"],
+        )
+    with profile_right:
         company_type = st.selectbox(
             "Company type",
             company_types,
             index=company_types.index(type_default) if type_default in company_types else 0,
-        )
-        requested_amount = st.number_input(
-            "Requested amount",
-            min_value=10000,
-            max_value=5000000,
-            value=int(_scenario_value(scenario, "requested_amount", 350000)),
-            step=10000,
-        )
-        term_months = st.slider("Term months", min_value=6, max_value=84, value=int(_scenario_value(scenario, "term_months", 36)), step=6)
-    with middle:
-        annual_revenue = st.number_input(
-            "Annual revenue",
-            min_value=50000,
-            max_value=50000000,
-            value=int(_scenario_value(scenario, "annual_revenue", 1800000)),
-            step=50000,
+            help=FIELD_HELP["company_type"],
         )
         years_in_business = st.number_input(
             "Years in business",
@@ -194,80 +282,275 @@ with st.form("loan_intake_form"):
             max_value=75.0,
             value=float(_scenario_value(scenario, "years_in_business", 4.0)),
             step=0.5,
+            help=FIELD_HELP["years_in_business"],
         )
-        existing_debt = st.number_input(
+        employees = st.number_input(
+            "Employees",
+            min_value=1,
+            max_value=10000,
+            value=int(_scenario_value(scenario, "employees", 42)),
+            step=1,
+            help=FIELD_HELP["employees"],
+        )
+
+    st.subheader("Loan Request")
+    loan_left, loan_right = st.columns(2)
+    with loan_left:
+        requested_amount_default = int(_scenario_value(scenario, "requested_amount", 350000))
+        requested_amount_text = st.text_input(
+            "Requested amount",
+            value=format_currency_input(requested_amount_default),
+            help=FIELD_HELP["requested_amount"],
+        )
+        term_months = st.slider(
+            "Term months",
+            min_value=6,
+            max_value=84,
+            value=int(_scenario_value(scenario, "term_months", 36)),
+            step=6,
+            help=FIELD_HELP["term_months"],
+        )
+        collateral_ratio = st.slider(
+            "Collateral coverage",
+            min_value=0.0,
+            max_value=2.0,
+            value=float(_scenario_value(scenario, "collateral_ratio", 0.65)),
+            step=0.05,
+            help=FIELD_HELP["collateral_ratio"],
+        )
+    with loan_right:
+        existing_debt_default = int(_scenario_value(scenario, "existing_debt", 550000))
+        existing_debt_text = st.text_input(
             "Existing debt",
-            min_value=0,
-            max_value=20000000,
-            value=int(_scenario_value(scenario, "existing_debt", 550000)),
-            step=25000,
+            value=format_currency_input(existing_debt_default),
+            help=FIELD_HELP["existing_debt"],
         )
         num_recent_loans = st.slider(
             "Recent loans in the last 12 months",
             min_value=0,
             max_value=12,
             value=int(_scenario_value(scenario, "num_recent_loans", 2)),
+            help=FIELD_HELP["num_recent_loans"],
         )
-        employees = st.number_input("Employees", min_value=1, max_value=10000, value=int(_scenario_value(scenario, "employees", 42)), step=1)
-    with right:
-        late_payment_ratio = st.slider(
-            "Late payment ratio",
+
+    st.subheader("Financial Snapshot")
+    financial_left, financial_right = st.columns(2)
+    with financial_left:
+        annual_revenue_default = int(_scenario_value(scenario, "annual_revenue", 1800000))
+        annual_revenue_text = st.text_input(
+            "Annual revenue",
+            value=format_currency_input(annual_revenue_default),
+            help=FIELD_HELP["annual_revenue"],
+        )
+        free_cash_flow_default = int(_scenario_value(scenario, "free_cash_flow", 120000))
+        free_cash_flow_text = st.text_input(
+            "Free cash flow",
+            value=format_currency_input(free_cash_flow_default),
+            help=FIELD_HELP["free_cash_flow"],
+        )
+    with financial_right:
+        monthly_burn_rate_default = int(_scenario_value(scenario, "monthly_burn_rate", 25000))
+        monthly_burn_rate_text = st.text_input(
+            "Monthly burn rate",
+            value=format_currency_input(monthly_burn_rate_default),
+            help=FIELD_HELP["monthly_burn_rate"],
+        )
+        expected_runway_months = st.slider(
+            "Expected runway months",
+            min_value=0,
+            max_value=60,
+            value=int(_scenario_value(scenario, "expected_runway_months", 18)),
+            step=1,
+            help=FIELD_HELP["expected_runway_months"],
+        )
+        annual_revenue_preview = _preview_money(annual_revenue_text, annual_revenue_default)
+        free_cash_flow_preview = _preview_money(free_cash_flow_text, free_cash_flow_default)
+        cash_flow_to_revenue_ratio = free_cash_flow_preview / max(float(annual_revenue_preview), 1)
+        st.metric("Cash flow / revenue", _ratio(cash_flow_to_revenue_ratio), help=FIELD_HELP["cash_flow_to_revenue_ratio"])
+
+    st.subheader("Five-Year Plan")
+    plan_left, plan_right = st.columns(2)
+    with plan_left:
+        forecast_revenue_cagr = st.slider(
+            "Expected annual revenue growth",
+            min_value=-0.20,
+            max_value=0.60,
+            value=float(_scenario_value(scenario, "forecast_revenue_cagr", 0.08)),
+            step=0.01,
+            format="%.2f",
+            help=FIELD_HELP["forecast_revenue_cagr"],
+        )
+        forecast_employee_cagr = st.slider(
+            "Expected annual employee growth",
+            min_value=-0.10,
+            max_value=0.50,
+            value=float(_scenario_value(scenario, "forecast_employee_cagr", 0.04)),
+            step=0.01,
+            format="%.2f",
+            help=FIELD_HELP["forecast_employee_cagr"],
+        )
+        forecast_fcf_margin_year5 = st.slider(
+            "Year 5 FCF margin target",
+            min_value=-0.25,
+            max_value=0.35,
+            value=float(_scenario_value(scenario, "forecast_fcf_margin_year5", 0.08)),
+            step=0.01,
+            format="%.2f",
+            help=FIELD_HELP["forecast_fcf_margin_year5"],
+        )
+    with plan_right:
+        planned_debt_reduction_pct = st.slider(
+            "Planned debt reduction",
             min_value=0.0,
             max_value=1.0,
-            value=float(_scenario_value(scenario, "late_payment_ratio", 0.12)),
-            step=0.01,
-        )
-        suspicious_transfer_ratio = st.slider(
-            "Suspicious transfer ratio",
-            min_value=0.0,
-            max_value=1.0,
-            value=float(_scenario_value(scenario, "suspicious_transfer_ratio", 0.08)),
-            step=0.01,
-        )
-        collateral_ratio = st.slider(
-            "Collateral ratio",
-            min_value=0.0,
-            max_value=2.0,
-            value=float(_scenario_value(scenario, "collateral_ratio", 0.65)),
+            value=float(_scenario_value(scenario, "planned_debt_reduction_pct", 0.20)),
             step=0.05,
+            format="%.2f",
+            help=FIELD_HELP["planned_debt_reduction_pct"],
         )
-        country_risk_score = st.slider(
-            "Country risk score",
+        forecast_plan_confidence_score = st.slider(
+            "Plan confidence score",
             min_value=0.0,
             max_value=1.0,
-            value=float(_scenario_value(scenario, "country_risk_score", 0.25)),
-            step=0.01,
+            value=float(_scenario_value(scenario, "forecast_plan_confidence_score", 0.55)),
+            step=0.05,
+            format="%.2f",
+            help=FIELD_HELP["forecast_plan_confidence_score"],
         )
+
+    st.subheader("Applicant Narrative")
+    narrative_left, narrative_middle, narrative_right = st.columns(3)
+    with narrative_left:
+        loan_purpose_context = st.text_area(
+            "Loan purpose",
+            value=_scenario_value(scenario, "loan_purpose_context", ""),
+            height=120,
+            help=FIELD_HELP["loan_purpose_context"],
+        )
+    with narrative_middle:
+        current_business_context = st.text_area(
+            "Current business context",
+            value=_scenario_value(scenario, "current_business_context", ""),
+            height=120,
+            help=FIELD_HELP["current_business_context"],
+        )
+    with narrative_right:
+        future_business_context = st.text_area(
+            "Future business context",
+            value=_scenario_value(scenario, "future_business_context", ""),
+            height=120,
+            help=FIELD_HELP["future_business_context"],
+        )
+
+    st.subheader("Executive Context")
+    context_left, context_middle, context_right = st.columns(3)
+    with context_left:
+        ceo_context = st.text_area(
+            "CEO context",
+            value=_scenario_value(scenario, "ceo_context", ""),
+            height=110,
+            help=FIELD_HELP["ceo_context"],
+        )
+    with context_middle:
+        cfo_context = st.text_area(
+            "CFO context",
+            value=_scenario_value(scenario, "cfo_context", ""),
+            height=110,
+            help=FIELD_HELP["cfo_context"],
+        )
+    with context_right:
+        coo_context = st.text_area(
+            "COO context",
+            value=_scenario_value(scenario, "coo_context", ""),
+            height=110,
+            help=FIELD_HELP["coo_context"],
+        )
+
+    with st.expander("Advanced Demo Signals", expanded=False):
+        demo_left, demo_right, demo_third = st.columns(3)
+        with demo_left:
+            late_payment_ratio = st.slider(
+                "Late payment ratio",
+                min_value=0.0,
+                max_value=1.0,
+                value=float(_scenario_value(scenario, "late_payment_ratio", 0.12)),
+                step=0.01,
+                help=FIELD_HELP["late_payment_ratio"],
+            )
+        with demo_right:
+            suspicious_transfer_ratio = st.slider(
+                "Suspicious transfer ratio",
+                min_value=0.0,
+                max_value=1.0,
+                value=float(_scenario_value(scenario, "suspicious_transfer_ratio", 0.08)),
+                step=0.01,
+                help=FIELD_HELP["suspicious_transfer_ratio"],
+            )
+        with demo_third:
+            country_risk_score = st.slider(
+                "Country risk score",
+                min_value=0.0,
+                max_value=1.0,
+                value=float(_scenario_value(scenario, "country_risk_score", 0.25)),
+                step=0.01,
+                help=FIELD_HELP["country_risk_score"],
+            )
 
     submitted = st.form_submit_button("Score Application", use_container_width=True)
 
 if submitted:
-    application = {
-        "application_id": f"SESSION-{len(st.session_state.portfolio_history) + 1:03d}",
-        "company_name": "Session Applicant" if scenario == "Custom application" else scenario,
-        "industry": industry,
-        "region": region,
-        "company_type": company_type,
-        "requested_amount": requested_amount,
-        "term_months": term_months,
-        "annual_revenue": annual_revenue,
-        "years_in_business": years_in_business,
-        "existing_debt": existing_debt,
-        "num_recent_loans": num_recent_loans,
-        "late_payment_ratio": late_payment_ratio,
-        "suspicious_transfer_ratio": suspicious_transfer_ratio,
-        "collateral_ratio": collateral_ratio,
-        "employees": employees,
-        "country_risk_score": country_risk_score,
-    }
-    prediction = st.session_state.model_bundle.score_one(application)
-    explanation = explain_prediction(
-        application,
-        prediction,
-        use_llm=st.session_state.use_llm_explanations,
-        model=st.session_state.explanation_model,
-    )
-    _store_prediction(application, prediction, explanation)
+    errors = []
+    requested_amount = _parse_money("Requested amount", requested_amount_text, errors, 10000, 5000000)
+    annual_revenue = _parse_money("Annual revenue", annual_revenue_text, errors, 50000, 50000000)
+    existing_debt = _parse_money("Existing debt", existing_debt_text, errors, 0, 20000000)
+    free_cash_flow = _parse_money("Free cash flow", free_cash_flow_text, errors, -20000000, 50000000)
+    monthly_burn_rate = _parse_money("Monthly burn rate", monthly_burn_rate_text, errors, 0, 5000000)
+    cash_flow_to_revenue_ratio = free_cash_flow / max(float(annual_revenue), 1)
+
+    if errors:
+        st.error(" ".join(errors))
+    else:
+        application = {
+            "application_id": f"SESSION-{len(st.session_state.portfolio_history) + 1:03d}",
+            "company_name": company_name or "Session Applicant",
+            "industry": industry,
+            "region": region,
+            "company_type": company_type,
+            "requested_amount": requested_amount,
+            "term_months": term_months,
+            "annual_revenue": annual_revenue,
+            "years_in_business": years_in_business,
+            "existing_debt": existing_debt,
+            "num_recent_loans": num_recent_loans,
+            "late_payment_ratio": late_payment_ratio,
+            "suspicious_transfer_ratio": suspicious_transfer_ratio,
+            "collateral_ratio": collateral_ratio,
+            "employees": employees,
+            "country_risk_score": country_risk_score,
+            "free_cash_flow": free_cash_flow,
+            "monthly_burn_rate": monthly_burn_rate,
+            "cash_flow_to_revenue_ratio": cash_flow_to_revenue_ratio,
+            "expected_runway_months": expected_runway_months,
+            "forecast_revenue_cagr": forecast_revenue_cagr,
+            "forecast_employee_cagr": forecast_employee_cagr,
+            "forecast_fcf_margin_year5": forecast_fcf_margin_year5,
+            "planned_debt_reduction_pct": planned_debt_reduction_pct,
+            "forecast_plan_confidence_score": forecast_plan_confidence_score,
+            "loan_purpose_context": loan_purpose_context,
+            "current_business_context": current_business_context,
+            "future_business_context": future_business_context,
+            "ceo_context": ceo_context,
+            "cfo_context": cfo_context,
+            "coo_context": coo_context,
+        }
+        prediction = st.session_state.model_bundle.score_one(application)
+        explanation = explain_prediction(
+            application,
+            prediction,
+            use_llm=st.session_state.use_llm_explanations,
+            model=st.session_state.explanation_model,
+        )
+        _store_prediction(application, prediction, explanation)
 
 if st.session_state.last_prediction:
     application = st.session_state.last_application
@@ -280,10 +563,81 @@ if st.session_state.last_prediction:
 
     st.subheader("Score Output")
     cols = st.columns(4)
-    cols[0].metric("Fraud Probability", f"{prediction['fraud_probability']:.1%}")
+    cols[0].metric("Fraud Probability", _ratio(prediction["fraud_probability"]))
     cols[1].metric("Risk Grade", prediction["grade"])
     cols[2].metric("Model Recommendation", prediction["decision"])
     cols[3].metric("Final Decision", final_decision)
+
+    cash_cols = st.columns(4)
+    cash_cols[0].metric("Free Cash Flow", _money(application.get("free_cash_flow", 0)))
+    cash_cols[1].metric("Monthly Burn", _money(application.get("monthly_burn_rate", 0)))
+    cash_cols[2].metric("Cash Flow / Revenue", _ratio(application.get("cash_flow_to_revenue_ratio", 0)))
+    cash_cols[3].metric("Expected Runway", format_months(application.get("expected_runway_months", 0)))
+
+    plan_cols = st.columns(5)
+    plan_cols[0].metric("Revenue CAGR", _ratio(application.get("forecast_revenue_cagr", 0)))
+    plan_cols[1].metric("Employee CAGR", _ratio(application.get("forecast_employee_cagr", 0)))
+    plan_cols[2].metric("Y5 FCF Margin", _ratio(application.get("forecast_fcf_margin_year5", 0)))
+    plan_cols[3].metric("Debt Reduction", _ratio(application.get("planned_debt_reduction_pct", 0)))
+    plan_cols[4].metric("Plan Confidence", _score(application.get("forecast_plan_confidence_score", 0)))
+    st.metric("Applicant Narrative", _context_completeness(application))
+
+    forecast = build_forecast_table(pd.DataFrame([application]))
+    display_forecast = forecast.rename(
+        columns={
+            "forecast_year": "Year",
+            "projected_revenue": "Projected revenue",
+            "projected_employees": "Projected employees",
+            "projected_free_cash_flow": "Projected FCF",
+            "projected_debt": "Projected debt",
+        }
+    )[["Year", "Projected revenue", "Projected employees", "Projected FCF", "Projected debt"]].copy()
+    for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
+        display_forecast[column] = display_forecast[column].apply(_money)
+    display_forecast["Projected employees"] = display_forecast["Projected employees"].apply(format_integer)
+    with st.expander("Generated Five-Year Forecast", expanded=True):
+        st.dataframe(display_forecast, use_container_width=True, hide_index=True)
+
+    executive_rows = [
+        {"Executive": "CEO", "Context": application.get("ceo_context", "")},
+        {"Executive": "CFO", "Context": application.get("cfo_context", "")},
+        {"Executive": "COO", "Context": application.get("coo_context", "")},
+    ]
+    executive_rows = [row for row in executive_rows if row["Context"]]
+    if executive_rows:
+        with st.expander("Executive Context", expanded=False):
+            st.dataframe(executive_rows, use_container_width=True, hide_index=True)
+
+    applicant_rows = [
+        {"Context": "Loan purpose", "Applicant input": application.get("loan_purpose_context", "")},
+        {"Context": "Current business", "Applicant input": application.get("current_business_context", "")},
+        {"Context": "Future business", "Applicant input": application.get("future_business_context", "")},
+    ]
+    applicant_rows = [row for row in applicant_rows if row["Applicant input"]]
+    if applicant_rows:
+        with st.expander("Applicant Narrative", expanded=False):
+            st.dataframe(applicant_rows, use_container_width=True, hide_index=True)
+
+    calculated = add_derived_features(pd.DataFrame([application]))
+    signals = calculated.iloc[0]
+    signal_rows = [
+        {"Signal": "Debt / revenue", "Value": _ratio(signals["debt_to_revenue_ratio"]), "What it tells the banker": "Debt pressure relative to business size."},
+        {"Signal": "Request / revenue", "Value": _ratio(signals["request_to_revenue_ratio"]), "What it tells the banker": "Requested exposure relative to reported revenue."},
+        {"Signal": "Loan velocity", "Value": _score(signals["loan_velocity_score"]), "What it tells the banker": "Recent borrowing intensity and possible credit stacking."},
+        {"Signal": "Payment stress", "Value": _score(signals["payment_stress_score"]), "What it tells the banker": "Late-payment and debt-pressure stress."},
+        {"Signal": "External financing pressure", "Value": _score(signals["external_financing_pressure"]), "What it tells the banker": "Fraud-triangle style financing pressure."},
+        {"Signal": "Financial distress", "Value": _score(signals["financial_distress_score"]), "What it tells the banker": "Combined debt, payment, collateral, and history stress."},
+        {"Signal": "Transaction anomaly", "Value": _score(signals["transaction_anomaly_score"]), "What it tells the banker": "Suspicious transfer and behavior pattern risk."},
+        {"Signal": "Cash-flow pressure", "Value": _score(signals["cash_flow_pressure_score"]), "What it tells the banker": "Negative FCF and burn-rate pressure."},
+        {"Signal": "Runway risk", "Value": _score(signals["runway_risk_score"]), "What it tells the banker": "Short-runway liquidity risk."},
+        {"Signal": "Cash conversion risk", "Value": _score(signals["cash_conversion_risk_score"]), "What it tells the banker": "Weak cash conversion relative to revenue."},
+        {"Signal": "Forecast aggressiveness", "Value": _score(signals["forecast_plan_aggressiveness_score"]), "What it tells the banker": "Ambition of the five-year plan relative to current signals."},
+        {"Signal": "Forecast execution risk", "Value": _score(signals["forecast_execution_risk_score"]), "What it tells the banker": "Risk that the forecast is hard to execute."},
+        {"Signal": "Hiring efficiency risk", "Value": _score(signals["forecast_hiring_efficiency_risk_score"]), "What it tells the banker": "Revenue growth that may be under-supported by headcount growth."},
+        {"Signal": "Debt service plan risk", "Value": _score(signals["forecast_debt_service_risk_score"]), "What it tells the banker": "Debt reduction strain under current cash-flow pressure."},
+    ]
+    with st.expander("Calculated Risk Signals", expanded=True):
+        st.dataframe(signal_rows, use_container_width=True, hide_index=True)
 
     if current_review:
         st.success(
@@ -335,6 +689,15 @@ if st.session_state.last_prediction:
     st.subheader("Similar Historical Applications")
     st.caption("Nearest synthetic portfolio cases by company profile, requested terms, and risk signals.")
     similar = similar_applications(st.session_state.model_bundle, applications, application)
-    st.dataframe(similar, use_container_width=True, hide_index=True)
+    display_similar = similar.copy()
+    for column in ["requested_amount", "free_cash_flow"]:
+        if column in display_similar:
+            display_similar[column] = display_similar[column].apply(_money)
+    if "expected_runway_months" in display_similar:
+        display_similar["expected_runway_months"] = display_similar["expected_runway_months"].apply(format_months)
+    for column in ["forecast_revenue_cagr", "fraud_probability"]:
+        if column in display_similar:
+            display_similar[column] = display_similar[column].apply(_ratio)
+    st.dataframe(display_similar, use_container_width=True, hide_index=True)
 else:
     st.info("Submit the form to score an application.")
