@@ -133,6 +133,41 @@ dimensions = [
         "Definition": "Synthetic banker-assessed confidence in the five-year plan from 0 to 1.",
         "Why it matters": "Lower confidence increases execution risk and supports manual review.",
     },
+    {
+        "Dimension": "Current and quick ratios",
+        "Definition": "Liquidity ratios summarizing current assets and liquid assets against current liabilities.",
+        "Why it matters": "Weak short-term liquidity can reveal stress not visible from revenue alone.",
+    },
+    {
+        "Dimension": "Receivables, payables, and inventory days",
+        "Definition": "Working-capital timing assumptions used to estimate cash conversion cycle.",
+        "Why it matters": "Long collection or inventory cycles can pressure cash flow and repayment capacity.",
+    },
+    {
+        "Dimension": "Document checklist",
+        "Definition": "Synthetic present/not-present status for financial statements, bank statements, tax return, KYB, and forecast support.",
+        "Why it matters": "Missing support can reduce audit readiness and increase manual review priority.",
+    },
+    {
+        "Dimension": "Document edits and late-stage changes",
+        "Definition": "Observed resubmission or change counts after initial intake.",
+        "Why it matters": "Repeated edits or late changes can indicate process anomalies or weak documentation quality.",
+    },
+    {
+        "Dimension": "Digital identity age",
+        "Definition": "Age of email domain, website, and primary business bank account in months.",
+        "Why it matters": "Very young identity markers can increase KYB verification risk.",
+    },
+    {
+        "Dimension": "Mismatch and duplicate signals",
+        "Definition": "Synthetic scores for location mismatch, duplicate contact details, and shared identifiers.",
+        "Why it matters": "Shared or inconsistent identifiers can indicate entity-resolution or application-channel risk.",
+    },
+    {
+        "Dimension": "Related-party and counterparty signals",
+        "Definition": "Synthetic scores for related-party exposure and counterparty concentration.",
+        "Why it matters": "Entity complexity and concentrated counterparties can require deeper network review.",
+    },
 ]
 
 st.subheader("Scoring Dimensions")
@@ -204,6 +239,51 @@ derived_dimensions = [
         "Signal": "Forecast debt service risk score",
         "Definition": "Measures debt reduction ambition under current debt and cash-flow pressure.",
         "Why it matters": "Debt plans may be less credible when cash flow is weak.",
+    },
+    {
+        "Signal": "Cash conversion cycle days",
+        "Definition": "Receivables days plus inventory days minus payables days.",
+        "Why it matters": "Long cycles can create working-capital strain and financing pressure.",
+    },
+    {
+        "Signal": "Document completeness score",
+        "Definition": "Share of expected application documents marked present.",
+        "Why it matters": "Completeness helps analysts separate supported cases from cases requiring document follow-up.",
+    },
+    {
+        "Signal": "Document quality risk score",
+        "Definition": "Combines missing documents, document edits, late-stage changes, and process deviation.",
+        "Why it matters": "Weak documentation quality can reduce auditability and increase review burden.",
+    },
+    {
+        "Signal": "Process integrity risk score",
+        "Definition": "Combines workflow deviation, late-stage changes, and document edit behavior.",
+        "Why it matters": "Business-process fraud literature emphasizes deviations from normal review flows.",
+    },
+    {
+        "Signal": "Identity verification risk score",
+        "Definition": "Combines digital footprint age, bank-account age, location mismatch, and duplicate contact risk.",
+        "Why it matters": "Application-channel and KYB signals help identify cases needing deeper verification.",
+    },
+    {
+        "Signal": "Working-capital pressure score",
+        "Definition": "Combines current ratio, quick ratio, cash conversion cycle, and receivables pressure.",
+        "Why it matters": "Adds liquidity depth beyond free cash flow and runway.",
+    },
+    {
+        "Signal": "Financial statement anomaly score",
+        "Definition": "Combines revenue/cash-flow mismatch, receivables pressure, FCF improvement need, and document quality.",
+        "Why it matters": "Financial-statement fraud research supports ratio and anomaly checks around reported performance.",
+    },
+    {
+        "Signal": "Related-party network risk score",
+        "Definition": "Combines related-party exposure, counterparty concentration, shared identifiers, and suspicious transfer behavior.",
+        "Why it matters": "Network-style review can reveal connected-entity or concentrated exposure risk.",
+    },
+    {
+        "Signal": "Narrative consistency risk score",
+        "Definition": "Flags contradictions between applicant narrative, document status, and financial signals.",
+        "Why it matters": "A credible lending review compares management context with observable evidence.",
     },
 ]
 st.dataframe(pd.DataFrame(derived_dimensions), use_container_width=True, hide_index=True)

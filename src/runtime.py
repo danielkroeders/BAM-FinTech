@@ -1,6 +1,6 @@
 import streamlit as st
 
-from src.data_pipeline import ensure_seed_data
+from src.data_pipeline import BASE_NUMERIC_COLUMNS, ensure_seed_data
 from src.modeling import train_model
 
 
@@ -15,11 +15,29 @@ def get_model_bundle():
     return train_model(seed_data["applications"])
 
 
+def _seed_data_has_current_schema(seed_data):
+    applications = seed_data.get("applications") if isinstance(seed_data, dict) else None
+    if applications is None:
+        return False
+    return all(column in applications.columns for column in BASE_NUMERIC_COLUMNS)
+
+
+def _model_bundle_has_current_metrics(model_bundle):
+    required_metrics = {
+        "precision_at_5pct",
+        "precision_at_10pct",
+        "precision_at_20pct",
+        "estimated_total_error_cost",
+    }
+    metrics = getattr(model_bundle, "metrics", {})
+    return all(key in metrics for key in required_metrics)
+
+
 def bootstrap_state():
-    if "seed_data" not in st.session_state:
-        st.session_state.seed_data = get_seed_data()
-    if "model_bundle" not in st.session_state:
-        st.session_state.model_bundle = get_model_bundle()
+    if "seed_data" not in st.session_state or not _seed_data_has_current_schema(st.session_state.seed_data):
+        st.session_state.seed_data = ensure_seed_data()
+    if "model_bundle" not in st.session_state or not _model_bundle_has_current_metrics(st.session_state.model_bundle):
+        st.session_state.model_bundle = train_model(st.session_state.seed_data["applications"])
     if "portfolio_history" not in st.session_state:
         st.session_state.portfolio_history = []
     if "review_history" not in st.session_state:

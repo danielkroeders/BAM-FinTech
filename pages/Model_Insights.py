@@ -1,7 +1,8 @@
 import pandas as pd
 import streamlit as st
 
-from src.formatting import format_score
+from src.data_pipeline import NUMERIC_COLUMNS, add_derived_features
+from src.formatting import format_currency, format_score
 from src.runtime import bootstrap_state
 from src.ui import render_sidebar
 
@@ -12,16 +13,98 @@ render_sidebar()
 
 bundle = st.session_state.model_bundle
 metrics = bundle.metrics
+applications = add_derived_features(st.session_state.seed_data["applications"])
 
 st.title("Model Insights")
 st.caption("Supervised fraud model performance, grading policy, and research-backed signal design.")
 
-metric_keys = ["accuracy", "balanced_accuracy", "precision", "recall", "f1", "roc_auc", "average_precision", "mcc"]
+metric_catalog = {
+    "Accuracy": "accuracy",
+    "Balanced Accuracy": "balanced_accuracy",
+    "Precision": "precision",
+    "Recall": "recall",
+    "F1": "f1",
+    "ROC-AUC": "roc_auc",
+    "Average Precision": "average_precision",
+    "MCC": "mcc",
+    "Precision At Top 5%": "precision_at_5pct",
+    "Precision At Top 10%": "precision_at_10pct",
+    "Precision At Top 20%": "precision_at_20pct",
+    "False Positive Rate": "false_positive_rate",
+    "False Negative Rate": "false_negative_rate",
+    "Predicted Review Rate": "predicted_review_rate",
+    "Estimated Review Cost": "estimated_review_cost",
+    "Estimated False Positive Cost": "estimated_false_positive_cost",
+    "Estimated False Negative Cost": "estimated_false_negative_cost",
+    "Estimated Total Error Cost": "estimated_total_error_cost",
+}
+default_metric_labels = [
+    "Balanced Accuracy",
+    "Precision",
+    "Recall",
+    "ROC-AUC",
+    "Average Precision",
+    "MCC",
+    "Precision At Top 10%",
+    "Estimated Total Error Cost",
+]
+selected_metric_labels = st.multiselect(
+    "Visible metrics",
+    list(metric_catalog.keys()),
+    default=default_metric_labels,
+)
 cols = st.columns(4)
-for index, key in enumerate(metric_keys):
+for index, label in enumerate(selected_metric_labels):
+    key = metric_catalog[label]
     col = cols[index % 4]
-    col.metric(key.replace("_", " ").title(), format_score(metrics[key], 3))
-st.metric("Precision At Top 10% Review Queue", format_score(metrics["precision_at_10pct"], 3))
+    value = format_currency(metrics[key]) if key.startswith("estimated_") else format_score(metrics[key], 3)
+    col.metric(label, value)
+
+queue_rows = pd.DataFrame(
+    [
+        {"Review queue": "Top 5%", "Precision": format_score(metrics["precision_at_5pct"], 3)},
+        {"Review queue": "Top 10%", "Precision": format_score(metrics["precision_at_10pct"], 3)},
+        {"Review queue": "Top 20%", "Precision": format_score(metrics["precision_at_20pct"], 3)},
+    ]
+)
+st.dataframe(queue_rows, use_container_width=True, hide_index=True)
+
+st.subheader("Custom Seed Metric")
+metric_left, metric_middle, metric_right, metric_extra = st.columns(4)
+numeric_options = [column for column in NUMERIC_COLUMNS if column in applications.columns]
+with metric_left:
+    custom_metric_name = st.text_input("Metric name", value="Custom portfolio metric")
+with metric_middle:
+    numerator_column = st.selectbox(
+        "Numerator",
+        numeric_options,
+        index=numeric_options.index("requested_amount") if "requested_amount" in numeric_options else 0,
+    )
+with metric_right:
+    denominator_options = ["None"] + numeric_options
+    denominator_column = st.selectbox(
+        "Denominator",
+        denominator_options,
+        index=denominator_options.index("annual_revenue") if "annual_revenue" in denominator_options else 0,
+    )
+with metric_extra:
+    aggregation = st.selectbox("Aggregation", ["Average", "Median", "Sum", "P90"])
+
+metric_series = pd.to_numeric(applications[numerator_column], errors="coerce")
+if denominator_column != "None":
+    denominator = pd.to_numeric(applications[denominator_column], errors="coerce").replace(0, pd.NA)
+    metric_series = metric_series / denominator
+metric_series = metric_series.dropna()
+if aggregation == "Median":
+    custom_value = metric_series.median()
+elif aggregation == "Sum":
+    custom_value = metric_series.sum()
+elif aggregation == "P90":
+    custom_value = metric_series.quantile(0.90)
+else:
+    custom_value = metric_series.mean()
+money_like = denominator_column == "None" and any(token in numerator_column for token in ["amount", "revenue", "debt", "cash", "burn"])
+st.metric(custom_metric_name or "Custom metric", format_currency(custom_value) if money_like else format_score(custom_value, 3))
 
 left, right = st.columns(2)
 with left:
@@ -45,6 +128,33 @@ with right:
         ]
     )
     st.dataframe(thresholds, use_container_width=True, hide_index=True)
+
+st.subheader("Governance Notes")
+governance_rows = pd.DataFrame(
+    [
+        {
+            "Area": "Data lineage",
+            "MVP control": "Synthetic seed applications are generated locally and enriched with derived ratios, verification metadata, and review outcomes.",
+        },
+        {
+            "Area": "Human review",
+            "MVP control": "C-D cases route to manual review; E-F cases require compliance-style review before final action.",
+        },
+        {
+            "Area": "Audit trail",
+            "MVP control": "Case review captures final decision, analyst action, notes, supervisor mailbox, and manual score adjustment status.",
+        },
+        {
+            "Area": "Threshold policy",
+            "MVP control": "A-F grades are fixed demo thresholds over fraud probability and are displayed next to model metrics.",
+        },
+        {
+            "Area": "Model limitations",
+            "MVP control": "The app is decision support on synthetic data; outputs are not legal, credit, or compliance determinations.",
+        },
+    ]
+)
+st.dataframe(governance_rows, use_container_width=True, hide_index=True)
 
 st.subheader("Top Feature Importances")
 importance_display = bundle.feature_importance.head(20).copy()
@@ -81,6 +191,15 @@ derived_signals = pd.DataFrame(
         {"Signal": "forecast_execution_risk_score", "Purpose": "Combines plan ambition, liquidity risk, and confidence into a forecast execution signal."},
         {"Signal": "forecast_hiring_efficiency_risk_score", "Purpose": "Measures whether headcount growth supports projected revenue growth."},
         {"Signal": "forecast_debt_service_risk_score", "Purpose": "Measures whether debt reduction plans are strained by cash-flow pressure."},
+        {"Signal": "cash_conversion_cycle_days", "Purpose": "Combines receivables, inventory, and payables timing into a working-capital pressure view."},
+        {"Signal": "document_completeness_score", "Purpose": "Measures whether the expected application package is present without requiring actual file upload."},
+        {"Signal": "document_quality_risk_score", "Purpose": "Flags missing documents, repeated edits, and late-stage changes."},
+        {"Signal": "process_integrity_risk_score", "Purpose": "Captures workflow deviations and unusual resubmission behavior."},
+        {"Signal": "identity_verification_risk_score", "Purpose": "Summarizes digital footprint age, bank-account age, and mismatch signals."},
+        {"Signal": "working_capital_pressure_score", "Purpose": "Combines current ratio, quick ratio, cash conversion cycle, and receivables pressure."},
+        {"Signal": "financial_statement_anomaly_score", "Purpose": "Captures revenue/cash-flow mismatch, receivables pressure, and unsupported margin improvement."},
+        {"Signal": "related_party_network_risk_score", "Purpose": "Summarizes related-party exposure, concentrated counterparties, and shared identifiers."},
+        {"Signal": "narrative_consistency_risk_score", "Purpose": "Flags contradictions between applicant context, document status, and financial signals."},
     ]
 )
 st.dataframe(derived_signals, use_container_width=True, hide_index=True)

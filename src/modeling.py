@@ -94,7 +94,16 @@ def train_model(applications):
         "roc_auc": roc_auc_score(y_test, probabilities),
         "average_precision": average_precision_score(y_test, probabilities),
         "mcc": matthews_corrcoef(y_test, predictions),
+        "precision_at_5pct": _precision_at_top_percent(y_test, probabilities, 0.05),
         "precision_at_10pct": _precision_at_top_percent(y_test, probabilities),
+        "precision_at_20pct": _precision_at_top_percent(y_test, probabilities, 0.20),
+        "false_positive_rate": fp / max(fp + tn, 1),
+        "false_negative_rate": fn / max(fn + tp, 1),
+        "predicted_review_rate": float((predictions == 1).mean()),
+        "estimated_review_cost": float((tp + fp) * 150),
+        "estimated_false_positive_cost": float(fp * 500),
+        "estimated_false_negative_cost": float(fn * 25000),
+        "estimated_total_error_cost": float((fp * 500) + (fn * 25000)),
         "tn": int(tn),
         "fp": int(fp),
         "fn": int(fn),
@@ -181,6 +190,22 @@ def rule_flags(application):
         flags.append("Revenue growth plan may be under-supported by employee growth.")
     if float(derived["forecast_debt_service_risk_score"]) >= 0.45:
         flags.append("Debt reduction plan may be strained by current cash-flow pressure.")
+    if float(derived["document_completeness_score"]) < 0.80:
+        flags.append("Document checklist is incomplete for the requested review.")
+    if float(derived["document_quality_risk_score"]) >= 0.45:
+        flags.append("Document quality risk is elevated due to missing items, edits, or late changes.")
+    if float(derived["process_integrity_risk_score"]) >= 0.45:
+        flags.append("Application process integrity risk is elevated.")
+    if float(derived["identity_verification_risk_score"]) >= 0.45:
+        flags.append("Digital identity or KYB verification signals need closer review.")
+    if float(derived["working_capital_pressure_score"]) >= 0.50:
+        flags.append("Working-capital pressure is elevated based on liquidity ratios and cash conversion cycle.")
+    if float(derived["financial_statement_anomaly_score"]) >= 0.50:
+        flags.append("Financial statement anomaly score is elevated.")
+    if float(derived["related_party_network_risk_score"]) >= 0.45:
+        flags.append("Related-party or counterparty network risk is elevated.")
+    if float(derived["narrative_consistency_risk_score"]) >= 0.45:
+        flags.append("Applicant narrative may be inconsistent with financial or document signals.")
     return flags
 
 

@@ -29,6 +29,8 @@ def _feature_group(feature_name):
 
 def _format_value(application, feature):
     value = application.get(feature, "")
+    if feature.endswith("_uploaded"):
+        return "Yes" if float(value or 0) >= 0.5 else "No"
     if feature in {"requested_amount", "annual_revenue", "existing_debt", "free_cash_flow", "monthly_burn_rate"}:
         return format_currency(value)
     if feature in {
@@ -46,8 +48,10 @@ def _format_value(application, feature):
         "planned_debt_reduction_pct",
     }:
         return format_percent(value)
-    if feature == "expected_runway_months":
+    if feature in {"expected_runway_months", "email_domain_age_months", "website_age_months", "bank_account_age_months"}:
         return format_months(value, 1)
+    if feature in {"receivables_days", "payables_days", "inventory_days", "cash_conversion_cycle_days"}:
+        return f"{format_score(value, 0)} days"
     if feature.endswith("_score") or feature == "external_financing_pressure":
         return format_score(value)
     if isinstance(value, float):

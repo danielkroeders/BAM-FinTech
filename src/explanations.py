@@ -1,7 +1,9 @@
 import os
 
+import pandas as pd
 import streamlit as st
 
+from src.data_pipeline import add_derived_features
 from src.formatting import format_currency, format_percent
 
 
@@ -16,6 +18,7 @@ def _api_key():
 
 def deterministic_explanation(application, prediction):
     probability = prediction["fraud_probability"]
+    derived = add_derived_features(pd.DataFrame([application])).iloc[0]
     flags = prediction.get("flags", [])
     amount = float(application.get("requested_amount", 0))
     drivers = "\n".join(f"- {flag}" for flag in flags) if flags else "- No elevated deterministic risk flags were triggered."
@@ -32,6 +35,12 @@ def deterministic_explanation(application, prediction):
         mitigants.append("Expected runway is at least 12 months.")
     if float(application.get("forecast_plan_confidence_score", 0)) >= 0.7:
         mitigants.append("Five-year plan confidence is relatively strong.")
+    if float(derived.get("document_completeness_score", 0)) >= 0.95:
+        mitigants.append("Expected application documents are complete.")
+    if float(application.get("current_ratio", 0)) >= 1.5 and float(application.get("quick_ratio", 0)) >= 1.0:
+        mitigants.append("Working-capital ratios are relatively healthy.")
+    if float(derived.get("identity_verification_risk_score", 1)) < 0.20:
+        mitigants.append("Digital identity and KYB verification signals are low risk.")
     mitigant_text = "\n".join(f"- {item}" for item in mitigants) if mitigants else "- No major mitigating factor was identified in the deterministic checks."
     next_step = {
         "Approve": "Proceed with standard analyst sign-off and retain the case summary.",

@@ -70,3 +70,19 @@ These measures are useful because fraud datasets are often imbalanced, and a dem
 Use this language when discussing the research grounding:
 
 > The MVP does not claim production-grade fraud detection. It uses synthetic data and literature-inspired signals to demonstrate how a lender could combine financial pressure ratios, transaction anomalies, explainability, manual review governance, and audit trails in a responsible decision-support workflow.
+
+## Additional Research-Backed MVP Extensions
+
+The newer papers in `docs/` expand the demo beyond classic transaction and ratio signals. The app now treats these as simple synthetic intake facts rather than requiring actual uploads.
+
+| Source theme | Implemented demo signal |
+| --- | --- |
+| Business-process fraud metrics | Document edit count, late-stage changes, process deviation score, document quality risk, and process integrity risk. |
+| Liquidity and working-capital analysis | Current ratio, quick ratio, receivables days, payables days, inventory days, cash conversion cycle, and working-capital pressure score. |
+| E-commerce and application-channel fraud | Email domain age, website age, bank-account age, location mismatch, duplicate contact score, and identity verification risk. |
+| Financial-statement fraud analytics | Revenue/cash-flow mismatch, receivables pressure, FCF improvement need, and financial statement anomaly score. |
+| Network and related-party review | Related-party exposure, counterparty concentration, shared identifiers, and related-party network risk. |
+| Trust, auditability, and human review | Document completeness, case summaries, manual final decision, review trail, and model-insight signal definitions. |
+| Narrative consistency | CEO/CFO/COO/applicant context is compared with financial, forecast, and document signals through a narrative consistency risk score. |
+
+These additions are intentionally lightweight for the MVP: the banker selects whether expected documents are already present, and the model uses synthetic metadata as if the documents had been reviewed upstream.
