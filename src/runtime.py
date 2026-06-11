@@ -22,6 +22,13 @@ def _seed_data_has_current_schema(seed_data):
     return all(column in applications.columns for column in BASE_NUMERIC_COLUMNS)
 
 
+def _seed_data_has_named_companies(seed_data):
+    applications = seed_data.get("applications") if isinstance(seed_data, dict) else None
+    if applications is None or "company_name" not in applications:
+        return False
+    return not applications["company_name"].astype(str).str.match(r"^Company\s+\d+$").any()
+
+
 def _model_bundle_has_current_metrics(model_bundle):
     required_metrics = {
         "precision_at_5pct",
@@ -34,7 +41,11 @@ def _model_bundle_has_current_metrics(model_bundle):
 
 
 def bootstrap_state():
-    if "seed_data" not in st.session_state or not _seed_data_has_current_schema(st.session_state.seed_data):
+    if (
+        "seed_data" not in st.session_state
+        or not _seed_data_has_current_schema(st.session_state.seed_data)
+        or not _seed_data_has_named_companies(st.session_state.seed_data)
+    ):
         st.session_state.seed_data = ensure_seed_data()
     if "model_bundle" not in st.session_state or not _model_bundle_has_current_metrics(st.session_state.model_bundle):
         st.session_state.model_bundle = train_model(st.session_state.seed_data["applications"])
@@ -60,3 +71,7 @@ def bootstrap_state():
         st.session_state.explanation_model = "gpt-4.1-mini"
     if "investor_demo_mode" not in st.session_state:
         st.session_state.investor_demo_mode = False
+    if "active_queue_application" not in st.session_state:
+        st.session_state.active_queue_application = None
+    if "active_intake_source" not in st.session_state:
+        st.session_state.active_intake_source = "Manual entry"

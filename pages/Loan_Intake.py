@@ -26,6 +26,7 @@ from src.formatting import (
 from src.runtime import bootstrap_state
 from src.ui import render_sidebar
 from src.workbench_features import (
+    build_application_queue,
     credit_memo,
     data_source_badges,
     decision_timeline,
@@ -185,6 +186,45 @@ st.markdown(
         font-size: 0.84rem;
         line-height: 1.45;
     }
+    .queue-panel {
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 8px;
+        margin: 0.35rem 0 1rem;
+        padding: 0.9rem 1rem;
+        background: rgba(15, 23, 42, 0.16);
+    }
+    .queue-panel-title {
+        color: #f8fafc;
+        font-size: 1rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 0.25rem;
+    }
+    .queue-panel-copy {
+        color: rgba(226, 232, 240, 0.78);
+        font-size: 0.86rem;
+        line-height: 1.45;
+        margin-bottom: 0.7rem;
+    }
+    .active-case-card {
+        border: 1px solid rgba(34, 197, 94, 0.28);
+        border-left: 5px solid #22c55e;
+        border-radius: 8px;
+        margin: 0.35rem 0 1rem;
+        padding: 0.8rem 1rem;
+        background: rgba(22, 101, 52, 0.14);
+    }
+    .active-case-title {
+        color: #f8fafc;
+        font-size: 0.98rem;
+        font-weight: 800;
+        margin-bottom: 0.2rem;
+    }
+    .active-case-copy {
+        color: rgba(226, 232, 240, 0.84);
+        font-size: 0.84rem;
+        line-height: 1.4;
+    }
     @media (max-width: 900px) {
         .score-strip {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -262,8 +302,46 @@ FIELD_HELP = {
 
 
 def _scenario_value(scenario, key, default):
+    active_values = st.session_state.get("active_queue_application") or {}
+    if key in active_values and pd.notna(active_values.get(key)):
+        return active_values.get(key)
     values = DEMO_SCENARIOS.get(scenario) or {}
     return values.get(key, default)
+
+
+def _clear_scored_case():
+    st.session_state.last_application = None
+    st.session_state.last_prediction = None
+    st.session_state.last_explanation = None
+    st.session_state.last_review = None
+    st.session_state.last_email_link = None
+    st.session_state.show_review_dialog = False
+
+
+def _activate_intake_case(application, source):
+    st.session_state.active_queue_application = dict(application)
+    st.session_state.active_intake_source = source
+    st.session_state.loan_demo_scenario = "Custom application"
+    _clear_scored_case()
+    rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+    if rerun:
+        rerun()
+
+
+def _clear_active_intake_case():
+    st.session_state.active_queue_application = None
+    st.session_state.active_intake_source = "Manual entry"
+    _clear_scored_case()
+    rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+    if rerun:
+        rerun()
+
+
+def _demo_application(scenario_name):
+    values = dict(DEMO_SCENARIOS.get(scenario_name) or {})
+    values["application_id"] = "DEMO-A2M-001" if scenario_name == "A2M Logistics Loan" else f"DEMO-{scenario_name[:8].upper()}"
+    values["company_name"] = "A2M Logistics" if scenario_name == "A2M Logistics Loan" else scenario_name
+    return values
 
 
 def _money(value):
@@ -591,9 +669,9 @@ if hasattr(st, "dialog"):
 header_left, header_right = st.columns([3, 1])
 with header_left:
     st.title("Loan Intake")
-    st.caption("Score a single SME loan application for credit, pricing, fraud, and anomaly risk.")
+    st.caption("Analyst workspace for starting, scoring, and reviewing incoming SME loan applications.")
 with header_right:
-    scenario = st.selectbox("Demo generator", list(DEMO_SCENARIOS.keys()), key="loan_demo_scenario")
+    st.metric("Active analyst", "Ms. Cooper")
 
 if st.session_state.investor_demo_mode:
     st.markdown(
@@ -601,17 +679,109 @@ if st.session_state.investor_demo_mode:
         <div class="demo-rail">
             <div class="demo-rail-title">Investor Demo Flow</div>
             <div class="demo-rail-steps">
-                1. Select A2M Logistics Loan or another scenario.
-                2. Submit the application and read the compact score output.
-                3. Review data readiness, recommended terms, monitoring, and model confidence.
-                4. Open Case Review, save a final decision, then generate the credit memo.
+                1. Ms. Cooper opens her analyst queue.
+                2. She starts the next application and the intake file loads below.
+                3. She scores the case, reviews terms, monitoring, confidence, and data readiness.
+                4. She saves a final decision and generates the credit memo.
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+st.subheader("Analyst Queue")
+queue = build_application_queue(st.session_state.model_bundle, applications)
+queue_mine = queue[queue["assigned_analyst"].eq("Ms. Cooper")].copy()
+if queue_mine.empty:
+    queue_mine = queue.head(12).copy()
+
+queue_metrics = st.columns(4)
+queue_metrics[0].metric("Assigned to Ms. Cooper", format_integer(len(queue_mine)))
+queue_metrics[1].metric("Same-day SLA", format_integer((queue_mine["sla"] == "Same day").sum()))
+queue_metrics[2].metric("Manual / Compliance", format_integer(queue_mine["queue_status"].isin(["Manual review", "Compliance review"]).sum()))
+queue_metrics[3].metric("Missing Docs", format_integer((queue_mine["missing_documents"] > 0).sum()))
+
+queue_display = queue_mine[
+    [
+        "application_id",
+        "company_name",
+        "requested_amount",
+        "fraud_probability",
+        "grade",
+        "queue_status",
+        "missing_documents",
+        "sla",
+    ]
+].head(8).copy()
+queue_display["requested_amount"] = queue_display["requested_amount"].apply(_money)
+queue_display["fraud_probability"] = queue_display["fraud_probability"].apply(_ratio)
+queue_display = queue_display.rename(
+    columns={
+        "application_id": "Application ID",
+        "company_name": "Company",
+        "requested_amount": "Requested amount",
+        "fraud_probability": "Application risk score",
+        "grade": "Grade",
+        "queue_status": "Queue status",
+        "missing_documents": "Missing docs",
+        "sla": "SLA",
+    }
+)
+
+with st.container():
+    st.markdown(
+        """
+        <div class="queue-panel">
+            <div class="queue-panel-title">Start Work From The Queue</div>
+            <div class="queue-panel-copy">Select an assigned application, start the intake review, and the working file below loads with the applicant data already present.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.dataframe(queue_display, use_container_width=True, hide_index=True)
+    queue_labels = [
+        f"{row.application_id} - {row.company_name} | Grade {row.grade} | {row.queue_status}"
+        for row in queue_mine.head(20).itertuples()
+    ]
+    queue_pick = st.selectbox("Next application", queue_labels)
+    selected_application_id = queue_pick.split(" - ", 1)[0]
+    selected_queue_row = queue_mine[queue_mine["application_id"] == selected_application_id].iloc[0].to_dict()
+    queue_actions = st.columns([1, 1, 1, 2])
+    if queue_actions[0].button("Start Selected Case", use_container_width=True):
+        _activate_intake_case(selected_queue_row, "Analyst queue")
+    if queue_actions[1].button("Start A2M Demo Case", use_container_width=True):
+        _activate_intake_case(_demo_application("A2M Logistics Loan"), "Investor demo case")
+    if queue_actions[2].button("Manual Entry", use_container_width=True):
+        _clear_active_intake_case()
+
+active_case = st.session_state.get("active_queue_application")
+if active_case:
+    st.markdown(
+        f"""
+        <div class="active-case-card">
+            <div class="active-case-title">Active intake: {escape(str(active_case.get("application_id", "Session")))} - {escape(str(active_case.get("company_name", "Applicant")))}</div>
+            <div class="active-case-copy">Source: {escape(st.session_state.get("active_intake_source", "Manual entry"))}. Applicant data is loaded into the working file below; Ms. Cooper can adjust fields before scoring.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+else:
+    st.info("No active intake case yet. Start a queued case above or use Manual Entry to build a custom applicant.")
+
+with st.expander("Demo tools", expanded=False):
+    scenario = st.selectbox("Demo generator", list(DEMO_SCENARIOS.keys()), key="loan_demo_scenario")
+    if st.button("Load selected demo generator", use_container_width=True):
+        if scenario == "Custom application":
+            _clear_active_intake_case()
+        else:
+            _activate_intake_case(_demo_application(scenario), "Demo generator")
+
 scenario_values = DEMO_SCENARIOS.get(scenario) or {}
+company_name_default = _scenario_value(
+    scenario,
+    "company_name",
+    "Session Applicant" if scenario == "Custom application" else scenario,
+)
 
 with st.form("loan_intake_form"):
     st.subheader("Company Profile")
@@ -619,7 +789,7 @@ with st.form("loan_intake_form"):
     with profile_left:
         company_name = st.text_input(
             "Company name",
-            value="Session Applicant" if scenario == "Custom application" else scenario,
+            value=company_name_default,
             help=FIELD_HELP["company_name"],
         )
         industry_default = _scenario_value(scenario, "industry", "Construction")
@@ -1061,6 +1231,9 @@ with st.form("loan_intake_form"):
 
 if submitted:
     errors = []
+    active_application_id = None
+    if st.session_state.get("active_queue_application"):
+        active_application_id = st.session_state.active_queue_application.get("application_id")
     requested_amount = _parse_money("Requested amount", requested_amount_text, errors, 10000, 5000000)
     annual_revenue = _parse_money("Annual revenue", annual_revenue_text, errors, 50000, 50000000)
     existing_debt = _parse_money("Existing debt", existing_debt_text, errors, 0, 20000000)
@@ -1073,7 +1246,7 @@ if submitted:
         st.error(" ".join(errors))
     else:
         application = {
-            "application_id": f"SESSION-{len(st.session_state.portfolio_history) + 1:03d}",
+            "application_id": active_application_id or f"SESSION-{len(st.session_state.portfolio_history) + 1:03d}",
             "company_name": company_name or "Session Applicant",
             "industry": industry,
             "region": region,

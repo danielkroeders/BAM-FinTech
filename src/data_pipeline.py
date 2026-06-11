@@ -94,6 +94,77 @@ CATEGORICAL_COLUMNS = ["industry", "region", "company_type"]
 TARGET_COLUMN = "is_fraud"
 FORECAST_YEARS = range(1, 6)
 
+NAME_PREFIXES = [
+    "Alder",
+    "Atlas",
+    "Brightline",
+    "Cedar",
+    "Clearwater",
+    "Cobalt",
+    "Evergreen",
+    "Fairway",
+    "Granite",
+    "Harbor",
+    "Keystone",
+    "Linden",
+    "Meridian",
+    "Northstar",
+    "Oakbridge",
+    "Pioneer",
+    "Redwood",
+    "Rivergate",
+    "Silverline",
+    "Summit",
+    "Terranova",
+    "Urbanwell",
+    "Vertex",
+    "Westhaven",
+]
+
+NAME_ROOTS = [
+    "Anchor",
+    "Bridge",
+    "Crown",
+    "Delta",
+    "Forge",
+    "Garden",
+    "Horizon",
+    "Juniper",
+    "Market",
+    "Metro",
+    "Nexus",
+    "Orchard",
+    "Prime",
+    "Radius",
+    "Signal",
+    "Stone",
+    "Tandem",
+    "Union",
+    "Vantage",
+    "Vista",
+]
+
+INDUSTRY_NAME_TERMS = {
+    "Construction": ["Build", "Works", "Projects", "Contracting"],
+    "Healthcare": ["Care", "Health", "Clinics", "Medica"],
+    "Logistics": ["Logistics", "Freight", "Transport", "Supply"],
+    "Manufacturing": ["Manufacturing", "Fabrication", "Industries", "Makers"],
+    "Retail": ["Retail", "Stores", "Commerce", "Market"],
+    "Software": ["Software", "Digital", "Systems", "Cloud"],
+    "Wholesale": ["Wholesale", "Trading", "Distribution", "Supply"],
+}
+
+NAME_SUFFIXES = [
+    "Group",
+    "Partners",
+    "Solutions",
+    "Services",
+    "Holdings",
+    "Ventures",
+    "Collective",
+    "Enterprises",
+]
+
 
 def _sigmoid(value):
     return 1 / (1 + np.exp(-value))
@@ -111,6 +182,18 @@ def _combined_text(frame, columns):
         if column in frame:
             text = text + " " + frame[column].fillna("").astype(str)
     return text.str.lower()
+
+
+def _company_names(industries):
+    names = []
+    for index, industry in enumerate(industries):
+        prefix = NAME_PREFIXES[index % len(NAME_PREFIXES)]
+        root = NAME_ROOTS[(index // len(NAME_PREFIXES)) % len(NAME_ROOTS)]
+        suffix = NAME_SUFFIXES[(index // (len(NAME_PREFIXES) * len(NAME_ROOTS))) % len(NAME_SUFFIXES)]
+        industry_terms = INDUSTRY_NAME_TERMS.get(str(industry), ["Business", "Services", "Capital", "Group"])
+        industry_term = industry_terms[index % len(industry_terms)]
+        names.append(f"{prefix} {root} {industry_term} {suffix}")
+    return names
 
 
 def _annual_debt_service(principal, annual_rate, term_months):
@@ -678,7 +761,7 @@ def generate_seed_data(rows=1200, seed=42):
         {
             "application_id": [f"APP-{i:05d}" for i in range(1, rows + 1)],
             "company_id": [f"CO-{i:05d}" for i in range(1, rows + 1)],
-            "company_name": [f"Company {i:05d}" for i in range(1, rows + 1)],
+            "company_name": _company_names(industry),
             "industry": industry,
             "region": region,
             "company_type": company_type,
@@ -856,9 +939,13 @@ def ensure_seed_data():
     required = ["applications.csv", "company_profiles.csv", "cash_flows.csv", "forecasts.csv", "transactions.csv", "decisions.csv"]
     missing_files = not SEED_DIR.exists() or any(not (SEED_DIR / name).exists() for name in required)
     missing_columns = False
+    placeholder_names = False
     if not missing_files:
-        application_columns = set(pd.read_csv(SEED_DIR / "applications.csv", nrows=1).columns)
+        sample_applications = pd.read_csv(SEED_DIR / "applications.csv", nrows=25)
+        application_columns = set(sample_applications.columns)
         missing_columns = any(column not in application_columns for column in BASE_NUMERIC_COLUMNS)
-    if missing_files or missing_columns:
+        if "company_name" in sample_applications:
+            placeholder_names = sample_applications["company_name"].astype(str).str.match(r"^Company\s+\d+$").any()
+    if missing_files or missing_columns or placeholder_names:
         generate_seed_data()
     return load_seed_data()
