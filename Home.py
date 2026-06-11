@@ -4,6 +4,7 @@ from src.formatting import format_currency, format_integer, format_percent, form
 from src.modeling import score_portfolio
 from src.runtime import bootstrap_state
 from src.ui import render_sidebar
+from src.workbench_features import build_application_queue
 
 
 st.set_page_config(page_title="CredRisk.AI Underwriter Workbench", layout="wide")
@@ -32,6 +33,39 @@ workflow_cols = st.columns(3)
 workflow_cols[0].info("1. Intake an SME loan request with financial, document, KYB, pricing, and contextual signals.")
 workflow_cols[1].info("2. Score application risk, assign an A-F risk grade, and recommend an action.")
 workflow_cols[2].info("3. Route C-D cases to manual review and high-risk E-F cases to compliance review.")
+
+st.subheader("Application Queue")
+queue_preview = build_application_queue(model_bundle, applications, limit=8)
+queue_display = queue_preview[
+    [
+        "application_id",
+        "company_name",
+        "requested_amount",
+        "fraud_probability",
+        "grade",
+        "queue_status",
+        "assigned_analyst",
+        "sla",
+    ]
+].copy()
+queue_display["requested_amount"] = queue_display["requested_amount"].apply(format_currency)
+queue_display["fraud_probability"] = queue_display["fraud_probability"].apply(format_percent)
+queue_display = queue_display.rename(
+    columns={
+        "application_id": "Application ID",
+        "company_name": "Company",
+        "requested_amount": "Requested amount",
+        "fraud_probability": "Application risk score",
+        "grade": "Grade",
+        "queue_status": "Queue status",
+        "assigned_analyst": "Assigned analyst",
+        "sla": "SLA",
+    }
+)
+st.dataframe(queue_display, use_container_width=True, hide_index=True)
+page_link = getattr(st, "page_link", None)
+if page_link:
+    st.page_link("pages/Application_Queue.py", label="Open full application queue")
 
 st.subheader("Simulated Data Sources")
 data_sources = [

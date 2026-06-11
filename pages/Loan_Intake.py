@@ -25,6 +25,15 @@ from src.formatting import (
 )
 from src.runtime import bootstrap_state
 from src.ui import render_sidebar
+from src.workbench_features import (
+    credit_memo,
+    data_source_badges,
+    decision_timeline,
+    grouped_risk_drivers,
+    model_confidence_rows,
+    portfolio_monitoring_preview,
+    recommended_loan_terms,
+)
 
 
 st.set_page_config(page_title="Loan Intake", layout="wide")
@@ -137,6 +146,44 @@ st.markdown(
         line-height: 1.45;
         margin: 0;
         padding-left: 1.1rem;
+    }
+    .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin: 0.25rem 0 0.75rem;
+    }
+    .source-badge {
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 999px;
+        color: #f8fafc;
+        display: inline-flex;
+        font-size: 0.78rem;
+        font-weight: 750;
+        gap: 0.35rem;
+        line-height: 1;
+        padding: 0.48rem 0.68rem;
+    }
+    .source-badge.ready { background: rgba(34, 197, 94, 0.22); }
+    .source-badge.partial { background: rgba(234, 179, 8, 0.24); }
+    .source-badge.review { background: rgba(239, 68, 68, 0.22); }
+    .demo-rail {
+        border: 1px solid rgba(59, 130, 246, 0.30);
+        border-radius: 8px;
+        margin: 0.5rem 0 1rem;
+        padding: 0.8rem 1rem;
+        background: rgba(30, 64, 175, 0.14);
+    }
+    .demo-rail-title {
+        color: #f8fafc;
+        font-size: 0.95rem;
+        font-weight: 800;
+        margin-bottom: 0.35rem;
+    }
+    .demo-rail-steps {
+        color: rgba(226, 232, 240, 0.86);
+        font-size: 0.84rem;
+        line-height: 1.45;
     }
     @media (max-width: 900px) {
         .score-strip {
@@ -547,6 +594,22 @@ with header_left:
     st.caption("Score a single SME loan application for credit, pricing, fraud, and anomaly risk.")
 with header_right:
     scenario = st.selectbox("Demo generator", list(DEMO_SCENARIOS.keys()), key="loan_demo_scenario")
+
+if st.session_state.investor_demo_mode:
+    st.markdown(
+        """
+        <div class="demo-rail">
+            <div class="demo-rail-title">Investor Demo Flow</div>
+            <div class="demo-rail-steps">
+                1. Select A2M Logistics Loan or another scenario.
+                2. Submit the application and read the compact score output.
+                3. Review data readiness, recommended terms, monitoring, and model confidence.
+                4. Open Case Review, save a final decision, then generate the credit memo.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 scenario_values = DEMO_SCENARIOS.get(scenario) or {}
 
@@ -1093,6 +1156,11 @@ if st.session_state.last_prediction:
     flag_label = f"{flag_count} elevated flag" if flag_count == 1 else f"{flag_count} elevated flags"
     decision_conditions = _decision_conditions(application, prediction, signals)
     condition_html = "".join(f"<li>{escape(condition)}</li>" for condition in decision_conditions)
+    loan_terms = recommended_loan_terms(application, prediction, signals)
+    monitoring_rows = portfolio_monitoring_preview(application, prediction, signals)
+    timeline_rows = decision_timeline(application, prediction, current_review)
+    driver_rows = grouped_risk_drivers(application, signals)
+    confidence_rows = model_confidence_rows(st.session_state.model_bundle.metrics, prediction, signals)
 
     st.subheader("Score Output")
     st.markdown(
@@ -1143,8 +1211,29 @@ if st.session_state.last_prediction:
         unsafe_allow_html=True,
     )
 
+    terms_col, monitoring_col = st.columns(2)
+    with terms_col:
+        st.subheader("Recommended Loan Terms")
+        st.dataframe(pd.DataFrame(loan_terms), use_container_width=True, hide_index=True)
+    with monitoring_col:
+        st.subheader("Portfolio Monitoring Preview")
+        st.dataframe(pd.DataFrame(monitoring_rows), use_container_width=True, hide_index=True)
+
+    st.subheader("Model Confidence and Governance")
+    st.dataframe(pd.DataFrame(confidence_rows), use_container_width=True, hide_index=True)
+    st.caption("MVP output is banker decision support. Manual adjustments, C-F grades, and exception cases remain subject to human review.")
+
     st.subheader("Data Readiness")
+    source_badges = data_source_badges(application, signals)
+    badge_html = "".join(
+        f'<span class="source-badge {escape(badge["Tone"])}">{escape(badge["Source"])}: {escape(badge["Status"])}</span>'
+        for badge in source_badges
+    )
+    st.markdown(f'<div class="badge-row">{badge_html}</div>', unsafe_allow_html=True)
     st.dataframe(pd.DataFrame(_data_readiness_rows(application, signals)), use_container_width=True, hide_index=True)
+
+    st.subheader("Risk Driver View")
+    st.dataframe(pd.DataFrame(driver_rows), use_container_width=True, hide_index=True)
 
     snapshot_left, snapshot_middle, snapshot_right = st.columns(3)
     with snapshot_left:
@@ -1296,26 +1385,37 @@ if st.session_state.last_prediction:
         st.caption("Fraud and anomaly detection are one component of the broader credit-risk assessment.")
         st.dataframe(pd.DataFrame(signal_rows), use_container_width=True, hide_index=True)
 
-    action_cols = st.columns([1, 1, 2])
+    action_cols = st.columns([1, 1, 1, 2])
     if action_cols[0].button("Open Case Review", use_container_width=True):
         if hasattr(st, "dialog"):
             _review_dialog()
         else:
             st.session_state.show_review_dialog = True
     report = case_summary(application, prediction, explanation, current_review)
+    memo = credit_memo(application, prediction, explanation, current_review, loan_terms, monitoring_rows, timeline_rows)
     action_cols[1].download_button(
-        "Download Summary",
+        "Generate Credit Memo",
+        data=memo,
+        file_name=f"{application['application_id']}_credit_memo.md",
+        mime="text/markdown",
+        use_container_width=True,
+    )
+    action_cols[2].download_button(
+        "Download Audit Summary",
         data=report,
         file_name=f"{application['application_id']}_case_summary.txt",
         mime="text/plain",
         use_container_width=True,
     )
     if st.session_state.last_email_link and current_review:
-        action_cols[2].markdown(f"[Open email draft]({st.session_state.last_email_link})")
+        action_cols[3].markdown(f"[Open email draft]({st.session_state.last_email_link})")
 
     if st.session_state.show_review_dialog and not hasattr(st, "dialog"):
         with st.expander("Case Review", expanded=True):
             _review_form_body()
+
+    st.subheader("Decision History Timeline")
+    st.dataframe(pd.DataFrame(timeline_rows), use_container_width=True, hide_index=True)
 
     st.write("Risk factors")
     if prediction["flags"]:

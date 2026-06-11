@@ -58,3 +58,5 @@ def bootstrap_state():
         st.session_state.use_llm_explanations = False
     if "explanation_model" not in st.session_state:
         st.session_state.explanation_model = "gpt-4.1-mini"
+    if "investor_demo_mode" not in st.session_state:
+        st.session_state.investor_demo_mode = False
