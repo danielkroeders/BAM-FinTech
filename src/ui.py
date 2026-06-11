@@ -1,23 +1,12 @@
-import os
-
 import streamlit as st
 
 
 PROFILE = {
     "bank": "Bank XYZ",
     "id": "01",
-    "first_name": "Alice",
+    "display_name": "Ms. Cooper",
     "role": "Credit Analyst",
 }
-
-
-def _has_api_key():
-    try:
-        if "OPENAI_API_KEY" in st.secrets:
-            return True
-    except Exception:
-        pass
-    return bool(os.getenv("OPENAI_API_KEY"))
 
 
 def render_sidebar():
@@ -67,18 +56,15 @@ def render_sidebar():
         unsafe_allow_html=True,
     )
     with st.sidebar:
-        st.header("Controls")
-        st.toggle("Use LLM explanations", key="use_llm_explanations")
-        st.selectbox("Explanation model", ["gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini"], key="explanation_model")
-        if _has_api_key():
-            st.success("OpenAI API key detected")
-        else:
-            st.info("No OpenAI API key detected")
+        st.header("Workspace")
+        with st.expander("Advanced settings", expanded=False):
+            st.toggle("Use LLM explanations", key="use_llm_explanations")
+            st.selectbox("Explanation model", ["gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini"], key="explanation_model")
         st.markdown(
             f"""
             <div class="profile-sidebar-card">
                 <div class="profile-label">Signed in</div>
-                <div class="profile-name">First name: {PROFILE["first_name"]}</div>
+                <div class="profile-name">{PROFILE["display_name"]}</div>
                 <div class="profile-meta">Bank: {PROFILE["bank"]}</div>
                 <div class="profile-meta">ID: {PROFILE["id"]} | {PROFILE["role"]}</div>
             </div>

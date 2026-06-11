@@ -36,27 +36,51 @@ st.markdown(
     <style>
     .score-panel {
         border: 1px solid rgba(148, 163, 184, 0.28);
-        border-left: 6px solid #64748b;
         border-radius: 8px;
-        padding: 0.85rem 1rem;
+        padding: 0;
         margin: 0.35rem 0 0.8rem;
-        background: rgba(15, 23, 42, 0.22);
+        background: rgba(15, 23, 42, 0.26);
+        overflow: hidden;
     }
-    .score-panel.low { border-left-color: #22c55e; }
-    .score-panel.medium { border-left-color: #eab308; }
-    .score-panel.high { border-left-color: #ef4444; }
+    .score-panel.low { border-top: 4px solid #22c55e; }
+    .score-panel.medium { border-top: 4px solid #eab308; }
+    .score-panel.high { border-top: 4px solid #ef4444; }
+    .score-panel-header {
+        align-items: center;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.8rem 1rem 0.7rem;
+    }
+    .score-headline {
+        color: #f8fafc;
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1.05;
+    }
+    .score-subtitle {
+        color: rgba(226, 232, 240, 0.76);
+        font-size: 0.82rem;
+        line-height: 1.35;
+        margin-top: 0.25rem;
+    }
     .score-strip {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0.75rem;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0;
     }
     .score-item {
+        border-right: 1px solid rgba(148, 163, 184, 0.14);
         min-width: 0;
-        padding-right: 0.5rem;
+        padding: 0.75rem 1rem;
+    }
+    .score-item:last-child {
+        border-right: none;
     }
     .score-label {
         color: rgba(226, 232, 240, 0.72);
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 700;
         line-height: 1.1;
         margin-bottom: 0.25rem;
@@ -64,17 +88,63 @@ st.markdown(
     }
     .score-value {
         color: #f8fafc;
-        font-size: 1.35rem;
+        font-size: 1.05rem;
         font-weight: 700;
         line-height: 1.2;
         overflow-wrap: anywhere;
     }
-    .score-value.primary {
-        font-size: 1.7rem;
+    .decision-badge {
+        border-radius: 999px;
+        color: #0f172a;
+        display: inline-flex;
+        font-size: 0.86rem;
+        font-weight: 800;
+        line-height: 1;
+        padding: 0.45rem 0.72rem;
+        white-space: nowrap;
+    }
+    .decision-badge.approve { background: #86efac; }
+    .decision-badge.review { background: #fde68a; }
+    .decision-badge.reject { background: #fca5a5; }
+    .decision-badge.pending { background: #cbd5e1; }
+    .decision-panel {
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 8px;
+        margin: 0.25rem 0 0.9rem;
+        padding: 0.9rem 1rem;
+        background: rgba(15, 23, 42, 0.18);
+    }
+    .decision-panel.approve { border-left: 5px solid #22c55e; }
+    .decision-panel.review,
+    .decision-panel.pending { border-left: 5px solid #eab308; }
+    .decision-panel.reject { border-left: 5px solid #ef4444; }
+    .decision-title {
+        color: #f8fafc;
+        font-size: 1.1rem;
+        font-weight: 800;
+        line-height: 1.25;
+        margin-bottom: 0.25rem;
+    }
+    .decision-copy {
+        color: rgba(226, 232, 240, 0.82);
+        font-size: 0.88rem;
+        line-height: 1.45;
+        margin-bottom: 0.55rem;
+    }
+    .decision-list {
+        color: rgba(226, 232, 240, 0.86);
+        font-size: 0.85rem;
+        line-height: 1.45;
+        margin: 0;
+        padding-left: 1.1rem;
     }
     @media (max-width: 900px) {
         .score-strip {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .score-panel-header {
+            align-items: flex-start;
+            flex-direction: column;
         }
     }
     </style>
@@ -177,6 +247,146 @@ def _risk_tone(probability):
     return "low"
 
 
+def _risk_label(probability):
+    if probability >= 0.58:
+        return "High risk"
+    if probability >= 0.28:
+        return "Moderate risk"
+    return "Lower risk"
+
+
+def _decision_tone(decision):
+    normalized = str(decision or "").lower()
+    if "approve" in normalized:
+        return "approve"
+    if "reject" in normalized:
+        return "reject"
+    if "pending" in normalized:
+        return "pending"
+    return "review"
+
+
+def _missing_documents(application):
+    document_fields = [
+        ("financial_statements_uploaded", "financial statements"),
+        ("bank_statements_uploaded", "bank statements"),
+        ("tax_return_uploaded", "tax return"),
+        ("ownership_docs_uploaded", "ownership/KYB"),
+        ("forecast_support_uploaded", "forecast support"),
+    ]
+    return [label for key, label in document_fields if float(application.get(key, 0) or 0) < 0.5]
+
+
+def _readiness_status(score):
+    if score >= 0.8:
+        return "Ready"
+    if score >= 0.5:
+        return "Partial"
+    return "Needs review"
+
+
+def _data_readiness_rows(application, signals):
+    missing_documents = _missing_documents(application)
+    document_score = float(signals.get("document_completeness_score", 0) or 0)
+    context_status = _context_completeness(application)
+    context_score = {"Complete": 1.0, "Partial": 0.6, "Missing": 0.0}.get(context_status, 0.0)
+    forecast_score = (
+        0.45 * float(application.get("forecast_support_uploaded", 0) or 0)
+        + 0.35 * float(application.get("forecast_plan_confidence_score", 0) or 0)
+        + 0.20
+    )
+    accounting_score = (
+        0.45 * float(application.get("financial_statements_uploaded", 0) or 0)
+        + 0.35 * float(application.get("tax_return_uploaded", 0) or 0)
+        + 0.20 * min(max(float(application.get("current_ratio", 0) or 0) / 2, 0), 1)
+    )
+    registry_score = (
+        0.45 * float(application.get("ownership_docs_uploaded", 0) or 0)
+        + 0.25 * min(float(application.get("email_domain_age_months", 0) or 0) / 24, 1)
+        + 0.20 * min(float(application.get("website_age_months", 0) or 0) / 24, 1)
+        + 0.10 * (1 - float(application.get("location_mismatch_score", 0) or 0))
+    )
+    banking_score = (
+        0.65 * float(application.get("bank_statements_uploaded", 0) or 0)
+        + 0.25 * min(float(application.get("bank_account_age_months", 0) or 0) / 24, 1)
+        + 0.10 * (1 - float(application.get("process_deviation_score", 0) or 0))
+    )
+
+    return [
+        {
+            "Source": "PSD2 / Open Banking",
+            "Status": _readiness_status(banking_score),
+            "Coverage": f"Bank history {format_months(application.get('bank_account_age_months', 0))}; statements {_yes_no(application.get('bank_statements_uploaded', 0)).lower()}",
+            "Used for": "Cash flow, burn, runway, transaction anomalies",
+        },
+        {
+            "Source": "Accounting data",
+            "Status": _readiness_status(accounting_score),
+            "Coverage": f"Current ratio {_score(application.get('current_ratio', 0))}; quick ratio {_score(application.get('quick_ratio', 0))}",
+            "Used for": "Liquidity, DSCR, working-capital pressure",
+        },
+        {
+            "Source": "Document package",
+            "Status": _readiness_status(document_score),
+            "Coverage": "Complete" if not missing_documents else f"Missing: {', '.join(missing_documents)}",
+            "Used for": "Completeness, edits, late-stage changes",
+        },
+        {
+            "Source": "Registry / KYB",
+            "Status": _readiness_status(registry_score),
+            "Coverage": f"Ownership docs {_yes_no(application.get('ownership_docs_uploaded', 0)).lower()}; location mismatch {_score(application.get('location_mismatch_score', 0))}",
+            "Used for": "Identity, ownership, related-party checks",
+        },
+        {
+            "Source": "Management narrative",
+            "Status": _readiness_status(context_score),
+            "Coverage": context_status,
+            "Used for": "Applicant context and contradiction checks",
+        },
+        {
+            "Source": "Five-year plan",
+            "Status": _readiness_status(forecast_score),
+            "Coverage": f"Support {_yes_no(application.get('forecast_support_uploaded', 0)).lower()}; confidence {_score(application.get('forecast_plan_confidence_score', 0))}",
+            "Used for": "Growth, FCF margin, debt reduction, execution risk",
+        },
+    ]
+
+
+def _decision_conditions(application, prediction, signals):
+    conditions = []
+    missing_documents = _missing_documents(application)
+    if missing_documents:
+        conditions.append(f"Collect or validate missing items: {', '.join(missing_documents)}.")
+    if float(signals.get("stressed_debt_service_coverage_ratio", 0) or 0) < 1.1:
+        conditions.append("Review debt-service coverage under the +2% interest-rate stress case.")
+    if float(signals.get("document_quality_risk_score", 0) or 0) >= 0.35:
+        conditions.append("Confirm document edits and late-stage changes before release.")
+    if float(signals.get("narrative_consistency_risk_score", 0) or 0) >= 0.4:
+        conditions.append("Resolve narrative contradictions against financial and document evidence.")
+    for flag in prediction.get("flags", [])[:2]:
+        if flag not in conditions:
+            conditions.append(flag)
+    if not conditions:
+        conditions.append("No extra conditions flagged beyond standard credit covenants.")
+    return conditions[:4]
+
+
+def _decision_copy(application, prediction, review, signals):
+    decision = review["final_decision"] if review else "Pending Review"
+    if review:
+        base = (
+            f"{review['action']} saved by the analyst at {review['timestamp']}. "
+            f"The final grade is {prediction['grade']} with an application risk score of {_ratio(prediction['fraud_probability'])}."
+        )
+        if prediction.get("manual_adjustment"):
+            base += f" Manual score adjustment is logged for supervisor review via {review.get('supervisor_email', 'the review mailbox')}."
+        return base
+    return (
+        f"Model recommends {prediction['decision']} at grade {prediction['grade']} "
+        f"with a {_risk_label(prediction['fraud_probability']).lower()} profile. Analyst decision is still pending."
+    )
+
+
 def _summary_table(rows):
     return pd.DataFrame(rows, columns=["Metric", "Value"])
 
@@ -267,7 +477,7 @@ def _review_form_body():
             manual_approved = st.checkbox("Supervisor approved manual score adjustment")
             if manual_approved:
                 manual_probability = st.slider(
-                    "Manual-adjust fraud probability",
+                    "Manual-adjust application risk score",
                     min_value=0.0,
                     max_value=1.0,
                     value=current_probability,
@@ -334,7 +544,7 @@ if hasattr(st, "dialog"):
 header_left, header_right = st.columns([3, 1])
 with header_left:
     st.title("Loan Intake")
-    st.caption("Score a single B2B loan application for fraud risk.")
+    st.caption("Score a single SME loan application for credit, pricing, fraud, and anomaly risk.")
 with header_right:
     scenario = st.selectbox("Demo generator", list(DEMO_SCENARIOS.keys()), key="loan_demo_scenario")
 
@@ -874,16 +1084,29 @@ if st.session_state.last_prediction:
     final_decision = current_review["final_decision"] if current_review else "Pending Review"
     calculated = add_derived_features(pd.DataFrame([application]))
     signals = calculated.iloc[0]
+    risk_tone = _risk_tone(prediction["fraud_probability"])
+    risk_label = _risk_label(prediction["fraud_probability"])
+    decision_tone = _decision_tone(final_decision)
+    review_status = current_review["timestamp"] if current_review else "Awaiting analyst"
+    manual_status = "Manual score" if prediction.get("manual_adjustment") else "Model score"
+    flag_count = len(prediction.get("flags", []))
+    flag_label = f"{flag_count} elevated flag" if flag_count == 1 else f"{flag_count} elevated flags"
+    decision_conditions = _decision_conditions(application, prediction, signals)
+    condition_html = "".join(f"<li>{escape(condition)}</li>" for condition in decision_conditions)
 
     st.subheader("Score Output")
     st.markdown(
         f"""
-        <div class="score-panel {_risk_tone(prediction["fraud_probability"])}">
-            <div class="score-strip">
-                <div class="score-item">
-                    <div class="score-label">Fraud probability</div>
-                    <div class="score-value primary">{escape(_ratio(prediction["fraud_probability"]))}</div>
+        <div class="score-panel {risk_tone}">
+            <div class="score-panel-header">
+                <div>
+                    <div class="score-label">Application risk score</div>
+                    <div class="score-headline">{escape(_ratio(prediction["fraud_probability"]))}</div>
+                    <div class="score-subtitle">{escape(risk_label)} profile with {escape(flag_label)}.</div>
                 </div>
+                <div class="decision-badge {decision_tone}">{escape(final_decision)}</div>
+            </div>
+            <div class="score-strip">
                 <div class="score-item">
                     <div class="score-label">Risk grade</div>
                     <div class="score-value">{escape(prediction["grade"])}</div>
@@ -893,14 +1116,35 @@ if st.session_state.last_prediction:
                     <div class="score-value">{escape(prediction["decision"])}</div>
                 </div>
                 <div class="score-item">
-                    <div class="score-label">Final decision</div>
-                    <div class="score-value">{escape(final_decision)}</div>
+                    <div class="score-label">Score source</div>
+                    <div class="score-value">{escape(manual_status)}</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Review status</div>
+                    <div class="score-value">{escape(review_status)}</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Stressed DSCR</div>
+                    <div class="score-value">{escape(_score(signals["stressed_debt_service_coverage_ratio"]))}</div>
                 </div>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+    st.markdown(
+        f"""
+        <div class="decision-panel {decision_tone}">
+            <div class="decision-title">Final Decision: {escape(final_decision)}</div>
+            <div class="decision-copy">{escape(_decision_copy(application, prediction, current_review, signals))}</div>
+            <ul class="decision-list">{condition_html}</ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.subheader("Data Readiness")
+    st.dataframe(pd.DataFrame(_data_readiness_rows(application, signals)), use_container_width=True, hide_index=True)
 
     snapshot_left, snapshot_middle, snapshot_right = st.columns(3)
     with snapshot_left:
@@ -1026,7 +1270,7 @@ if st.session_state.last_prediction:
         {"Signal": "Request / revenue", "Value": _ratio(signals["request_to_revenue_ratio"]), "What it tells the banker": "Requested exposure relative to reported revenue."},
         {"Signal": "Loan velocity", "Value": _score(signals["loan_velocity_score"]), "What it tells the banker": "Recent borrowing intensity and possible credit stacking."},
         {"Signal": "Payment stress", "Value": _score(signals["payment_stress_score"]), "What it tells the banker": "Late-payment and debt-pressure stress."},
-        {"Signal": "External financing pressure", "Value": _score(signals["external_financing_pressure"]), "What it tells the banker": "Fraud-triangle style financing pressure."},
+        {"Signal": "External financing pressure", "Value": _score(signals["external_financing_pressure"]), "What it tells the banker": "Financing pressure from request size, debt, and recent borrowing."},
         {"Signal": "Financial distress", "Value": _score(signals["financial_distress_score"]), "What it tells the banker": "Combined debt, payment, collateral, and history stress."},
         {"Signal": "Transaction anomaly", "Value": _score(signals["transaction_anomaly_score"]), "What it tells the banker": "Suspicious transfer and behavior pattern risk."},
         {"Signal": "Cash-flow pressure", "Value": _score(signals["cash_flow_pressure_score"]), "What it tells the banker": "Negative FCF and burn-rate pressure."},
@@ -1049,15 +1293,8 @@ if st.session_state.last_prediction:
         {"Signal": "Narrative consistency risk", "Value": _score(signals["narrative_consistency_risk_score"]), "What it tells the banker": "Potential contradictions between applicant context, documents, and financials."},
     ]
     with st.expander("Calculated Risk Signals", expanded=True):
+        st.caption("Fraud and anomaly detection are one component of the broader credit-risk assessment.")
         st.dataframe(pd.DataFrame(signal_rows), use_container_width=True, hide_index=True)
-
-    if current_review:
-        st.success(
-            f"Final decision: {current_review['final_decision']} | Saved {current_review['timestamp']} | "
-            f"Analyst action: {current_review['action']}"
-        )
-    else:
-        st.info("Final decision: pending analyst review.")
 
     action_cols = st.columns([1, 1, 2])
     if action_cols[0].button("Open Case Review", use_container_width=True):
@@ -1090,16 +1327,8 @@ if st.session_state.last_prediction:
     st.write("AI decision rationale")
     st.info(explanation)
 
-    if st.session_state.last_review and st.session_state.last_review.get("application_id") == application["application_id"]:
-        review = st.session_state.last_review
-        st.write("Latest analyst review")
-        st.success(
-            f"{review['action']} saved at {review['timestamp']} with final grade {review['final_grade']} "
-            f"and final decision {review['final_decision']}."
-        )
-
     st.subheader("Similar Historical Applications")
-    st.caption("Nearest synthetic portfolio cases by company profile, requested terms, and risk signals.")
+    st.caption("Nearest synthetic portfolio cases by company profile, requested terms, and credit/anomaly risk signals.")
     similar = similar_applications(st.session_state.model_bundle, applications, application)
     display_similar = similar.copy()
     for column in ["requested_amount", "free_cash_flow"]:
@@ -1114,6 +1343,7 @@ if st.session_state.last_prediction:
             display_similar[column] = display_similar[column].apply(_ratio)
     if "debt_service_coverage_ratio" in display_similar:
         display_similar["debt_service_coverage_ratio"] = display_similar["debt_service_coverage_ratio"].apply(_score)
+    display_similar = display_similar.rename(columns={"fraud_probability": "Application risk score"})
     st.dataframe(display_similar, use_container_width=True, hide_index=True)
 else:
     st.info("Submit the form to score an application.")

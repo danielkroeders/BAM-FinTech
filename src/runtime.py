@@ -9,7 +9,7 @@ def get_seed_data():
     return ensure_seed_data()
 
 
-@st.cache_resource(show_spinner="Training fraud model")
+@st.cache_resource(show_spinner="Training application risk model")
 def get_model_bundle():
     seed_data = ensure_seed_data()
     return train_model(seed_data["applications"])

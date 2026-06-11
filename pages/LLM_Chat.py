@@ -12,7 +12,7 @@ bootstrap_state()
 render_sidebar()
 
 st.title("AI Explainability")
-st.caption("Plain-language explanation for the latest scored loan request.")
+st.caption("Plain-language credit and anomaly risk explanation for the latest scored loan request.")
 
 application = st.session_state.last_application
 prediction = st.session_state.last_prediction
@@ -20,7 +20,7 @@ prediction = st.session_state.last_prediction
 if not application or not prediction:
     st.info("No application has been scored yet. Use the Loan Intake page to create the first decision.")
 else:
-    st.metric("Latest Fraud Probability", format_percent(prediction["fraud_probability"]))
+    st.metric("Latest Application Risk Score", format_percent(prediction["fraud_probability"]))
     st.write(f"Grade: **{prediction['grade']}**")
     st.write(f"Recommended action: **{prediction['decision']}**")
 
@@ -39,8 +39,8 @@ else:
         top_drivers = shap_table.head(8).copy()
 
         summary_cols = st.columns(3)
-        summary_cols[0].metric("Baseline Fraud Risk", format_percent(baseline_probability))
-        summary_cols[1].metric("Application Fraud Risk", format_percent(predicted_probability))
+        summary_cols[0].metric("Baseline Risk", format_percent(baseline_probability))
+        summary_cols[1].metric("Application Risk", format_percent(predicted_probability))
         summary_cols[2].metric("Largest Driver", top_drivers.iloc[0]["driver"].replace("_", " ").title())
 
         chart_data = top_drivers.set_index("driver")["contribution"].sort_values()
@@ -57,7 +57,7 @@ else:
         display_table["SHAP contribution"] = display_table["SHAP contribution"].apply(lambda value: format_score(value, 4))
         st.dataframe(display_table, use_container_width=True, hide_index=True)
         st.caption(
-            "Positive SHAP contributions push the fraud score higher for this application. Negative contributions push it lower. "
+            "Positive SHAP contributions push the application risk score higher. Negative contributions push it lower. "
             "Categorical one-hot features are grouped back to their original fields for readability."
         )
     except ImportError:

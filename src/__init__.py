@@ -1,1 +1,1 @@
-"""B2B Loan Fraud Intelligence app package."""
+"""CredRisk.AI Underwriter Workbench app package."""

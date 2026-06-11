@@ -52,7 +52,7 @@ def deterministic_explanation(application, prediction):
         "Reject": "Route to compliance review before any final adverse action is communicated.",
     }[prediction["decision"]]
     return (
-        f"Decision: {prediction['decision']} | Grade {prediction['grade']} | Fraud probability {format_percent(probability)}\n\n"
+        f"Decision: {prediction['decision']} | Grade {prediction['grade']} | Application risk score {format_percent(probability)}\n\n"
         f"Applicant context: {application.get('company_type', 'The applicant')} in "
         f"{application.get('industry', 'unknown industry')} requested {format_currency(amount)}.\n\n"
         f"Top risk drivers:\n{drivers}\n\n"
@@ -75,7 +75,7 @@ def llm_explanation(application, prediction, model):
             "application": application,
             "prediction": prediction,
             "instruction": (
-                "Explain the result concisely for a lending fraud analyst using sections for Decision, Top risk drivers, "
+                "Explain the result concisely for a credit risk analyst using sections for Decision, Top risk drivers, "
                 "Mitigating factors, Recommended analyst action, and Compliance note. Do not invent facts or claim legal certainty."
             ),
         }
@@ -84,7 +84,7 @@ def llm_explanation(application, prediction, model):
             input=[
                 {
                     "role": "system",
-                    "content": "You write concise, plain-language fraud risk explanations for B2B lending decision support.",
+                    "content": "You write concise, plain-language credit and anomaly risk explanations for SME lending decision support.",
                 },
                 {"role": "user", "content": str(prompt)},
             ],

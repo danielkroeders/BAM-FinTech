@@ -10,7 +10,7 @@ bootstrap_state()
 render_sidebar()
 
 st.title("About")
-st.caption("Definitions for the loan intake scoring dimensions used by the fraud risk model.")
+st.caption("Definitions for the loan intake scoring dimensions used by the SME application-risk model.")
 
 st.info(
     "This demo uses synthetic data for decision support. Scores help prioritize analyst review and do not establish legal, "
@@ -36,7 +36,7 @@ dimensions = [
     {
         "Dimension": "Requested amount",
         "Definition": "The loan principal requested by the applicant.",
-        "Why it matters": "Large requests relative to business scale can indicate elevated repayment or fraud risk.",
+        "Why it matters": "Large requests relative to business scale can indicate elevated repayment or anomaly risk.",
     },
     {
         "Dimension": "Term months",
@@ -315,12 +315,12 @@ st.dataframe(pd.DataFrame(derived_dimensions), use_container_width=True, hide_in
 
 st.subheader("How To Read The Score")
 grade_rows = [
-    {"Grade": "A", "Fraud probability": "< 0.15", "Recommended action": "Approve"},
-    {"Grade": "B", "Fraud probability": "0.15 to < 0.28", "Recommended action": "Approve"},
-    {"Grade": "C", "Fraud probability": "0.28 to < 0.42", "Recommended action": "Manual Review"},
-    {"Grade": "D", "Fraud probability": "0.42 to < 0.58", "Recommended action": "Manual Review"},
-    {"Grade": "E", "Fraud probability": "0.58 to < 0.74", "Recommended action": "Reject"},
-    {"Grade": "F", "Fraud probability": ">= 0.74", "Recommended action": "Reject"},
+    {"Grade": "A", "Application risk score": "< 0.15", "Recommended action": "Approve"},
+    {"Grade": "B", "Application risk score": "0.15 to < 0.28", "Recommended action": "Approve"},
+    {"Grade": "C", "Application risk score": "0.28 to < 0.42", "Recommended action": "Manual Review"},
+    {"Grade": "D", "Application risk score": "0.42 to < 0.58", "Recommended action": "Manual Review"},
+    {"Grade": "E", "Application risk score": "0.58 to < 0.74", "Recommended action": "Reject"},
+    {"Grade": "F", "Application risk score": ">= 0.74", "Recommended action": "Reject"},
 ]
 st.dataframe(pd.DataFrame(grade_rows), use_container_width=True, hide_index=True)
 

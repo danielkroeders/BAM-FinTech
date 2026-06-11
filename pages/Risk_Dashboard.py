@@ -12,7 +12,7 @@ bootstrap_state()
 render_sidebar()
 
 st.title("Risk Dashboard")
-st.caption("Portfolio-level fraud monitoring for lending analysts.")
+st.caption("Portfolio-level SME credit risk monitoring for lending analysts.")
 
 portfolio = score_portfolio(st.session_state.model_bundle, st.session_state.seed_data["applications"])
 
@@ -23,6 +23,7 @@ def _display_table(frame, columns):
         display["requested_amount"] = display["requested_amount"].apply(format_currency)
     if "fraud_probability" in display:
         display["fraud_probability"] = display["fraud_probability"].apply(format_percent)
+        display = display.rename(columns={"fraud_probability": "Application risk score"})
     return display
 
 with st.expander("Portfolio Filters", expanded=True):
@@ -43,7 +44,7 @@ with st.expander("Portfolio Filters", expanded=True):
         sorted(portfolio["region"].unique()),
         default=sorted(portfolio["region"].unique()),
     )
-    probability_range = filter_cols[4].slider("Fraud probability", 0.0, 1.0, (0.0, 1.0), step=0.01)
+    probability_range = filter_cols[4].slider("Application risk score", 0.0, 1.0, (0.0, 1.0), step=0.01)
 
 filtered = portfolio[
     portfolio["grade"].isin(selected_grades)
@@ -140,6 +141,7 @@ if st.session_state.portfolio_history:
         display_history["requested_amount"] = display_history["requested_amount"].apply(format_currency)
     if "fraud_probability" in display_history:
         display_history["fraud_probability"] = display_history["fraud_probability"].apply(format_percent)
+        display_history = display_history.rename(columns={"fraud_probability": "Application risk score"})
     st.dataframe(display_history, use_container_width=True, hide_index=True)
 else:
     st.info("No applications have been scored in this session yet.")
@@ -150,6 +152,7 @@ if st.session_state.review_history:
     display_reviews = reviews.copy()
     if "final_probability" in display_reviews:
         display_reviews["final_probability"] = display_reviews["final_probability"].apply(format_percent)
+        display_reviews = display_reviews.rename(columns={"final_probability": "Final application risk score"})
     st.dataframe(display_reviews, use_container_width=True, hide_index=True)
 else:
     st.info("No analyst reviews have been saved in this session yet.")

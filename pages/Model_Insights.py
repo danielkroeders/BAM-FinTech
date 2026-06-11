@@ -16,7 +16,7 @@ metrics = bundle.metrics
 applications = add_derived_features(st.session_state.seed_data["applications"])
 
 st.title("Model Insights")
-st.caption("Supervised fraud model performance, grading policy, and research-backed signal design.")
+st.caption("Supervised SME application-risk model performance, grading policy, and research-backed signal design.")
 
 metric_catalog = {
     "Accuracy": "accuracy",
@@ -111,20 +111,20 @@ with left:
     st.subheader("Confusion Matrix")
     matrix = pd.DataFrame(
         [[metrics["tn"], metrics["fp"]], [metrics["fn"], metrics["tp"]]],
-        index=["Actual legitimate", "Actual fraud"],
-        columns=["Predicted legitimate", "Predicted fraud"],
+        index=["Actual lower risk", "Actual high risk"],
+        columns=["Predicted lower risk", "Predicted high risk"],
     )
     st.dataframe(matrix, use_container_width=True)
 with right:
     st.subheader("A-F Grading Thresholds")
     thresholds = pd.DataFrame(
         [
-            {"Grade": "A", "Fraud probability": "< 0.15", "Decision": "Approve"},
-            {"Grade": "B", "Fraud probability": "0.15 to < 0.28", "Decision": "Approve"},
-            {"Grade": "C", "Fraud probability": "0.28 to < 0.42", "Decision": "Manual Review"},
-            {"Grade": "D", "Fraud probability": "0.42 to < 0.58", "Decision": "Manual Review"},
-            {"Grade": "E", "Fraud probability": "0.58 to < 0.74", "Decision": "Reject"},
-            {"Grade": "F", "Fraud probability": ">= 0.74", "Decision": "Reject"},
+            {"Grade": "A", "Application risk score": "< 0.15", "Decision": "Approve"},
+            {"Grade": "B", "Application risk score": "0.15 to < 0.28", "Decision": "Approve"},
+            {"Grade": "C", "Application risk score": "0.28 to < 0.42", "Decision": "Manual Review"},
+            {"Grade": "D", "Application risk score": "0.42 to < 0.58", "Decision": "Manual Review"},
+            {"Grade": "E", "Application risk score": "0.58 to < 0.74", "Decision": "Reject"},
+            {"Grade": "F", "Application risk score": ">= 0.74", "Decision": "Reject"},
         ]
     )
     st.dataframe(thresholds, use_container_width=True, hide_index=True)
@@ -146,7 +146,7 @@ governance_rows = pd.DataFrame(
         },
         {
             "Area": "Threshold policy",
-            "MVP control": "A-F grades are fixed demo thresholds over fraud probability and are displayed next to model metrics.",
+            "MVP control": "A-F grades are fixed demo thresholds over the application risk score and are displayed next to model metrics.",
         },
         {
             "Area": "Model limitations",
@@ -170,7 +170,7 @@ derived_signals = pd.DataFrame(
         {"Signal": "loan_velocity_score", "Purpose": "Captures rapid recent borrowing behavior and possible credit stacking."},
         {"Signal": "payment_stress_score", "Purpose": "Combines late-payment behavior with debt pressure."},
         {"Signal": "collateral_gap_ratio", "Purpose": "Estimates uncovered exposure when collateral is weak."},
-        {"Signal": "external_financing_pressure", "Purpose": "Approximates fraud-triangle pressure from request size, debt, and loan velocity."},
+        {"Signal": "external_financing_pressure", "Purpose": "Approximates financing pressure from request size, debt, and loan velocity."},
         {"Signal": "financial_distress_score", "Purpose": "Combines debt, payment, collateral, and short-history stress."},
         {"Signal": "transaction_anomaly_score", "Purpose": "Summarizes suspicious transfers, payment stress, country risk, and borrowing velocity."},
         {"Signal": "company_scale_mismatch_score", "Purpose": "Flags employee scale that appears stretched relative to requested exposure."},

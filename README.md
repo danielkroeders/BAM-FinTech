@@ -1,6 +1,6 @@
-# B2B Loan Fraud Intelligence
+# CredRisk.AI Underwriter Workbench
 
-A synthetic Streamlit decision-support demo for business lenders. The app scores B2B loan applications for fraud risk, assigns an A-F grade, recommends an operational action, and explains the result in plain language.
+A synthetic Streamlit MVP for SME lenders. The app demonstrates CredRisk.AI's lender-side Underwriter Workbench: it scores SME loan applications for credit, pricing, fraud, and anomaly risk, assigns an A-F grade, recommends an operational action, and explains the result in plain language.
 
 This is not a production underwriting, compliance, or legal decision system. High-risk outcomes are framed as requiring human compliance review.
 
@@ -38,10 +38,10 @@ The app generates synthetic seed CSV files under `data/seed/` automatically on f
 ## Demo Script
 
 For a full presentation runbook, see `DEMO.md`.
-For the research grounding behind the fraud ratios, cash-flow signals, and detection measures, see `docs/fraud_research.md`.
+For the research grounding behind the risk ratios, cash-flow signals, anomaly measures, and detection measures, see `docs/fraud_research.md`.
 
-1. Start on `Home.py` and introduce the app as synthetic decision support for B2B loan fraud triage.
-2. Open `Loan Intake` and choose a demo generator scenario such as `Low-risk established borrower`, `Credit stacking case`, or `Suspicious transfers`.
+1. Start on `Home.py` and introduce the app as the CredRisk.AI Underwriter Workbench MVP for SME credit-risk assessment.
+2. Open `Loan Intake` and choose a demo generator scenario such as `A2M Logistics Loan`, `Low-risk established borrower`, `Credit stacking case`, or `Suspicious transfers`.
 3. Score the application, then point out the A-F grade, recommended action, risk flags, structured explanation, similar historical applications, and downloadable case summary.
 4. Click `Open Case Review`, choose an analyst action, optionally prepare the email-ready analysis, and save the review to the audit trail.
 5. For approve/reject outcomes, demonstrate that manual score adjustment requires supervisor approval and supervisor email routing.
@@ -54,7 +54,7 @@ The app works without an OpenAI API key by using deterministic explanations. If 
 
 ## Pages
 
-- `Home.py`: portfolio metrics, known fraud count, model ROC-AUC, recall, and workflow overview.
+- `Home.py`: portfolio metrics, high-risk case count, model ROC-AUC, recall, simulated data sources, and workflow overview.
 - `pages/About.py`: definitions for Loan Intake scoring dimensions and risk grade interpretation.
 - `pages/Loan_Intake.py`: score one B2B loan application and store the latest decision in session state.
 - `pages/Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, and live session decisions.
@@ -64,7 +64,7 @@ The app works without an OpenAI API key by using deterministic explanations. If 
 
 ## A-F Risk Grade Mapping
 
-| Grade | Fraud probability | Action |
+| Grade | Application risk score | Action |
 | --- | --- | --- |
 | A | `< 0.15` | Approve |
 | B | `0.15 to < 0.28` | Approve |

@@ -96,7 +96,7 @@ def shap_driver_table(model_bundle, application):
     grouped = pd.DataFrame(rows).groupby("driver", as_index=False)["contribution"].sum()
     grouped["application_value"] = grouped["driver"].apply(lambda feature: _format_value(enriched_application, feature))
     grouped["impact"] = grouped["contribution"].apply(
-        lambda value: "Raises fraud risk" if value > 0 else "Lowers fraud risk" if value < 0 else "Neutral"
+        lambda value: "Raises application risk" if value > 0 else "Lowers application risk" if value < 0 else "Neutral"
     )
     grouped["absolute_contribution"] = grouped["contribution"].abs()
     grouped = grouped.sort_values("absolute_contribution", ascending=False).reset_index(drop=True)
