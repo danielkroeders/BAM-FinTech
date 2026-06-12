@@ -37,7 +37,7 @@ from src.workbench_features import (
 )
 
 
-st.set_page_config(page_title="Loan Intake", layout="wide")
+st.set_page_config(page_title="Personal Workspace", layout="wide")
 bootstrap_state()
 render_sidebar()
 
@@ -168,24 +168,6 @@ st.markdown(
     .source-badge.ready { background: rgba(34, 197, 94, 0.22); }
     .source-badge.partial { background: rgba(234, 179, 8, 0.24); }
     .source-badge.review { background: rgba(239, 68, 68, 0.22); }
-    .demo-rail {
-        border: 1px solid rgba(59, 130, 246, 0.30);
-        border-radius: 8px;
-        margin: 0.5rem 0 1rem;
-        padding: 0.8rem 1rem;
-        background: rgba(30, 64, 175, 0.14);
-    }
-    .demo-rail-title {
-        color: #f8fafc;
-        font-size: 0.95rem;
-        font-weight: 800;
-        margin-bottom: 0.35rem;
-    }
-    .demo-rail-steps {
-        color: rgba(226, 232, 240, 0.86);
-        font-size: 0.84rem;
-        line-height: 1.45;
-    }
     .queue-panel {
         border: 1px solid rgba(148, 163, 184, 0.24);
         border-radius: 8px;
@@ -247,7 +229,7 @@ company_types = sorted(applications["company_type"].unique())
 FIELD_HELP = {
     "company_name": "Applicant company name used for the session case record and downloadable summary.",
     "industry": "Primary business sector. Sector patterns can affect fraud exposure and cash-flow volatility.",
-    "region": "Applicant operating region. Regional context contributes to the synthetic risk profile.",
+    "region": "Applicant operating region. Regional context contributes to the risk profile.",
     "company_type": "Legal or operating structure, such as LLC, corporation, partnership, or sole proprietorship.",
     "years_in_business": "How long the company has operated. Short histories can reduce verification depth.",
     "employees": "Reported employee count, used to compare company scale with revenue and requested exposure.",
@@ -262,9 +244,9 @@ FIELD_HELP = {
     "monthly_burn_rate": "Estimated monthly cash consumption at application date.",
     "expected_runway_months": "Estimated months the applicant can sustain current burn with available cash.",
     "cash_flow_to_revenue_ratio": "Free cash flow divided by annual revenue, calculated automatically.",
-    "late_payment_ratio": "Share of observed payments that were late in the synthetic transaction profile.",
-    "suspicious_transfer_ratio": "Share of transfers flagged as unusual in the synthetic transaction profile.",
-    "country_risk_score": "Synthetic jurisdictional risk score from 0 to 1.",
+    "late_payment_ratio": "Share of observed payments that were late in the transaction profile.",
+    "suspicious_transfer_ratio": "Share of transfers flagged as unusual in the transaction profile.",
+    "country_risk_score": "Jurisdictional risk score from 0 to 1.",
     "forecast_revenue_cagr": "Expected average annual revenue growth over the next five years.",
     "forecast_employee_cagr": "Expected average annual employee growth over the next five years.",
     "forecast_fcf_margin_year5": "Target free-cash-flow margin by year five.",
@@ -282,16 +264,16 @@ FIELD_HELP = {
     "forecast_support_uploaded": "Whether supporting material for the five-year plan is already present.",
     "document_edit_count": "Number of observed edits or resubmissions after initial intake.",
     "late_stage_change_count": "Number of changes made late in the review process.",
-    "process_deviation_score": "Synthetic score for unusual workflow or process deviations from 0 to 1.",
+    "process_deviation_score": "Score for unusual workflow or process deviations from 0 to 1.",
     "email_domain_age_months": "Estimated age of the applicant email domain in months.",
     "website_age_months": "Estimated age of the applicant website in months.",
     "bank_account_age_months": "Estimated age of the primary business bank account in months.",
-    "location_mismatch_score": "Synthetic score for mismatch between stated location, bank, website, or application metadata.",
-    "duplicate_contact_score": "Synthetic score for shared or duplicate contact details across applications.",
-    "related_party_exposure_score": "Synthetic score for related-party or ownership complexity.",
-    "counterparty_concentration_score": "Synthetic score for revenue or payment concentration in a small counterparty set.",
-    "shared_identifier_score": "Synthetic score for shared bank, address, phone, or owner identifiers.",
-    "narrative_contradiction_score": "Synthetic score for detected contradictions between applicant text and observed evidence.",
+    "location_mismatch_score": "Score for mismatch between stated location, bank, website, or application metadata.",
+    "duplicate_contact_score": "Score for shared or duplicate contact details across applications.",
+    "related_party_exposure_score": "Score for related-party or ownership complexity.",
+    "counterparty_concentration_score": "Score for revenue or payment concentration in a small counterparty set.",
+    "shared_identifier_score": "Score for shared bank, address, phone, or owner identifiers.",
+    "narrative_contradiction_score": "Score for detected contradictions between applicant text and observed evidence.",
     "loan_purpose_context": "Applicant-provided reason for the loan and intended use of funds.",
     "current_business_context": "Applicant-provided context for current operating conditions, recent performance, and key constraints.",
     "future_business_context": "Applicant-provided context for expected changes after funding, outside the formal five-year forecast table.",
@@ -321,7 +303,7 @@ def _clear_scored_case():
 def _activate_intake_case(application, source):
     st.session_state.active_queue_application = dict(application)
     st.session_state.active_intake_source = source
-    st.session_state.loan_demo_scenario = "Custom application"
+    st.session_state.loan_example_scenario = "Custom application"
     _clear_scored_case()
     rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
     if rerun:
@@ -337,7 +319,7 @@ def _clear_active_intake_case():
         rerun()
 
 
-def _demo_application(scenario_name):
+def _example_application(scenario_name):
     values = dict(DEMO_SCENARIOS.get(scenario_name) or {})
     values["application_id"] = "DEMO-A2M-001" if scenario_name == "A2M Logistics Loan" else f"DEMO-{scenario_name[:8].upper()}"
     values["company_name"] = "A2M Logistics" if scenario_name == "A2M Logistics Loan" else scenario_name
@@ -415,6 +397,19 @@ def _data_readiness_rows(application, signals):
     document_score = float(signals.get("document_completeness_score", 0) or 0)
     context_status = _context_completeness(application)
     context_score = {"Complete": 1.0, "Partial": 0.6, "Missing": 0.0}.get(context_status, 0.0)
+    management_notes = [
+        label
+        for key, label in [
+            ("loan_purpose_context", "loan purpose"),
+            ("current_business_context", "current business context"),
+            ("future_business_context", "future business context"),
+            ("ceo_context", "CEO note"),
+            ("cfo_context", "CFO note"),
+            ("coo_context", "COO note"),
+        ]
+        if str(application.get(key, "")).strip()
+    ]
+    management_coverage = ", ".join(management_notes) if management_notes else "No applicant or management narrative provided"
     forecast_score = (
         0.45 * float(application.get("forecast_support_uploaded", 0) or 0)
         + 0.35 * float(application.get("forecast_plan_confidence_score", 0) or 0)
@@ -440,39 +435,54 @@ def _data_readiness_rows(application, signals):
     return [
         {
             "Source": "PSD2 / Open Banking",
-            "Status": _readiness_status(banking_score),
-            "Coverage": f"Bank history {format_months(application.get('bank_account_age_months', 0))}; statements {_yes_no(application.get('bank_statements_uploaded', 0)).lower()}",
-            "Used for": "Cash flow, burn, runway, transaction anomalies",
+            "Readiness": _readiness_status(banking_score),
+            "Evidence coverage": (
+                f"Connected bank-account history: {format_months(application.get('bank_account_age_months', 0))}. "
+                f"Bank statements received: {_yes_no(application.get('bank_statements_uploaded', 0))}."
+            ),
+            "Decision use": "Confirms cash inflows/outflows and flags payment or transfer anomalies.",
         },
         {
             "Source": "Accounting data",
-            "Status": _readiness_status(accounting_score),
-            "Coverage": f"Current ratio {_score(application.get('current_ratio', 0))}; quick ratio {_score(application.get('quick_ratio', 0))}",
-            "Used for": "Liquidity, DSCR, working-capital pressure",
+            "Readiness": _readiness_status(accounting_score),
+            "Evidence coverage": (
+                f"Financial statements received: {_yes_no(application.get('financial_statements_uploaded', 0))}. "
+                f"Tax return received: {_yes_no(application.get('tax_return_uploaded', 0))}. "
+                f"Current ratio: {_score(application.get('current_ratio', 0))}; quick ratio: {_score(application.get('quick_ratio', 0))}."
+            ),
+            "Decision use": "Checks liquidity and whether free cash flow can cover estimated debt service.",
         },
         {
             "Source": "Document package",
-            "Status": _readiness_status(document_score),
-            "Coverage": "Complete" if not missing_documents else f"Missing: {', '.join(missing_documents)}",
-            "Used for": "Completeness, edits, late-stage changes",
+            "Readiness": _readiness_status(document_score),
+            "Evidence coverage": "All expected documents received." if not missing_documents else f"Missing required evidence: {', '.join(missing_documents)}.",
+            "Decision use": "Determines whether the file is complete enough to support a credit decision.",
         },
         {
             "Source": "Registry / KYB",
-            "Status": _readiness_status(registry_score),
-            "Coverage": f"Ownership docs {_yes_no(application.get('ownership_docs_uploaded', 0)).lower()}; location mismatch {_score(application.get('location_mismatch_score', 0))}",
-            "Used for": "Identity, ownership, related-party checks",
+            "Readiness": _readiness_status(registry_score),
+            "Evidence coverage": (
+                f"Ownership/KYB documents received: {_yes_no(application.get('ownership_docs_uploaded', 0))}. "
+                f"Email domain age: {format_months(application.get('email_domain_age_months', 0))}; "
+                f"website age: {format_months(application.get('website_age_months', 0))}. "
+                f"Location mismatch risk score: {_score(application.get('location_mismatch_score', 0))} / {_score(1)}."
+            ),
+            "Decision use": "Supports identity, ownership, related-party, and location consistency checks.",
         },
         {
             "Source": "Management narrative",
-            "Status": _readiness_status(context_score),
-            "Coverage": context_status,
-            "Used for": "Applicant context and contradiction checks",
+            "Readiness": _readiness_status(context_score),
+            "Evidence coverage": f"Narrative completeness: {context_status}. Provided context: {management_coverage}.",
+            "Decision use": "Compares the applicant story with financial evidence and flags contradictions.",
         },
         {
             "Source": "Five-year plan",
-            "Status": _readiness_status(forecast_score),
-            "Coverage": f"Support {_yes_no(application.get('forecast_support_uploaded', 0)).lower()}; confidence {_score(application.get('forecast_plan_confidence_score', 0))}",
-            "Used for": "Growth, FCF margin, debt reduction, execution risk",
+            "Readiness": _readiness_status(forecast_score),
+            "Evidence coverage": (
+                f"Forecast support document received: {_yes_no(application.get('forecast_support_uploaded', 0))}. "
+                f"Banker confidence score: {_score(application.get('forecast_plan_confidence_score', 0))} / {_score(1)}."
+            ),
+            "Decision use": "Assesses growth realism, free-cash-flow margin, debt reduction, and execution risk.",
         },
     ]
 
@@ -611,7 +621,7 @@ def _review_form_body():
         else:
             st.caption("Manual score adjustment is only available for approve/reject review outcomes.")
 
-        submitted = st.form_submit_button("Save Review", use_container_width=True)
+        submitted = st.form_submit_button("Save Review", width="stretch")
 
     if submitted:
         final_prediction = prediction
@@ -623,8 +633,7 @@ def _review_form_body():
             explanation = explain_prediction(
                 application,
                 final_prediction,
-                use_llm=st.session_state.use_llm_explanations,
-                model=st.session_state.explanation_model,
+                use_llm=False,
             )
             st.session_state.last_prediction = final_prediction
             st.session_state.last_explanation = explanation
@@ -668,28 +677,12 @@ if hasattr(st, "dialog"):
 
 header_left, header_right = st.columns([3, 1])
 with header_left:
-    st.title("Loan Intake")
-    st.caption("Analyst workspace for starting, scoring, and reviewing incoming SME loan applications.")
+    st.title("Personal Workspace")
+    st.caption("Live analyst workspace for Ms. Cooper's current SME lending tasks.")
 with header_right:
     st.metric("Active analyst", "Ms. Cooper")
 
-if st.session_state.investor_demo_mode:
-    st.markdown(
-        """
-        <div class="demo-rail">
-            <div class="demo-rail-title">Investor Demo Flow</div>
-            <div class="demo-rail-steps">
-                1. Ms. Cooper opens her analyst queue.
-                2. She starts the next application and the intake file loads below.
-                3. She scores the case, reviews terms, monitoring, confidence, and data readiness.
-                4. She saves a final decision and generates the credit memo.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-st.subheader("Analyst Queue")
+st.subheader("Current Tasks")
 queue = build_application_queue(st.session_state.model_bundle, applications)
 queue_mine = queue[queue["assigned_analyst"].eq("Ms. Cooper")].copy()
 if queue_mine.empty:
@@ -722,7 +715,7 @@ queue_display = queue_display.rename(
         "requested_amount": "Requested amount",
         "fraud_probability": "Application risk score",
         "grade": "Grade",
-        "queue_status": "Queue status",
+        "queue_status": "Task status",
         "missing_documents": "Missing docs",
         "sla": "SLA",
     }
@@ -731,14 +724,14 @@ queue_display = queue_display.rename(
 with st.container():
     st.markdown(
         """
-        <div class="queue-panel">
-            <div class="queue-panel-title">Start Work From The Queue</div>
-            <div class="queue-panel-copy">Select an assigned application, start the intake review, and the working file below loads with the applicant data already present.</div>
+            <div class="queue-panel">
+            <div class="queue-panel-title">Start Work From Current Tasks</div>
+            <div class="queue-panel-copy">Select an assigned case, start the review, and the working file below loads with the applicant data already present.</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.dataframe(queue_display, use_container_width=True, hide_index=True)
+    st.dataframe(queue_display, width="stretch", hide_index=True)
     queue_labels = [
         f"{row.application_id} - {row.company_name} | Grade {row.grade} | {row.queue_status}"
         for row in queue_mine.head(20).itertuples()
@@ -747,11 +740,11 @@ with st.container():
     selected_application_id = queue_pick.split(" - ", 1)[0]
     selected_queue_row = queue_mine[queue_mine["application_id"] == selected_application_id].iloc[0].to_dict()
     queue_actions = st.columns([1, 1, 1, 2])
-    if queue_actions[0].button("Start Selected Case", use_container_width=True):
-        _activate_intake_case(selected_queue_row, "Analyst queue")
-    if queue_actions[1].button("Start A2M Demo Case", use_container_width=True):
-        _activate_intake_case(_demo_application("A2M Logistics Loan"), "Investor demo case")
-    if queue_actions[2].button("Manual Entry", use_container_width=True):
+    if queue_actions[0].button("Start Selected Case", width="stretch"):
+        _activate_intake_case(selected_queue_row, "Current tasks")
+    if queue_actions[1].button("Start A2M Example Case", width="stretch"):
+        _activate_intake_case(_example_application("A2M Logistics Loan"), "Example case")
+    if queue_actions[2].button("Manual Entry", width="stretch"):
         _clear_active_intake_case()
 
 active_case = st.session_state.get("active_queue_application")
@@ -766,15 +759,15 @@ if active_case:
         unsafe_allow_html=True,
     )
 else:
-    st.info("No active intake case yet. Start a queued case above or use Manual Entry to build a custom applicant.")
+    st.info("No active workspace case yet. Start a task above or use Manual Entry to build a custom applicant.")
 
-with st.expander("Demo tools", expanded=False):
-    scenario = st.selectbox("Demo generator", list(DEMO_SCENARIOS.keys()), key="loan_demo_scenario")
-    if st.button("Load selected demo generator", use_container_width=True):
+with st.expander("Example Cases", expanded=False):
+    scenario = st.selectbox("Case example", list(DEMO_SCENARIOS.keys()), key="loan_example_scenario")
+    if st.button("Load selected example", width="stretch"):
         if scenario == "Custom application":
             _clear_active_intake_case()
         else:
-            _activate_intake_case(_demo_application(scenario), "Demo generator")
+            _activate_intake_case(_example_application(scenario), "Example case")
 
 scenario_values = DEMO_SCENARIOS.get(scenario) or {}
 company_name_default = _scenario_value(
@@ -1197,9 +1190,9 @@ with st.form("loan_intake_form"):
                 help=FIELD_HELP["narrative_contradiction_score"],
             )
 
-    with st.expander("Advanced Demo Signals", expanded=False):
-        demo_left, demo_right, demo_third = st.columns(3)
-        with demo_left:
+    with st.expander("Advanced Signals", expanded=False):
+        signal_left, signal_right, signal_third = st.columns(3)
+        with signal_left:
             late_payment_ratio = st.slider(
                 "Late payment ratio",
                 min_value=0.0,
@@ -1208,7 +1201,7 @@ with st.form("loan_intake_form"):
                 step=0.01,
                 help=FIELD_HELP["late_payment_ratio"],
             )
-        with demo_right:
+        with signal_right:
             suspicious_transfer_ratio = st.slider(
                 "Suspicious transfer ratio",
                 min_value=0.0,
@@ -1217,7 +1210,7 @@ with st.form("loan_intake_form"):
                 step=0.01,
                 help=FIELD_HELP["suspicious_transfer_ratio"],
             )
-        with demo_third:
+        with signal_third:
             country_risk_score = st.slider(
                 "Country risk score",
                 min_value=0.0,
@@ -1227,7 +1220,7 @@ with st.form("loan_intake_form"):
                 help=FIELD_HELP["country_risk_score"],
             )
 
-    submitted = st.form_submit_button("Score Application", use_container_width=True)
+    submitted = st.form_submit_button("Score Application", width="stretch")
 
 if submitted:
     errors = []
@@ -1305,8 +1298,7 @@ if submitted:
         explanation = explain_prediction(
             application,
             prediction,
-            use_llm=st.session_state.use_llm_explanations,
-            model=st.session_state.explanation_model,
+            use_llm=False,
         )
         _store_prediction(application, prediction, explanation)
 
@@ -1383,18 +1375,21 @@ if st.session_state.last_prediction:
         """,
         unsafe_allow_html=True,
     )
+    st.subheader("Decision Rationale")
+    st.caption("Explanation source: deterministic analyst explanation. Open AI Explainability to run a local or hosted model.")
+    st.info(explanation)
 
     terms_col, monitoring_col = st.columns(2)
     with terms_col:
         st.subheader("Recommended Loan Terms")
-        st.dataframe(pd.DataFrame(loan_terms), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(loan_terms), width="stretch", hide_index=True)
     with monitoring_col:
         st.subheader("Portfolio Monitoring Preview")
-        st.dataframe(pd.DataFrame(monitoring_rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(monitoring_rows), width="stretch", hide_index=True)
 
     st.subheader("Model Confidence and Governance")
-    st.dataframe(pd.DataFrame(confidence_rows), use_container_width=True, hide_index=True)
-    st.caption("MVP output is banker decision support. Manual adjustments, C-F grades, and exception cases remain subject to human review.")
+    st.dataframe(pd.DataFrame(confidence_rows), width="stretch", hide_index=True)
+    st.caption("Output is banker decision support. Manual adjustments, C-F grades, and exception cases remain subject to human review.")
 
     st.subheader("Data Readiness")
     source_badges = data_source_badges(application, signals)
@@ -1403,10 +1398,10 @@ if st.session_state.last_prediction:
         for badge in source_badges
     )
     st.markdown(f'<div class="badge-row">{badge_html}</div>', unsafe_allow_html=True)
-    st.dataframe(pd.DataFrame(_data_readiness_rows(application, signals)), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(_data_readiness_rows(application, signals)), width="stretch", hide_index=True)
 
     st.subheader("Risk Driver View")
-    st.dataframe(pd.DataFrame(driver_rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(driver_rows), width="stretch", hide_index=True)
 
     snapshot_left, snapshot_middle, snapshot_right = st.columns(3)
     with snapshot_left:
@@ -1427,7 +1422,7 @@ if st.session_state.last_prediction:
                     ("Cash conversion cycle", _days(signals["cash_conversion_cycle_days"])),
                 ]
             ),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     with snapshot_middle:
@@ -1443,7 +1438,7 @@ if st.session_state.last_prediction:
                     ("Statement anomaly", _score(signals["financial_statement_anomaly_score"])),
                 ]
             ),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     with snapshot_right:
@@ -1459,7 +1454,7 @@ if st.session_state.last_prediction:
                     ("Narrative risk", _score(signals["narrative_consistency_risk_score"])),
                 ]
             ),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -1477,7 +1472,7 @@ if st.session_state.last_prediction:
         display_forecast[column] = display_forecast[column].apply(_money)
     display_forecast["Projected employees"] = display_forecast["Projected employees"].apply(format_integer)
     with st.expander("Generated Five-Year Forecast", expanded=True):
-        st.dataframe(display_forecast, use_container_width=True, hide_index=True)
+        st.dataframe(display_forecast, width="stretch", hide_index=True)
 
     executive_rows = [
         {"Executive": "CEO", "Context": application.get("ceo_context", "")},
@@ -1487,7 +1482,7 @@ if st.session_state.last_prediction:
     executive_rows = [row for row in executive_rows if row["Context"]]
     if executive_rows:
         with st.expander("Executive Context", expanded=False):
-            st.dataframe(executive_rows, use_container_width=True, hide_index=True)
+            st.dataframe(executive_rows, width="stretch", hide_index=True)
 
     applicant_rows = [
         {"Context": "Loan purpose", "Applicant input": application.get("loan_purpose_context", "")},
@@ -1497,7 +1492,7 @@ if st.session_state.last_prediction:
     applicant_rows = [row for row in applicant_rows if row["Applicant input"]]
     if applicant_rows:
         with st.expander("Applicant Narrative", expanded=False):
-            st.dataframe(applicant_rows, use_container_width=True, hide_index=True)
+            st.dataframe(applicant_rows, width="stretch", hide_index=True)
 
     document_rows = [
         {"Document": "Financial statements", "Present": _yes_no(application.get("financial_statements_uploaded", 0))},
@@ -1523,9 +1518,9 @@ if st.session_state.last_prediction:
     with st.expander("Document & Verification Review", expanded=True):
         review_left, review_right = st.columns(2)
         with review_left:
-            st.dataframe(pd.DataFrame(document_rows), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(document_rows), width="stretch", hide_index=True)
         with review_right:
-            st.dataframe(pd.DataFrame(verification_rows), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(verification_rows), width="stretch", hide_index=True)
 
     signal_rows = [
         {"Signal": "Debt / revenue", "Value": _ratio(signals["debt_to_revenue_ratio"]), "What it tells the banker": "Debt pressure relative to business size."},
@@ -1556,10 +1551,10 @@ if st.session_state.last_prediction:
     ]
     with st.expander("Calculated Risk Signals", expanded=True):
         st.caption("Fraud and anomaly detection are one component of the broader credit-risk assessment.")
-        st.dataframe(pd.DataFrame(signal_rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(signal_rows), width="stretch", hide_index=True)
 
     action_cols = st.columns([1, 1, 1, 2])
-    if action_cols[0].button("Open Case Review", use_container_width=True):
+    if action_cols[0].button("Open Case Review", width="stretch"):
         if hasattr(st, "dialog"):
             _review_dialog()
         else:
@@ -1571,14 +1566,14 @@ if st.session_state.last_prediction:
         data=memo,
         file_name=f"{application['application_id']}_credit_memo.md",
         mime="text/markdown",
-        use_container_width=True,
+        width="stretch",
     )
     action_cols[2].download_button(
         "Download Audit Summary",
         data=report,
         file_name=f"{application['application_id']}_case_summary.txt",
         mime="text/plain",
-        use_container_width=True,
+        width="stretch",
     )
     if st.session_state.last_email_link and current_review:
         action_cols[3].markdown(f"[Open email draft]({st.session_state.last_email_link})")
@@ -1588,7 +1583,7 @@ if st.session_state.last_prediction:
             _review_form_body()
 
     st.subheader("Decision History Timeline")
-    st.dataframe(pd.DataFrame(timeline_rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(timeline_rows), width="stretch", hide_index=True)
 
     st.write("Risk factors")
     if prediction["flags"]:
@@ -1597,11 +1592,8 @@ if st.session_state.last_prediction:
     else:
         st.success("No elevated deterministic risk flags were triggered.")
 
-    st.write("AI decision rationale")
-    st.info(explanation)
-
     st.subheader("Similar Historical Applications")
-    st.caption("Nearest synthetic portfolio cases by company profile, requested terms, and credit/anomaly risk signals.")
+    st.caption("Nearest historical portfolio cases by company profile, requested terms, and credit/anomaly risk signals.")
     similar = similar_applications(st.session_state.model_bundle, applications, application)
     display_similar = similar.copy()
     for column in ["requested_amount", "free_cash_flow"]:
@@ -1617,6 +1609,6 @@ if st.session_state.last_prediction:
     if "debt_service_coverage_ratio" in display_similar:
         display_similar["debt_service_coverage_ratio"] = display_similar["debt_service_coverage_ratio"].apply(_score)
     display_similar = display_similar.rename(columns={"fraud_probability": "Application risk score"})
-    st.dataframe(display_similar, use_container_width=True, hide_index=True)
+    st.dataframe(display_similar, width="stretch", hide_index=True)
 else:
     st.info("Submit the form to score an application.")

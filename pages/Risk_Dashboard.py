@@ -89,7 +89,7 @@ st.dataframe(
             "decision",
         ],
     ),
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
@@ -108,7 +108,7 @@ st.dataframe(
             "decision",
         ],
     ),
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
@@ -118,7 +118,7 @@ st.dataframe(
         filtered.sort_values("fraud_probability", ascending=False).head(25),
         ["application_id", "company_name", "industry", "region", "requested_amount", "fraud_probability", "grade", "decision"],
     ),
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )
 
@@ -142,7 +142,7 @@ if st.session_state.portfolio_history:
     if "fraud_probability" in display_history:
         display_history["fraud_probability"] = display_history["fraud_probability"].apply(format_percent)
         display_history = display_history.rename(columns={"fraud_probability": "Application risk score"})
-    st.dataframe(display_history, use_container_width=True, hide_index=True)
+    st.dataframe(display_history, width="stretch", hide_index=True)
 else:
     st.info("No applications have been scored in this session yet.")
 
@@ -153,6 +153,6 @@ if st.session_state.review_history:
     if "final_probability" in display_reviews:
         display_reviews["final_probability"] = display_reviews["final_probability"].apply(format_percent)
         display_reviews = display_reviews.rename(columns={"final_probability": "Final application risk score"})
-    st.dataframe(display_reviews, use_container_width=True, hide_index=True)
+    st.dataframe(display_reviews, width="stretch", hide_index=True)
 else:
     st.info("No analyst reviews have been saved in this session yet.")

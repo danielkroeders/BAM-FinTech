@@ -18,7 +18,7 @@ These notes summarize the local PDFs in `docs/` and translate their fraud-detect
 
 ## Implemented Derived Signals
 
-The app computes these fields automatically from seed and intake data in `src/data_pipeline.py`.
+The app computes these fields automatically from the demo portfolio and workspace intake data in `src/data_pipeline.py`.
 
 | Signal | Research motivation | How it helps the demo |
 | --- | --- | --- |

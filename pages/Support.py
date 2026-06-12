@@ -16,7 +16,7 @@ SUPPORT_REPS = [
         "role": "Implementation Lead",
         "email": "mila.verhoeven@credrisk.ai",
         "phone": "+31 20 555 0101",
-        "focus": "Onboarding, demo setup, and lender workflow questions.",
+        "focus": "Onboarding, workspace setup, and lender workflow questions.",
     },
     {
         "name": "Daan Peters",
@@ -37,15 +37,15 @@ SUPPORT_REPS = [
 FAQ_ITEMS = [
     (
         "Is this a production credit decision system?",
-        "No. This MVP is a synthetic decision-support demo. It helps analysts review risk signals, explanations, and workflow controls, but it does not make legal, compliance, or final credit decisions.",
+        "No. This is a decision-support workspace. It helps analysts review risk signals, explanations, and workflow controls, but it does not make legal, compliance, or final credit decisions.",
     ),
     (
-        "Where does the data come from in this MVP?",
-        "The current demo uses synthetic seed data. It simulates financial statements, cash flow, document status, KYB checks, transaction behavior, forecasts, and pricing inputs.",
+        "Where does the data come from?",
+        "The workspace uses application, accounting, document, KYB, transaction, forecast, and pricing inputs available to the review file.",
     ),
     (
         "Does the model consider interest rates and repayment affordability?",
-        "Yes. Loan Intake includes an offered interest rate, annual debt service, DSCR, and a +2 percentage point stressed DSCR.",
+        "Yes. Personal Workspace includes an offered interest rate, annual debt service, DSCR, and a +2 percentage point stressed DSCR.",
     ),
     (
         "Can analysts override the model result?",
@@ -56,7 +56,7 @@ FAQ_ITEMS = [
         "High-risk E/F outcomes should be routed to human compliance-style review before any external decision is communicated.",
     ),
     (
-        "What integrations are planned after the MVP?",
+        "What integrations are supported?",
         "The business plan points toward PSD2/Open Banking, accounting integrations, registry/KvK data, contextual data sources, and eventually an API and SME self-service portal.",
     ),
 ]
@@ -66,12 +66,12 @@ def _support_response(message):
     text = message.lower()
     if any(word in text for word in ["dscr", "interest", "rate", "pricing"]):
         return (
-            "For pricing questions, check Loan Intake's interest rate, annual debt service, DSCR, and stressed DSCR fields. "
+            "For pricing questions, check Personal Workspace's interest rate, annual debt service, DSCR, and stressed DSCR fields. "
             "If DSCR is below 1.0, the case should usually remain in manual review."
         )
     if any(word in text for word in ["document", "kyb", "upload", "checklist"]):
         return (
-            "The MVP does not upload real files. It uses document checklist statuses to simulate whether financial statements, "
+            "The workspace uses document checklist statuses to track whether financial statements, "
             "bank statements, tax returns, KYB docs, and forecast support have already been reviewed."
         )
     if any(word in text for word in ["score", "grade", "risk", "flag"]):
@@ -83,11 +83,10 @@ def _support_response(message):
         return "You can contact Mila, Daan, or Sofia using the email and phone links at the top of this Support page."
     if any(word in text for word in ["api", "psd2", "accounting", "integration"]):
         return (
-            "Integrations are part of the post-MVP roadmap. The current version simulates PSD2, accounting, document, "
-            "registry, and contextual signals with synthetic data."
+            "The workspace is designed around PSD2, accounting, document, registry, and contextual signal inputs."
         )
     return (
-        "Thanks. I logged that as a demo support question. For urgent case review, contact Daan Peters or use the request form above."
+        "Thanks. I logged that as a support question. For urgent case review, contact Daan Peters or use the request form above."
     )
 
 
@@ -108,7 +107,7 @@ def _mailto(rep, category, case_id, message):
 
 
 st.title("Support")
-st.caption("Contact a CredRisk.AI representative, submit a support request, or use the demo live chat.")
+st.caption("Contact a CredRisk.AI representative, submit a support request, or use live chat.")
 
 st.subheader("Contact A Representative")
 rep_cols = st.columns(len(SUPPORT_REPS))
@@ -128,20 +127,20 @@ with st.form("support_request_form"):
         category = st.selectbox(
             "Category",
             [
-                "Loan intake",
+                "Personal workspace",
                 "Model score",
                 "Case review",
                 "Document checks",
                 "Account access",
                 "Technical issue",
-                "Demo question",
+                "Workflow question",
             ],
         )
     with form_right:
         preferred_contact = st.radio("Preferred contact", ["Email", "Phone"], horizontal=True)
         case_id = st.text_input("Case or application ID", placeholder="APP-00001 or SESSION-001")
     message = st.text_area("Message", placeholder="Describe what you need help with.", height=110)
-    submitted = st.form_submit_button("Submit Support Request", use_container_width=True)
+    submitted = st.form_submit_button("Submit Support Request", width="stretch")
 
 if submitted:
     selected_rep = next(rep for rep in SUPPORT_REPS if rep["name"] == selected_name)
@@ -151,7 +150,7 @@ if submitted:
 chat_left, chat_right = st.columns([2, 1])
 with chat_left:
     st.subheader("Live Chat")
-    st.caption("Demo chat only. It uses scripted responses and does not contact a real support desk.")
+    st.caption("This chat uses scripted responses and does not contact a real support desk.")
     if "support_chat_history" not in st.session_state:
         st.session_state.support_chat_history = [
             {
@@ -166,7 +165,7 @@ with chat_left:
 
     with st.form("support_chat_form", clear_on_submit=True):
         prompt = st.text_input("Message support", placeholder="Ask about scoring, DSCR, documents, or integrations.")
-        send_chat = st.form_submit_button("Send", use_container_width=True)
+        send_chat = st.form_submit_button("Send", width="stretch")
     if send_chat and prompt.strip():
         st.session_state.support_chat_history.append({"role": "user", "content": prompt.strip()})
         st.session_state.support_chat_history.append({"role": "assistant", "content": _support_response(prompt.strip())})

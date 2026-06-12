@@ -67,9 +67,9 @@ queue_rows = pd.DataFrame(
         {"Review queue": "Top 20%", "Precision": format_score(metrics["precision_at_20pct"], 3)},
     ]
 )
-st.dataframe(queue_rows, use_container_width=True, hide_index=True)
+st.dataframe(queue_rows, width="stretch", hide_index=True)
 
-st.subheader("Custom Seed Metric")
+st.subheader("Custom Portfolio Metric")
 metric_left, metric_middle, metric_right, metric_extra = st.columns(4)
 numeric_options = [column for column in NUMERIC_COLUMNS if column in applications.columns]
 with metric_left:
@@ -114,7 +114,7 @@ with left:
         index=["Actual lower risk", "Actual high risk"],
         columns=["Predicted lower risk", "Predicted high risk"],
     )
-    st.dataframe(matrix, use_container_width=True)
+    st.dataframe(matrix, width="stretch")
 with right:
     st.subheader("A-F Grading Thresholds")
     thresholds = pd.DataFrame(
@@ -127,39 +127,39 @@ with right:
             {"Grade": "F", "Application risk score": ">= 0.74", "Decision": "Reject"},
         ]
     )
-    st.dataframe(thresholds, use_container_width=True, hide_index=True)
+    st.dataframe(thresholds, width="stretch", hide_index=True)
 
 st.subheader("Governance Notes")
 governance_rows = pd.DataFrame(
     [
         {
             "Area": "Data lineage",
-            "MVP control": "Synthetic seed applications are generated locally and enriched with derived ratios, verification metadata, and review outcomes.",
+            "Control": "Application records are prepared locally and enriched with derived ratios, verification metadata, and review outcomes.",
         },
         {
             "Area": "Human review",
-            "MVP control": "C-D cases route to manual review; E-F cases require compliance-style review before final action.",
+            "Control": "C-D cases route to manual review; E-F cases require compliance-style review before final action.",
         },
         {
             "Area": "Audit trail",
-            "MVP control": "Case review captures final decision, analyst action, notes, supervisor mailbox, and manual score adjustment status.",
+            "Control": "Case review captures final decision, analyst action, notes, supervisor mailbox, and manual score adjustment status.",
         },
         {
             "Area": "Threshold policy",
-            "MVP control": "A-F grades are fixed demo thresholds over the application risk score and are displayed next to model metrics.",
+            "Control": "A-F grades are fixed policy thresholds over the application risk score and are displayed next to model metrics.",
         },
         {
             "Area": "Model limitations",
-            "MVP control": "The app is decision support on synthetic data; outputs are not legal, credit, or compliance determinations.",
+            "Control": "The app is decision support; outputs are not legal, credit, or compliance determinations.",
         },
     ]
 )
-st.dataframe(governance_rows, use_container_width=True, hide_index=True)
+st.dataframe(governance_rows, width="stretch", hide_index=True)
 
 st.subheader("Top Feature Importances")
 importance_display = bundle.feature_importance.head(20).copy()
 importance_display["importance"] = importance_display["importance"].apply(lambda value: format_score(value, 4))
-st.dataframe(importance_display, use_container_width=True, hide_index=True)
+st.dataframe(importance_display, width="stretch", hide_index=True)
 st.bar_chart(bundle.feature_importance.head(12).set_index("feature")["importance"])
 
 st.subheader("Research-Backed Derived Signals")
@@ -208,5 +208,5 @@ derived_signals = pd.DataFrame(
         {"Signal": "narrative_consistency_risk_score", "Purpose": "Flags contradictions between applicant context, document status, and financial signals."},
     ]
 )
-st.dataframe(derived_signals, use_container_width=True, hide_index=True)
-st.caption("These derived fields are computed automatically from seed and intake data; analysts do not need to enter them manually.")
+st.dataframe(derived_signals, width="stretch", hide_index=True)
+st.caption("These derived fields are computed automatically from portfolio and workspace intake data; analysts do not need to enter them manually.")

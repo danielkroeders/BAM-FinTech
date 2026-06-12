@@ -1,177 +1,196 @@
-# Claude Instructions: Build the BAM-FinTech App
+# Codex Instructions: Recreate The CredRisk.AI Underwriter Workbench
 
-You are being asked to create a complete Streamlit application for a B2B loan fraud intelligence demo. Build the app from scratch in this repository so it matches the product described below.
+Build and maintain **CredRisk.AI Underwriter Workbench** as a Streamlit application for SME lending analysts. The product should feel like a real bank employee workspace already in motion: Ms. Cooper starts from her workday, opens assigned cases, scores applications, reviews evidence, records final decisions, monitors portfolio risk, and can optionally run an AI second review.
 
-## Product Goal
-
-Create a multi-page app called **B2B Loan Fraud Intelligence** for business lenders. The app should score B2B loan applications for fraud risk, assign an A-F grade, recommend an operational action, and explain the decision in plain language.
-
-This is a synthetic demo and decision-support tool, not a production underwriting or legal decision system. High-risk outcomes must be framed as requiring human compliance review.
-
-## Required User Experience
-
-The app must be a real working Streamlit product, not a landing page.
-
-Create these pages:
-
-- `Home.py`: overview page with portfolio size, known fraud count, model ROC-AUC, model recall, and a short workflow summary.
-- `pages/Loan_Intake.py`: form for scoring a single B2B loan application.
-- `pages/Risk_Dashboard.py`: portfolio-level dashboard with grade distribution, decision mix, highest-risk applications, and live session decisions.
-- `pages/Model_Insights.py`: model metrics, confusion matrix, top feature importances, and A-F grading thresholds.
-- `pages/LLM_Chat.py`: AI explainability page for the latest scored loan request.
-
-The correct launch command must be:
+Launch command:
 
 ```bash
 streamlit run Home.py
 ```
 
-Do not use `app.py` as the entrypoint.
+Do not create or use `app.py`.
 
-## Required Project Structure
+## Product Shape
 
-Create and use this structure:
+The application is an operational lending workbench, not a landing page. It supports:
+
+- RF model scoring for SME loan applications.
+- A-F risk grading and model recommendations.
+- Case-level evidence readiness and calculated risk signals.
+- Analyst final decisions that remain separate from model recommendations.
+- Bulk actions on the team workboard.
+- Portfolio monitoring and review audit history.
+- Deterministic explanations by default.
+- Optional hosted or local LLM second-review output from the AI Explainability page only.
+
+High-risk outputs require human compliance review. Never present model or LLM output as a final legal, credit, or compliance determination.
+
+## Required Structure
+
+Keep this Streamlit page layout:
 
 ```text
 Home.py
 pages/
-  Loan_Intake.py
+  Personal_Workspace.py
+  Operations_Desk.py
   Risk_Dashboard.py
   Model_Insights.py
   LLM_Chat.py
+  About.py
+  Support.py
 src/
   __init__.py
+  case_workflow.py
   data_pipeline.py
-  modeling.py
   explanations.py
+  formatting.py
+  modeling.py
   runtime.py
+  shap_explanations.py
   ui.py
+  workbench_features.py
 data/
   seed/
-    applications.csv
-    company_profiles.csv
-    transactions.csv
-    decisions.csv
-requirements.txt
+docs/
+  fraud_research.md
 README.md
+DEMO.md
+Run_App.bat
+requirements.txt
 ```
 
-## Dependencies
+Do not recreate `pages/Loan_Intake.py` or `pages/Application_Queue.py`; those concepts are now `Personal_Workspace.py` and `Operations_Desk.py`.
 
-Use Python with these runtime dependencies:
+## Page Requirements
+
+### Home
+
+`Home.py` is Ms. Cooper's employee homepage. It must show only:
+
+- Welcome message for Ms. Cooper.
+- Current tasks table.
+- `Slack Updates`.
+- `Calendar Today`.
+
+Do not put source-status panels, connected-data panels, portfolio charts, RF model metrics, product walkthrough content, or explanation controls on Home.
+
+### Personal Workspace
+
+`pages/Personal_Workspace.py` is the case work surface. It must:
+
+- Let Ms. Cooper start an assigned case, start the A2M example case, or use manual entry.
+- Keep clearly marked example cases available for presentations.
+- Group intake fields around company profile, loan request, financial snapshot, five-year plan, applicant narrative, executive context, documents, verification, and advanced signals.
+- Score an application through the RF model.
+- Store latest application, prediction, deterministic explanation, and session history.
+- Show score output near the top: application risk score, risk grade, model recommendation, final decision status, review status, and stressed DSCR.
+- Show `Decision Rationale` immediately after the score panel. This rationale is deterministic in Personal Workspace.
+- Keep model recommendation separate from analyst final decision.
+- Provide case review, audit summary download, credit memo generation, similar historical applications, decision timeline, calculated risk signals, data readiness, recommended terms, and monitoring preview.
+
+Data Readiness must use plain banker language. Avoid shorthand like "support no" or unexplained scores. Use labels such as:
+
+- `Forecast support document received: Yes/No`.
+- `Banker confidence score: 0,38 / 1,00`.
+- `Financial statements received: Yes/No`.
+- `Decision use: Checks liquidity and whether free cash flow can cover estimated debt service.`
+
+### Operations Desk
+
+`pages/Operations_Desk.py` is the team workboard. It must:
+
+- Show open work items, manual/compliance work, evidence follow-up, rejected-today count, filters, task table, and selected-case detail.
+- Support selecting multiple visible cases and applying `Reject Selected Cases`.
+- Record bulk rejections in `review_history`, `portfolio_history`, and `bulk_final_decisions`.
+- Link into Personal Workspace for single-case work.
+
+### Risk Dashboard
+
+`pages/Risk_Dashboard.py` must show:
+
+- Portfolio filters.
+- Filtered exposure.
+- Manual review queue.
+- Compliance review queue.
+- Highest-risk applications.
+- Live session decisions.
+- Analyst review audit trail.
+
+### Model Insights
+
+`pages/Model_Insights.py` must show:
+
+- Accuracy, balanced accuracy, precision, recall, F1, ROC-AUC, average precision, MCC, false-positive/false-negative rates, review-rate and error-cost metrics.
+- Precision at top 5%, 10%, and 20% review queues.
+- Confusion matrix.
+- A-F grading thresholds.
+- Governance notes.
+- Feature importances.
+- Research-backed derived signals.
+
+### AI Explainability
+
+`pages/LLM_Chat.py` is the only place where hosted or local LLM calls may run.
+
+The flow must be:
+
+1. Score an application in Personal Workspace.
+2. Open AI Explainability.
+3. Show the RF model baseline first.
+4. Show deterministic explanation by default.
+5. Let the user choose `Deterministic`, `OpenAI API`, or `Local server`.
+6. Let the user choose `Detailed analyst memo` or `Concise summary`.
+7. Call the chosen LLM provider only after the user clicks `Run Explanation`.
+8. Render the returned output on the page.
+
+The RF baseline must show:
+
+- RF application risk score.
+- RF grade.
+- RF recommendation.
+- RF ROC-AUC.
+- RF recall.
+- RF precision.
+- Balanced accuracy.
+- Precision at top 10%.
+
+LLM output must act as a second reviewer. The prompt must ask the LLM to:
+
+- Use the RF model output, RF validation metrics, and loan intake inputs as evidence.
+- Run its own qualitative assessment.
+- Say whether it agrees, partially agrees, or disagrees with the RF recommendation.
+- Output exactly one line in the form `AI review score: NN/100`.
+- Output exactly one line in the form `AI suggested grade: X`.
+- Use the same A-F thresholds as the RF model.
+- Explain if the case looks more severe or less severe than the RF grade, for example "more like grade E than RF grade C".
+- Suggest follow-up actions and questions.
+- Avoid inventing facts or claiming legal certainty.
+
+The UI must parse the AI review score, compute the implied A-F grade, and compare it with the RF grade. If the LLM's written grade conflicts with the implied grade, show a warning and treat the implied grade as the normalized comparison.
+
+### About
+
+`pages/About.py` defines scoring dimensions and derived risk signals. Keep it explanatory and banker-readable.
+
+### Support
+
+`pages/Support.py` provides representative contacts, support request form, scripted chat, and FAQ.
+
+## Decisioning Policy
+
+Use this A-F grade mapping everywhere:
 
 ```text
-streamlit
-pandas
-numpy
-scikit-learn
-openai
+A: application risk score < 0.15
+B: application risk score < 0.28
+C: application risk score < 0.42
+D: application risk score < 0.58
+E: application risk score < 0.74
+F: application risk score >= 0.74
 ```
 
-Python 3.10+ is recommended.
-
-## Data Requirements
-
-Generate synthetic seed data automatically when needed. The app should work on first run without the user manually creating CSV files.
-
-`src/data_pipeline.py` must define:
-
-- `SEED_DIR`
-- `NUMERIC_COLUMNS`
-- `CATEGORICAL_COLUMNS`
-- `TARGET_COLUMN`
-- `generate_seed_data()`
-- `load_seed_data()`
-- `ensure_seed_data()`
-
-The app must create/load these CSVs under `data/seed/`:
-
-- `applications.csv`
-- `company_profiles.csv`
-- `transactions.csv`
-- `decisions.csv`
-
-Use at least 400 seed application rows. A default around 1,200 rows is good.
-
-Required numeric model features:
-
-- `requested_amount`
-- `term_months`
-- `annual_revenue`
-- `years_in_business`
-- `existing_debt`
-- `num_recent_loans`
-- `late_payment_ratio`
-- `suspicious_transfer_ratio`
-- `collateral_ratio`
-- `employees`
-- `country_risk_score`
-
-Required categorical model features:
-
-- `industry`
-- `region`
-- `company_type`
-
-Required target:
-
-- `is_fraud`
-
-Synthetic risk should be realistic for B2B lending. Higher risk should be influenced by high debt pressure, high requested amount relative to revenue, many recent loans, suspicious transfer ratio, late payments, country risk, low collateral, and short operating history.
-
-## Modeling Requirements
-
-`src/modeling.py` must train a supervised fraud model using scikit-learn.
-
-Use:
-
-- `Pipeline`
-- `ColumnTransformer`
-- numeric imputation with median
-- numeric scaling with `StandardScaler`
-- categorical imputation with most frequent value
-- categorical encoding with `OneHotEncoder(handle_unknown="ignore")`
-- `RandomForestClassifier`
-
-Create a `ModelBundle` dataclass containing:
-
-- trained pipeline
-- metrics dictionary
-- feature importance DataFrame
-- threshold map
-
-Compute and expose:
-
-- accuracy
-- precision
-- recall
-- F1
-- ROC-AUC
-- confusion matrix values: `tn`, `fp`, `fn`, `tp`
-
-Implement:
-
-- `train_model(applications)`
-- `grade_from_probability(probability)`
-- `decision_from_grade(grade)`
-- `rule_flags(application)`
-- `score_application(model_bundle, application)`
-- `score_portfolio(model_bundle, applications)`
-
-## A-F Risk Grade Mapping
-
-Use this exact mapping:
-
-```text
-A: fraud probability < 0.15
-B: fraud probability < 0.28
-C: fraud probability < 0.42
-D: fraud probability < 0.58
-E: fraud probability < 0.74
-F: fraud probability >= 0.74
-```
-
-Use this exact decision mapping:
+Use this model recommendation mapping:
 
 ```text
 A or B: Approve
@@ -179,232 +198,158 @@ C or D: Manual Review
 E or F: Reject
 ```
 
-## Loan Intake Page
+The RF model recommendation is never the final analyst decision. Final decision is saved through review workflow or bulk action.
 
-The single-loan form must collect:
+## Model And Data Requirements
 
-- industry
-- region
-- company type
-- requested amount
-- term months
-- annual revenue
-- years in business
-- existing debt
-- recent loans in the last 12 months
-- late payment ratio
-- suspicious transfer ratio
-- collateral ratio
-- employees
-- country risk score
+`src/modeling.py` must use scikit-learn with:
 
-On submit, display:
+- `Pipeline`.
+- `ColumnTransformer`.
+- numeric imputation with median.
+- numeric scaling with `StandardScaler`.
+- categorical imputation with most frequent value.
+- categorical encoding with `OneHotEncoder(handle_unknown="ignore")`.
+- `RandomForestClassifier`.
 
-- fraud probability
-- A-F grade
-- recommended action
-- risk factors
-- AI decision rationale
+Expose:
 
-Store the latest scored application, prediction, and explanation in Streamlit session state. Append each submitted score to a session-level history list so the dashboard can display live session decisions.
+- `ModelBundle`.
+- `train_model(applications)`.
+- `grade_from_probability(probability)`.
+- `decision_from_grade(grade)`.
+- `rule_flags(application)`.
+- `score_application(model_bundle, application)`.
+- `score_portfolio(model_bundle, applications)`.
 
-## Explanation Requirements
+`src/data_pipeline.py` must keep the local portfolio data available automatically and maintain derived features for:
 
-`src/explanations.py` must provide deterministic explanations and optional LLM explanations.
+- debt pressure.
+- request-to-revenue exposure.
+- loan velocity.
+- payment stress.
+- collateral gap.
+- transaction anomaly.
+- company scale mismatch.
+- governance complexity.
+- free cash flow.
+- monthly burn.
+- cash-flow-to-revenue.
+- runway risk.
+- cash conversion.
+- five-year forecast realism.
+- interest-rate and debt-service stress.
+- document completeness and document quality.
+- process integrity.
+- identity/KYB verification.
+- working-capital pressure.
+- financial-statement anomaly.
+- related-party network risk.
+- narrative consistency.
 
-The app must work without an API key. If no OpenAI key is present, or if the LLM call fails, use deterministic fallback.
+Keep cash-flow fields, forecast fields, document/KYB fields, applicant narrative, and executive context in the case file.
 
-Read the API key from:
+## Explanations
 
-- Streamlit secrets: `OPENAI_API_KEY`
-- environment variable: `OPENAI_API_KEY`
+`src/explanations.py` must provide:
 
-The deterministic explanation must:
+- deterministic explanation that works without any API key or local model.
+- OpenAI API explanation through `OPENAI_API_KEY`.
+- local model explanation through an OpenAI-compatible chat-completions endpoint.
+- local URL normalization so server root, `/v1`, or an accidentally pasted `/chat/completions` path still resolves to the correct base URL.
+- visible fallback error messages when LLM calls fail.
 
-- state decision, grade, and fraud probability
-- mention applicant context, such as company type, industry, and requested amount
-- list top risk drivers
-- state that this is decision support and high-risk cases need human compliance review
+Local LLM fields are entered on AI Explainability and kept only in Streamlit session state. Do not write server URLs or tokens to files.
 
-The optional LLM explanation must:
+Local defaults:
 
-- use the model output and flags as source material
-- explain the result in concise plain language
-- avoid claiming legal certainty
-- avoid inventing facts
-- fail back to deterministic explanation
-
-## Runtime and Session State
-
-`src/runtime.py` must provide cached bootstrap helpers:
-
-- `get_seed_data()` with `st.cache_data`
-- `get_model_bundle()` with `st.cache_resource`
-- `bootstrap_state()`
-
-`bootstrap_state()` must initialize:
-
-- `seed_data`
-- `model_bundle`
-- `portfolio_history`
-- `last_application`
-- `last_prediction`
-
-Each page must call `bootstrap_state()` before using shared data or model objects.
-
-## Shared UI
-
-`src/ui.py` must provide a shared sidebar with:
-
-- toggle for LLM explanations
-- explanation model selectbox
-- API key detected indicator
-
-Keep the UI professional, compact, and operational. It should feel like a risk tool for lending analysts, not a marketing site.
-
-## Acceptance Checks
-
-Before finishing, verify:
-
-```bash
-python3 -m compileall src Home.py pages
-streamlit run Home.py
+```text
+LOCAL_LLM_BASE_URL=http://localhost:1234/v1
+LOCAL_LLM_MODEL=local-model
+LOCAL_LLM_API_KEY=local
 ```
 
-Functional acceptance:
+## Runtime State
 
-- Home page loads from `Home.py`.
-- Seed data is created or loaded automatically.
-- Model trains and metrics display.
-- Loan Intake scores a sample application.
-- Score output includes fraud probability, grade, decision, flags, and explanation.
-- App works without `OPENAI_API_KEY`.
-- Risk Dashboard shows grade distribution, decision mix, highest-risk applications, and session history after scoring.
-- Model Insights shows metrics, confusion matrix, feature importances, and thresholds.
-- AI Explainability handles the case where no application has been scored yet.
+`src/runtime.py` must initialize:
+
+- `seed_data`.
+- `model_bundle`.
+- `portfolio_history`.
+- `review_history`.
+- `last_application`.
+- `last_prediction`.
+- `last_explanation`.
+- `last_explanation_source`.
+- `last_explanation_error`.
+- `last_review`.
+- `last_email_link`.
+- `show_review_dialog`.
+- LLM page state: provider, latest output, source, error, case signature, local URL/model/token.
+- bulk action state.
+- active case state.
+
+Every page must call `bootstrap_state()` before using shared state.
+
+## UI And Copy Rules
+
+- Keep the UI operational and compact.
+- Do not make a marketing landing page.
+- Do not use app-facing words that reveal staging or sample data, except for clearly marked example cases in Personal Workspace.
+- Use employee language: current tasks, workboard, evidence follow-up, case review, final decision, audit trail, supervisor routing.
+- Keep data-source readiness inside Personal Workspace because readiness differs per applicant.
+- Use European formatting helpers from `src/formatting.py`.
+- Use `width="stretch"` instead of deprecated `use_container_width=True`.
+- Keep buttons and tables readable on desktop and mobile.
+- Never include secrets or real customer data.
 
 ## Documentation
 
-Create or update `README.md` with:
+Maintain:
 
-- product summary
-- setup instructions
-- correct launch command: `streamlit run Home.py`
-- optional OpenAI key behavior
-- page overview
-- A-F risk grade mapping
+- `README.md`: product summary, Windows launcher, manual launch, LLM provider setup, page overview, A-F grade policy.
+- `DEMO.md`: walkthrough runbook for presentations.
+- `docs/fraud_research.md`: research grounding for derived signals.
 
-Never include secrets or real customer data.
+`README.md` must mention `Run_App.bat` before manual command-line setup.
 
-## Investor Demo Enhancements
+## Dependencies
 
-Keep these MVP demo workflows available and maintained:
+Required runtime dependencies:
 
-- `pages/Loan_Intake.py` must include a top-right demo generator with preset B2B borrower scenarios for reliable investor demos.
-- After scoring an application, Loan Intake must show similar historical synthetic applications with their fraud probability, grade, decision, and historical fraud outcome.
-- Loan Intake must provide a case review pop-up or fallback review panel where analysts can choose an action, add notes, prepare an email-ready case analysis, and save the review to session audit history.
-- Manual score adjustment is only allowed for approve/reject review outcomes and must require explicit supervisor approval plus a supervisor or review mailbox.
-- Any manual adjustment must store the final probability, grade, decision, manual-adjustment flag, supervisor email, and analyst note in the session audit trail.
-- Loan Intake must offer a downloadable case summary for the latest scored application.
-- `pages/Risk_Dashboard.py` must include portfolio filters, a manual review queue for C-D grades, a compliance review queue for E-F grades, live session decisions, and analyst review audit history.
-- Deterministic explanations must remain structured for analyst use, including decision, top risk drivers, mitigating factors, recommended analyst action, and compliance note.
-- `README.md` must include a short demo script suitable for grading and investor presentation.
+```text
+streamlit
+pandas
+numpy
+scikit-learn
+openai
+shap
+pypdf
+```
 
-## Final Decision Review Behavior
+Python 3.10+ is recommended.
 
-Append and preserve these Loan Intake review rules:
+## Acceptance Checks
 
-- After a case review is saved, the selected analyst action must be reflected on the page as the case `Final Decision`.
-- The score output should keep the model result visible as `Model Recommendation` while showing the analyst outcome separately as `Final Decision`.
-- Do not show `Manual Adjustment` as the primary score output metric; manual adjustment should remain an audit detail only.
-- Saving a case review from the pop-up must trigger a page refresh or rerun so the updated final decision is immediately visible.
-- Live session decision tables should include `final_decision` so reviewed cases clearly show the analyst outcome.
-- Case summaries should include both the final decision and the original model recommendation.
+Before finishing meaningful changes, verify:
 
-## First-Time User Launcher
+```bash
+python -m compileall src Home.py pages
+streamlit run Home.py
+```
 
-Append and preserve these launcher rules:
+Functional checks:
 
-- The repository should include a double-clickable Windows launcher named `Run_App.bat`.
-- The launcher must run from the project root, create a local `.venv` when needed, install dependencies from `requirements.txt`, and start the app with `streamlit run Home.py`.
-- The launcher must not require users to run terminal commands manually for first-time setup.
-- The launcher should provide clear error messages when Python 3.10+ is missing or dependency installation fails.
-- Generated local environments such as `.venv/` must remain ignored by git.
-- `README.md` should mention the double-click launcher before the manual Streamlit command.
-
-## Demo Runbook Documentation
-
-Append and preserve these demo documentation rules:
-
-- The repository should include a standalone `DEMO.md` file for investor demos, grading presentations, and live walkthroughs.
-- `DEMO.md` should include first-time startup steps, the core product message, a five-minute demo flow, a two-minute backup flow, suggested presenter language, safety notes, and troubleshooting.
-- The demo guide should emphasize that all data is synthetic and that high-risk outcomes require human compliance review.
-- `README.md` should link to `DEMO.md` from the demo script section so presenters can find the full runbook quickly.
-
-## Research-Backed Fraud Signals
-
-Append and preserve these signal-design rules:
-
-- Local fraud research PDFs may be summarized in `docs/fraud_research.md`; do not paste full paper text into Codex instructions.
-- `src/data_pipeline.py` should maintain `add_derived_features()` for research-backed synthetic fraud measures derived from seed and intake fields.
-- Keep derived features automatic and hidden from the Loan Intake form unless there is a strong demo reason to expose them.
-- Maintain derived pressure, anomaly, velocity, distress, collateral, scale-mismatch, and governance signals in the model feature set.
-- `src/modeling.py` must derive these features before training, portfolio scoring, and single-application scoring.
-- Similar-case matching and SHAP explanations should use the derived feature set so comparable cases and explanations reflect the same model inputs.
-- Model Insights should include imbalance-aware metrics such as balanced accuracy, average precision, Matthews correlation coefficient, and precision at the top review queue, not accuracy alone.
-- `README.md` should link to `docs/fraud_research.md` so graders can inspect the research grounding.
-
-## Cash-Flow Risk Signals
-
-Append and preserve these cash-flow signal rules:
-
-- Synthetic seed data should include `data/seed/cash_flows.csv` in addition to the original seed tables.
-- Cash-flow analysis must include free cash flow, monthly burn rate, cash flow as a percentage of revenue, and expected runway at application date.
-- `src/data_pipeline.py` should generate these cash-flow fields automatically and include them in model features.
-- Loan Intake should capture cash-flow inputs compactly and compute cash flow / revenue automatically from free cash flow and annual revenue.
-- Derived cash-flow risk measures should include cash-flow pressure, runway risk, and cash conversion risk.
-- Rule flags, SHAP explanations, similar-case matching, About, Model Insights, and case summaries should reflect cash-flow signals where relevant.
-- Keep cash-flow fields synthetic and never use real company financials.
-
-## Banker-First Loan Intake
-
-Append and preserve these Loan Intake usability rules:
-
-- Loan Intake should feel like a banker reviewing an incoming application, not a model-lab control panel.
-- Visible intake fields should be grouped around company profile, loan request, and financial snapshot.
-- Advanced synthetic controls such as late-payment ratio, suspicious-transfer ratio, and country risk should live under an `Advanced Demo Signals` expander.
-- Derived ratios and risk scores must be calculated by the model pipeline, not manually entered by the banker.
-- After scoring, show a `Calculated Risk Signals` section with the model-calculated ratios and scores used to support the decision.
-- Keep the demo generator because it helps presentations, but it should populate banker-facing inputs rather than exposing all model internals up front.
-
-## Five-Year Forecast And Executive Context
-
-Append and preserve these forward-looking intake rules:
-
-- Synthetic seed data should include `data/seed/forecasts.csv` with annual five-year forecast rows for each application.
-- The five-year forecast should include projected annual revenue, projected employees, projected free cash flow, and projected debt.
-- Loan Intake should capture forecast assumptions such as expected revenue growth, employee growth, year-five FCF margin target, planned debt reduction, and plan confidence.
-- The model should grade forecast realism through derived plan-aggressiveness, execution-risk, hiring-efficiency-risk, and debt-service-risk signals.
-- After scoring, Loan Intake should show a generated five-year forecast table and include forecast-derived risk signals in `Calculated Risk Signals`.
-- Loan Intake should include CEO, CFO, and COO context text areas. Demo scenarios may prefill them; the custom template should leave them empty.
-- Executive context should supplement the case summary and presentation narrative, but raw text should not be used as a model feature unless explicitly designed and documented later.
-
-## Applicant Narrative Context
-
-Append and preserve these applicant-context rules:
-
-- Loan Intake should include a separate applicant narrative section for loan purpose, current business context, and future business context.
-- This applicant narrative is distinct from the CEO, CFO, and COO executive context and does not need to duplicate the five-year forecast text.
-- Demo scenarios may prefill applicant narrative fields; the custom template should leave them empty.
-- Applicant narrative should appear in the post-score review output and case summary.
-- The app may show a simple narrative completeness indicator, but raw applicant narrative text should not be used directly as a model feature unless explicitly designed and documented later.
-
-## European Number Formatting
-
-Append and preserve these display-formatting rules:
-
-- User-facing currency should use the euro sign, for example `€ 1.234,56`.
-- User-facing numbers should use `.` as the thousands separator and `,` as the decimal separator.
-- Keep underlying dataframe and model values numeric; apply European formatting only to UI display strings, reports, summaries, and exported text.
-- Prefer the shared helpers in `src/formatting.py` for currency, percentages, scores, integers, and month values.
-- Loan Intake currency input fields should display formatted euro values such as `€1.000.000,00` while parsing values back into numeric model inputs.
+- Home loads and shows only current tasks, Slack Updates, and Calendar Today.
+- Personal Workspace scores an application and shows deterministic Decision Rationale near the score output.
+- Personal Workspace Data Readiness uses clear evidence labels.
+- Case review saves final decision separately from model recommendation.
+- Operations Desk supports bulk rejection and audit history.
+- Risk Dashboard shows manual/compliance queues and session history.
+- Model Insights shows metrics, thresholds, confusion matrix, and feature importance.
+- AI Explainability handles no-scored-case state.
+- AI Explainability shows RF baseline metrics.
+- AI Explainability runs no LLM call until `Run Explanation` is clicked.
+- AI Explainability can run deterministic, OpenAI API, or local-server explanations.
+- AI Explainability extracts AI review score, maps it to A-F grade thresholds, and compares it to RF grade.
+- App works without `OPENAI_API_KEY` and without a local model.

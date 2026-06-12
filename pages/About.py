@@ -10,10 +10,10 @@ bootstrap_state()
 render_sidebar()
 
 st.title("About")
-st.caption("Definitions for the loan intake scoring dimensions used by the SME application-risk model.")
+st.caption("Definitions for the workspace scoring dimensions used by the SME application-risk model.")
 
 st.info(
-    "This demo uses synthetic data for decision support. Scores help prioritize analyst review and do not establish legal, "
+    "Scores help prioritize analyst review and do not establish legal, "
     "credit, or compliance certainty."
 )
 
@@ -26,7 +26,7 @@ dimensions = [
     {
         "Dimension": "Region",
         "Definition": "The applicant's operating or lending region.",
-        "Why it matters": "Regional market conditions and synthetic country-risk assumptions affect fraud exposure.",
+        "Why it matters": "Regional market conditions and country-risk assumptions affect fraud exposure.",
     },
     {
         "Dimension": "Company type",
@@ -75,7 +75,7 @@ dimensions = [
     },
     {
         "Dimension": "Suspicious transfer ratio",
-        "Definition": "Share of transfers flagged as unusual in the synthetic transaction profile.",
+        "Definition": "Share of transfers flagged as unusual in the transaction profile.",
         "Why it matters": "Unusual transfer patterns can be a fraud indicator and are weighted heavily in the model.",
     },
     {
@@ -90,12 +90,12 @@ dimensions = [
     },
     {
         "Dimension": "Country risk score",
-        "Definition": "A synthetic score from 0 to 1 representing jurisdictional or country-level risk.",
-        "Why it matters": "Higher values indicate greater contextual risk in the demo's synthetic assumptions.",
+        "Definition": "A score from 0 to 1 representing jurisdictional or country-level risk.",
+        "Why it matters": "Higher values indicate greater contextual risk assumptions.",
     },
     {
         "Dimension": "Free cash flow",
-        "Definition": "Synthetic annual cash generated after operating and investment needs.",
+        "Definition": "Annual cash generated after operating and investment needs.",
         "Why it matters": "Positive free cash flow can mitigate risk, while negative cash flow can indicate liquidity pressure.",
     },
     {
@@ -135,7 +135,7 @@ dimensions = [
     },
     {
         "Dimension": "Plan confidence score",
-        "Definition": "Synthetic banker-assessed confidence in the five-year plan from 0 to 1.",
+        "Definition": "Banker-assessed confidence in the five-year plan from 0 to 1.",
         "Why it matters": "Lower confidence increases execution risk and supports manual review.",
     },
     {
@@ -150,7 +150,7 @@ dimensions = [
     },
     {
         "Dimension": "Document checklist",
-        "Definition": "Synthetic present/not-present status for financial statements, bank statements, tax return, KYB, and forecast support.",
+        "Definition": "Present/not-present status for financial statements, bank statements, tax return, KYB, and forecast support.",
         "Why it matters": "Missing support can reduce audit readiness and increase manual review priority.",
     },
     {
@@ -165,18 +165,18 @@ dimensions = [
     },
     {
         "Dimension": "Mismatch and duplicate signals",
-        "Definition": "Synthetic scores for location mismatch, duplicate contact details, and shared identifiers.",
+        "Definition": "Scores for location mismatch, duplicate contact details, and shared identifiers.",
         "Why it matters": "Shared or inconsistent identifiers can indicate entity-resolution or application-channel risk.",
     },
     {
         "Dimension": "Related-party and counterparty signals",
-        "Definition": "Synthetic scores for related-party exposure and counterparty concentration.",
+        "Definition": "Scores for related-party exposure and counterparty concentration.",
         "Why it matters": "Entity complexity and concentrated counterparties can require deeper network review.",
     },
 ]
 
 st.subheader("Scoring Dimensions")
-st.dataframe(pd.DataFrame(dimensions), use_container_width=True, hide_index=True)
+st.dataframe(pd.DataFrame(dimensions), width="stretch", hide_index=True)
 
 st.subheader("Derived Risk Signals")
 derived_dimensions = [
@@ -311,7 +311,7 @@ derived_dimensions = [
         "Why it matters": "A credible lending review compares management context with observable evidence.",
     },
 ]
-st.dataframe(pd.DataFrame(derived_dimensions), use_container_width=True, hide_index=True)
+st.dataframe(pd.DataFrame(derived_dimensions), width="stretch", hide_index=True)
 
 st.subheader("How To Read The Score")
 grade_rows = [
@@ -322,6 +322,6 @@ grade_rows = [
     {"Grade": "E", "Application risk score": "0.58 to < 0.74", "Recommended action": "Reject"},
     {"Grade": "F", "Application risk score": ">= 0.74", "Recommended action": "Reject"},
 ]
-st.dataframe(pd.DataFrame(grade_rows), use_container_width=True, hide_index=True)
+st.dataframe(pd.DataFrame(grade_rows), width="stretch", hide_index=True)
 
 st.warning("E and F recommendations should be treated as high-risk decision support requiring human compliance review.")

@@ -57,10 +57,6 @@ def render_sidebar():
     )
     with st.sidebar:
         st.header("Workspace")
-        st.toggle("Investor demo mode", key="investor_demo_mode")
-        with st.expander("Advanced settings", expanded=False):
-            st.toggle("Use LLM explanations", key="use_llm_explanations")
-            st.selectbox("Explanation model", ["gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini"], key="explanation_model")
         st.markdown(
             f"""
             <div class="profile-sidebar-card">

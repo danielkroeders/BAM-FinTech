@@ -109,11 +109,11 @@ def portfolio_monitoring_preview(application, prediction, signals):
 
     return [
         {"Monitor": "Watchlist status", "Output": watchlist, "Trigger": "Based on projected risk, DSCR stress, and document quality."},
-        {"Monitor": "90-day projected risk", "Output": format_percent(projected_probability), "Trigger": f"Current score {format_percent(probability)} plus synthetic trend signals."},
+        {"Monitor": "90-day projected risk", "Output": format_percent(projected_probability), "Trigger": f"Current score {format_percent(probability)} plus trend signals."},
         {"Monitor": "Cash-flow trigger", "Output": format_score(cash_pressure), "Trigger": "Rising burn, negative FCF, or weak runway."},
         {"Monitor": "Debt-service trigger", "Output": format_score(debt_stress), "Trigger": "DSCR and +2% interest-rate stress coverage."},
         {"Monitor": "Review cadence", "Output": cadence, "Trigger": "Post-origination monitoring schedule."},
-        {"Monitor": "Data refresh", "Output": "Bank feed, accounting, documents", "Trigger": "Simulated source refresh for MVP demo."},
+        {"Monitor": "Data refresh", "Output": "Bank feed, accounting, documents", "Trigger": "Latest source refresh across connected evidence."},
     ]
 
 
@@ -169,9 +169,9 @@ def model_confidence_rows(metrics, prediction, signals):
     confidence = "High" if evidence_strength >= 0.75 else "Medium" if evidence_strength >= 0.5 else "Low"
     return [
         {"Item": "Model confidence", "Value": confidence, "Meaning": "Combines data completeness, narrative consistency, process integrity, and distance from grade thresholds."},
-        {"Item": "Training ROC-AUC", "Value": format_score(metrics.get("roc_auc", 0), 3), "Meaning": "Synthetic validation metric for ranking high-risk cases."},
+        {"Item": "Training ROC-AUC", "Value": format_score(metrics.get("roc_auc", 0), 3), "Meaning": "Validation metric for ranking high-risk cases."},
         {"Item": "Grade boundary distance", "Value": format_percent(nearest_boundary), "Meaning": "Lower values mean the case is closer to a grade threshold."},
-        {"Item": "Human review rule", "Value": "Required for C-F or manual adjustments", "Meaning": "The MVP supports banker decisioning and governance."},
+        {"Item": "Human review rule", "Value": "Required for C-F or manual adjustments", "Meaning": "Supports banker decisioning and governance."},
     ]
 
 
@@ -216,8 +216,8 @@ def credit_memo(application, prediction, explanation, review, terms, monitoring,
     lines.extend(
         [
             "",
-            "## MVP Governance Note",
-            "This memo is generated from synthetic MVP data for banker decision support. It is not a legal credit decision or a production risk model output.",
+            "## Governance Note",
+            "This memo is generated for banker decision support. It is not a legal credit decision or a production risk model output.",
         ]
     )
     return "\n".join(lines)
