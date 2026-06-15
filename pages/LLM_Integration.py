@@ -6,15 +6,15 @@ from src.explanations import deterministic_explanation, explain_prediction
 from src.formatting import format_percent, format_score
 from src.runtime import bootstrap_state
 from src.shap_explanations import shap_driver_table
-from src.ui import render_sidebar
+from src.ui import render_sidebar, safe_page_link
 
 
-st.set_page_config(page_title="AI Explainability", layout="wide")
+st.set_page_config(page_title="LLM Integration", layout="wide")
 bootstrap_state()
 render_sidebar()
 
-st.title("AI Explainability")
-st.caption("Run deterministic, hosted, or local-model explanations for the latest scored loan request.")
+st.title("LLM Integration")
+st.caption("Connect deterministic, hosted, or local-model second-review explanations to the latest scored loan request.")
 
 application = st.session_state.last_application
 prediction = st.session_state.last_prediction
@@ -72,8 +72,28 @@ def _grade_comparison(ai_grade, rf_grade):
     return f"Aligned with RF grade {rf_grade}"
 
 
+def _record_llm_run(signature, application, prediction, provider, source, error, explanation):
+    ai_review_score = _extract_ai_review_score(explanation)
+    ai_text_grade = _extract_ai_grade(explanation)
+    ai_grade = _grade_from_review_score(ai_review_score) or ai_text_grade
+    st.session_state.llm_review_history.append(
+        {
+            "Run ID": f"LLM-{len(st.session_state.llm_review_history) + 1:03d}",
+            "Timestamp": st.session_state.llm_chat_last_run,
+            "Application ID": application.get("application_id", "Session"),
+            "Provider": provider,
+            "Source": source,
+            "Status": "Fallback" if error else "Completed",
+            "RF grade": prediction.get("grade"),
+            "AI review score": f"{ai_review_score}/100" if ai_review_score is not None else "N/A",
+            "AI grade": ai_grade or "N/A",
+        }
+    )
+
+
 if not application or not prediction:
     st.info("No application has been scored yet. Use Personal Workspace to create the first decision.")
+    safe_page_link("pages/Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
 else:
     signature = (
         f"{application.get('application_id', '')}:"
@@ -102,7 +122,7 @@ else:
 
     default_explanation = deterministic_explanation(application, prediction)
 
-    st.subheader("Run Explanation")
+    st.subheader("Run LLM Review")
     st.caption(
         "The RF model provides the baseline score. A hosted or local LLM can then act as a second reviewer, "
         "produce an AI review score, map it back to the A-F grade policy, and suggest follow-up actions."
@@ -135,10 +155,13 @@ else:
             local_api_key = st.text_input("Local API key", value=local_api_key, type="password")
             st.caption("Enter the server root or `/v1` base URL. The app calls `/v1/chat/completions` when you click Run.")
 
-        run_explanation = st.form_submit_button("Run Explanation", width="stretch")
+        run_explanation = st.form_submit_button("Run LLM Review", width="stretch")
 
     if run_explanation:
+        from datetime import datetime
+
         st.session_state.llm_chat_provider = provider
+        st.session_state.llm_chat_last_run = datetime.now().strftime("%Y-%m-%d %H:%M")
         if provider == "Deterministic":
             st.session_state.llm_chat_explanation = default_explanation
             st.session_state.llm_chat_source = "Deterministic"
@@ -181,12 +204,27 @@ else:
             st.session_state.llm_chat_source = st.session_state.last_explanation_source
             st.session_state.llm_chat_error = st.session_state.last_explanation_error
             st.session_state.llm_chat_signature = signature
+        _record_llm_run(
+            signature,
+            application,
+            prediction,
+            provider,
+            st.session_state.llm_chat_source,
+            st.session_state.llm_chat_error,
+            st.session_state.llm_chat_explanation,
+        )
 
     explanation = st.session_state.get("llm_chat_explanation") or default_explanation
     source = st.session_state.get("llm_chat_source") or "Deterministic"
     error = st.session_state.get("llm_chat_error")
 
-    st.subheader("Explanation Output")
+    status_cols = st.columns(4)
+    status_cols[0].metric("Selected provider", st.session_state.get("llm_chat_provider", "Deterministic"))
+    status_cols[1].metric("Last source", source)
+    status_cols[2].metric("Last run", st.session_state.get("llm_chat_last_run", "Not run yet"))
+    status_cols[3].metric("Status", "Fallback" if error else "Ready")
+
+    st.subheader("LLM Review Output")
     st.caption(f"Explanation source: {source}")
     if source == "Local server":
         st.caption(f"Local endpoint used: {st.session_state.last_local_llm_base_url}")
@@ -209,6 +247,15 @@ else:
             )
         st.caption("AI grade uses the same A-F thresholds as the RF score. This is a qualitative second-review score, not a calibrated probability.")
     st.info(explanation)
+
+    current_history = [
+        row
+        for row in st.session_state.llm_review_history
+        if row.get("Application ID") == application.get("application_id", "Session")
+    ]
+    if current_history:
+        st.subheader("Saved LLM Review Runs")
+        st.dataframe(current_history[-8:], width="stretch", hide_index=True)
 
     st.subheader("SHAP Driver Analysis")
     try:

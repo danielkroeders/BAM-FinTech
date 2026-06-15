@@ -27,6 +27,9 @@ streamlit run Home.py
 
 The app prepares a local portfolio on first run.
 
+The demo login screen uses a password step followed by a six-digit verification code step before opening the local workspace.
+The sidebar includes a dark-mode toggle, and the same preference can be saved from Profile & Settings.
+
 ## Walkthrough
 
 For a full presentation runbook, see `DEMO.md`.
@@ -37,24 +40,24 @@ For the research grounding behind the risk ratios, cash-flow signals, anomaly me
 3. Score the application, then point out the A-F grade, model recommendation, final-decision status, risk flags, structured explanation, similar historical applications, and downloadable case summary.
 4. Click `Open Case Review`, choose an analyst action, optionally prepare the email-ready analysis, and save the review to the audit trail.
 5. For approve/reject outcomes, show that manual score adjustment requires supervisor approval and supervisor email routing.
-6. Open `Operations Desk` to show the team workboard, evidence follow-up, bulk rejection, selected-case detail, and handoff into Personal Workspace.
-7. Open `Risk Dashboard` to show filtered portfolio monitoring, the manual review queue, the compliance review queue, live session decisions, and the analyst review audit trail.
-8. Open `Model Insights` and `AI Explainability` to discuss model metrics, grading thresholds, feature importance, and SHAP driver analysis.
+6. Open `LLM Integration` to discuss deterministic, hosted, or local-model second review, qualitative AI review score, and SHAP driver analysis.
+7. Open `Operations Desk` to show the team workboard, evidence follow-up, bulk rejection, selected-case detail, and handoff into Personal Workspace.
+8. Open `Risk Dashboard` and `Model Insights` to show filtered portfolio monitoring, model metrics, grading thresholds, and feature importance.
 
 ## Optional LLM Providers
 
-The app works without an LLM by using deterministic explanations. The RF model remains the baseline score; hosted or local LLMs can act as a second reviewer on the AI Explainability page, produce a qualitative `AI review score`, map that score back to the A-F grade policy, and suggest follow-up actions.
+The app works without an LLM by using deterministic explanations. The RF model remains the baseline score; hosted or local LLMs can act as a second reviewer on the LLM Integration page, produce a qualitative `AI review score`, map that score back to the A-F grade policy, and suggest follow-up actions.
 
-For hosted explanations, set `OPENAI_API_KEY` in Streamlit secrets or the environment, then choose `OpenAI API` on the AI Explainability page and click `Run Explanation`.
+For hosted explanations, set `OPENAI_API_KEY` in Streamlit secrets or the environment, then choose `OpenAI API` on the LLM Integration page and click `Run LLM Review`.
 
-For a local model, score an application first, open AI Explainability, choose `Local server`, enter the local endpoint/model/token, and click `Run Explanation`. Defaults:
+For a local model, score an application first, open LLM Integration, choose `Local server`, enter the local endpoint/model/token, and click `Run LLM Review`. Defaults:
 
 - `LOCAL_LLM_BASE_URL`: `http://localhost:1234/v1`
 - `LOCAL_LLM_MODEL`: `local-model`
 - `LOCAL_LLM_API_KEY`: `local`
 
 The local path works with tools that expose OpenAI-style chat completions, such as LM Studio or Ollama's `/v1` endpoint.
-Those values stay in Streamlit session state and are not written to the repository. You may enter either the server root, such as `http://localhost:1234`, or the `/v1` base URL. The app normalizes this and calls `/v1/chat/completions` only after you click `Run Explanation`. If the local call fails, the explanation area shows the error and uses the deterministic analyst explanation.
+Those values stay in Streamlit session state and are not written to the repository. You may enter either the server root, such as `http://localhost:1234`, or the `/v1` base URL. The app normalizes this and calls `/v1/chat/completions` only after you click `Run LLM Review`. If the local call fails, the explanation area shows the error and uses the deterministic analyst explanation.
 
 ## Pages
 
@@ -63,9 +66,10 @@ Those values stay in Streamlit session state and are not written to the reposito
 - `pages/Operations_Desk.py`: team workboard for incoming applications, evidence gaps, SLA status, and case handoff.
 - `pages/Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, live session decisions, and review audit history.
 - `pages/Model_Insights.py`: model metrics, confusion matrix, feature importances, grading thresholds, and derived signal design.
-- `pages/LLM_Chat.py`: explainability view for the latest scored loan request.
+- `pages/LLM_Integration.py`: LLM second-review integration view for the latest scored loan request.
+- `pages/Profile_Settings.py`: analyst profile, personal connected apps such as Slack/Teams, Gmail/Outlook, Drive/OneDrive/SharePoint, Zoom, user type, permissions, and team manager settings.
 - `pages/About.py`: definitions for workspace scoring dimensions and risk grade interpretation.
-- `pages/Support.py`: representative contact details, support request form, scripted live chat, and FAQ.
+- `pages/Support.py`: representative email contacts, support request form, scripted live chat, and FAQ.
 
 ## A-F Risk Grade Mapping
 

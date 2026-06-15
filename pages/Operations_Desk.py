@@ -5,7 +5,8 @@ import streamlit as st
 
 from src.formatting import format_currency, format_percent, format_score
 from src.runtime import bootstrap_state
-from src.ui import render_sidebar
+from src.table_views import application_table
+from src.ui import open_application_in_workspace, render_sidebar
 from src.workbench_features import build_application_queue
 
 
@@ -19,6 +20,15 @@ final_decisions = st.session_state.bulk_final_decisions
 queue["final_decision"] = queue["application_id"].apply(
     lambda application_id: final_decisions.get(application_id, {}).get("final_decision", "Pending")
 )
+
+
+def _upsert_portfolio_history(application_id, values):
+    for row in reversed(st.session_state.portfolio_history):
+        if row.get("application_id") == application_id:
+            row.update(values)
+            return
+    st.session_state.portfolio_history.append(values)
+
 
 st.title("Operations Desk")
 st.caption("Team workboard for live SME lending tasks, evidence follow-up, and review routing.")
@@ -40,7 +50,8 @@ filtered = queue[
     & queue["assigned_analyst"].isin(analyst_filter)
 ].copy()
 
-display = filtered[
+display = application_table(
+    filtered,
     [
         "application_id",
         "company_name",
@@ -54,25 +65,7 @@ display = filtered[
         "missing_documents",
         "assigned_analyst",
         "sla",
-    ]
-].copy()
-display["requested_amount"] = display["requested_amount"].apply(format_currency)
-display["fraud_probability"] = display["fraud_probability"].apply(format_percent)
-display = display.rename(
-    columns={
-        "application_id": "Application ID",
-        "company_name": "Company",
-        "industry": "Industry",
-        "requested_amount": "Requested amount",
-        "fraud_probability": "Application risk score",
-        "grade": "Grade",
-        "decision": "Model recommendation",
-        "queue_status": "Task status",
-        "final_decision": "Final decision",
-        "missing_documents": "Missing docs",
-        "assigned_analyst": "Assigned analyst",
-        "sla": "SLA",
-    }
+    ],
 )
 
 st.dataframe(display, width="stretch", hide_index=True)
@@ -94,7 +87,12 @@ with st.expander("Bulk Actions", expanded=False):
             st.warning("Select at least one case before applying a bulk rejection.")
         else:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+            created_count = 0
+            skipped_count = 0
             for application_id in selected_ids:
+                if st.session_state.bulk_final_decisions.get(application_id, {}).get("final_decision") == "Reject":
+                    skipped_count += 1
+                    continue
                 row = filtered[filtered["application_id"] == application_id].iloc[0].to_dict()
                 review = {
                     "review_id": f"REV-{len(st.session_state.review_history) + 1:03d}",
@@ -113,15 +111,20 @@ with st.expander("Bulk Actions", expanded=False):
                 st.session_state.bulk_final_decisions[application_id] = review
                 st.session_state.bulk_action_history.append(review)
                 st.session_state.review_history.append(review)
-                st.session_state.portfolio_history.append(
+                _upsert_portfolio_history(
+                    application_id,
                     {
                         **row,
                         "review_action": "Bulk Reject",
                         "final_decision": "Reject",
                         "manual_adjustment": False,
-                    }
+                    },
                 )
-            st.success(f"Rejected {len(selected_ids)} case(s) and added the decision to the audit trail.")
+                created_count += 1
+            if created_count:
+                st.success(f"Rejected {created_count} case(s) and added the decision to the audit trail.")
+            if skipped_count:
+                st.info(f"Skipped {skipped_count} already rejected case(s).")
             rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
             if rerun:
                 rerun()
@@ -158,8 +161,7 @@ if not filtered.empty:
     )
     st.dataframe(selected_details, width="stretch", hide_index=True)
 
-    page_link = getattr(st, "page_link", None)
-    if page_link:
-        st.page_link("pages/Personal_Workspace.py", label="Open Personal Workspace")
+    if st.button("Start This Case In Personal Workspace", width="stretch"):
+        open_application_in_workspace(selected.to_dict(), "Operations Desk")
 else:
     st.info("No applications match the selected filters.")

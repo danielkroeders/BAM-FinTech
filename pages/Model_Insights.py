@@ -1,3 +1,4 @@
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -48,10 +49,18 @@ default_metric_labels = [
     "Precision At Top 10%",
     "Estimated Total Error Cost",
 ]
+metric_presets = {
+    "Executive": ["Balanced Accuracy", "ROC-AUC", "Precision At Top 10%", "Estimated Total Error Cost"],
+    "Model validation": ["Accuracy", "Balanced Accuracy", "Precision", "Recall", "F1", "ROC-AUC", "Average Precision", "MCC"],
+    "Cost / risk": ["False Positive Rate", "False Negative Rate", "Predicted Review Rate", "Estimated Review Cost", "Estimated Total Error Cost"],
+    "All metrics": list(metric_catalog.keys()),
+}
+metric_preset = st.selectbox("Metric preset", list(metric_presets.keys()), index=1)
 selected_metric_labels = st.multiselect(
     "Visible metrics",
     list(metric_catalog.keys()),
-    default=default_metric_labels,
+    default=metric_presets.get(metric_preset, default_metric_labels),
+    key=f"visible_metrics_{metric_preset}",
 )
 cols = st.columns(4)
 for index, label in enumerate(selected_metric_labels):
@@ -157,10 +166,23 @@ governance_rows = pd.DataFrame(
 st.dataframe(governance_rows, width="stretch", hide_index=True)
 
 st.subheader("Top Feature Importances")
-importance_display = bundle.feature_importance.head(20).copy()
+importance_raw = bundle.feature_importance.head(20).copy()
+importance_display = importance_raw.copy()
 importance_display["importance"] = importance_display["importance"].apply(lambda value: format_score(value, 4))
 st.dataframe(importance_display, width="stretch", hide_index=True)
-st.bar_chart(bundle.feature_importance.head(12).set_index("feature")["importance"])
+importance_chart = (
+    alt.Chart(importance_raw.head(12))
+    .mark_bar(cornerRadiusTopRight=4, cornerRadiusBottomRight=4, opacity=0.88)
+    .encode(
+        x=alt.X("importance:Q", axis=alt.Axis(title=None)),
+        y=alt.Y("feature:N", sort="-x", axis=alt.Axis(title=None)),
+        tooltip=["feature:N", alt.Tooltip("importance:Q", format=".4f")],
+    )
+    .properties(height=360)
+    .configure_axis(domain=False, gridColor="rgba(148, 163, 184, 0.28)", labelColor="#475569")
+    .configure_view(strokeOpacity=0)
+)
+st.altair_chart(importance_chart, width="stretch")
 
 st.subheader("Research-Backed Derived Signals")
 derived_signals = pd.DataFrame(

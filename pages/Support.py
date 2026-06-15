@@ -1,35 +1,34 @@
 from urllib.parse import quote
+from datetime import datetime
 
 import streamlit as st
 
 from src.runtime import bootstrap_state
-from src.ui import render_sidebar
+from src.ui import get_profile, render_sidebar
 
 
 st.set_page_config(page_title="Support", layout="wide")
 bootstrap_state()
 render_sidebar()
+profile = get_profile()
 
 SUPPORT_REPS = [
     {
         "name": "Mila Verhoeven",
         "role": "Implementation Lead",
         "email": "mila.verhoeven@credrisk.ai",
-        "phone": "+31 20 555 0101",
         "focus": "Onboarding, workspace setup, and lender workflow questions.",
     },
     {
         "name": "Daan Peters",
         "role": "Risk Support Specialist",
         "email": "daan.peters@credrisk.ai",
-        "phone": "+31 20 555 0102",
         "focus": "Scoring, DSCR, risk flags, and model explanation questions.",
     },
     {
         "name": "Sofia de Vries",
         "role": "Customer Success",
         "email": "sofia.devries@credrisk.ai",
-        "phone": "+31 20 555 0103",
         "focus": "Account access, support routing, and training material.",
     },
 ]
@@ -57,7 +56,7 @@ FAQ_ITEMS = [
     ),
     (
         "What integrations are supported?",
-        "The business plan points toward PSD2/Open Banking, accounting integrations, registry/KvK data, contextual data sources, and eventually an API and SME self-service portal.",
+        "Personal connected apps include Slack, Teams, Gmail, Outlook, file storage, and meeting tools. Risk-model data sources are handled separately from personal app connections.",
     ),
 ]
 
@@ -79,11 +78,11 @@ def _support_response(message):
             "The score combines financial pressure, cash flow, forecast realism, document quality, identity/KYB signals, "
             "transaction anomalies, and debt-service stress. Open Model Insights for the full signal list."
         )
-    if any(word in text for word in ["email", "phone", "rep", "contact", "call"]):
-        return "You can contact Mila, Daan, or Sofia using the email and phone links at the top of this Support page."
+    if any(word in text for word in ["email", "rep", "contact", "call"]):
+        return "You can contact Mila, Daan, or Sofia using the email links at the top of this Support page."
     if any(word in text for word in ["api", "psd2", "accounting", "integration"]):
         return (
-            "The workspace is designed around PSD2, accounting, document, registry, and contextual signal inputs."
+            "Personal connected apps live on Profile & Settings. Model data sources, such as file evidence and financial signals, are separate from those personal app connections."
         )
     return (
         "Thanks. I logged that as a support question. For urgent case review, contact Daan Peters or use the request form above."
@@ -117,7 +116,6 @@ for column, rep in zip(rep_cols, SUPPORT_REPS):
         st.caption(rep["role"])
         st.write(rep["focus"])
         st.markdown(f"[Email {rep['name'].split()[0]}](mailto:{rep['email']})")
-        st.markdown(f"[Call {rep['phone']}](tel:{rep['phone'].replace(' ', '')})")
 
 st.subheader("Support Request")
 with st.form("support_request_form"):
@@ -137,25 +135,40 @@ with st.form("support_request_form"):
             ],
         )
     with form_right:
-        preferred_contact = st.radio("Preferred contact", ["Email", "Phone"], horizontal=True)
+        preferred_contact = st.radio("Preferred contact", ["Email", "Slack", "Teams"], horizontal=True)
         case_id = st.text_input("Case or application ID", placeholder="APP-00001 or SESSION-001")
     message = st.text_area("Message", placeholder="Describe what you need help with.", height=110)
     submitted = st.form_submit_button("Submit Support Request", width="stretch")
 
 if submitted:
     selected_rep = next(rep for rep in SUPPORT_REPS if rep["name"] == selected_name)
-    st.success(f"Support request prepared for {selected_rep['name']}. Preferred contact: {preferred_contact}.")
+    ticket = {
+        "Ticket ID": f"TICKET-{len(st.session_state.support_ticket_history) + 1:03d}",
+        "Created": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "Representative": selected_rep["name"],
+        "Category": category,
+        "Preferred contact": preferred_contact,
+        "Case/Application ID": case_id or "Not provided",
+        "Status": "Prepared",
+    }
+    st.session_state.support_ticket_history.append(ticket)
+    st.success(f"Support request prepared for {selected_rep['name']}. Preferred channel: {preferred_contact}.")
     st.markdown(f"[Open email draft]({_mailto(selected_rep, category, case_id, message)})")
+
+if st.session_state.support_ticket_history:
+    st.subheader("Recent Support Requests")
+    st.dataframe(st.session_state.support_ticket_history[-6:], width="stretch", hide_index=True)
 
 chat_left, chat_right = st.columns([2, 1])
 with chat_left:
     st.subheader("Live Chat")
     st.caption("This chat uses scripted responses and does not contact a real support desk.")
     if "support_chat_history" not in st.session_state:
+        first_name = (profile.get("name") or profile.get("display_name") or "there").split()[0]
         st.session_state.support_chat_history = [
             {
                 "role": "assistant",
-                "content": "Hi Alice, this is CredRisk.AI support. Ask about scoring, documents, DSCR, integrations, or case review.",
+                "content": f"Hi {first_name}, this is CredRisk.AI support. Ask about scoring, documents, DSCR, integrations, or case review.",
             }
         ]
 

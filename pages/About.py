@@ -175,10 +175,6 @@ dimensions = [
     },
 ]
 
-st.subheader("Scoring Dimensions")
-st.dataframe(pd.DataFrame(dimensions), width="stretch", hide_index=True)
-
-st.subheader("Derived Risk Signals")
 derived_dimensions = [
     {
         "Signal": "Debt-to-revenue ratio",
@@ -311,9 +307,7 @@ derived_dimensions = [
         "Why it matters": "A credible lending review compares management context with observable evidence.",
     },
 ]
-st.dataframe(pd.DataFrame(derived_dimensions), width="stretch", hide_index=True)
 
-st.subheader("How To Read The Score")
 grade_rows = [
     {"Grade": "A", "Application risk score": "< 0.15", "Recommended action": "Approve"},
     {"Grade": "B", "Application risk score": "0.15 to < 0.28", "Recommended action": "Approve"},
@@ -322,6 +316,25 @@ grade_rows = [
     {"Grade": "E", "Application risk score": "0.58 to < 0.74", "Recommended action": "Reject"},
     {"Grade": "F", "Application risk score": ">= 0.74", "Recommended action": "Reject"},
 ]
-st.dataframe(pd.DataFrame(grade_rows), width="stretch", hide_index=True)
+
+
+def _filter_rows(frame, query):
+    if not query:
+        return frame
+    haystack = frame.astype(str).agg(" ".join, axis=1).str.lower()
+    return frame[haystack.str.contains(query.lower(), regex=False)]
+
+
+search_query = st.text_input("Search glossary", placeholder="Try document, DSCR, forecast, KYB, grade...")
+dimension_frame = _filter_rows(pd.DataFrame(dimensions), search_query)
+derived_frame = _filter_rows(pd.DataFrame(derived_dimensions), search_query)
+
+dimension_tab, signal_tab, grade_tab = st.tabs(["Scoring Dimensions", "Derived Signals", "Grade Policy"])
+with dimension_tab:
+    st.dataframe(dimension_frame, width="stretch", hide_index=True)
+with signal_tab:
+    st.dataframe(derived_frame, width="stretch", hide_index=True)
+with grade_tab:
+    st.dataframe(pd.DataFrame(grade_rows), width="stretch", hide_index=True)
 
 st.warning("E and F recommendations should be treated as high-risk decision support requiring human compliance review.")

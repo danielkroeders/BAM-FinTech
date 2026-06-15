@@ -53,6 +53,8 @@ def bootstrap_state():
         st.session_state.model_bundle = train_model(st.session_state.seed_data["applications"])
     if "portfolio_history" not in st.session_state:
         st.session_state.portfolio_history = []
+    if "score_history" not in st.session_state:
+        st.session_state.score_history = []
     if "review_history" not in st.session_state:
         st.session_state.review_history = []
     if "last_application" not in st.session_state:
@@ -83,6 +85,8 @@ def bootstrap_state():
         st.session_state.llm_chat_error = None
     if "llm_chat_signature" not in st.session_state:
         st.session_state.llm_chat_signature = None
+    if "llm_review_history" not in st.session_state:
+        st.session_state.llm_review_history = []
     if "llm_provider" not in st.session_state:
         st.session_state.llm_provider = "OpenAI API"
     if "explanation_model" not in st.session_state:
@@ -110,6 +114,8 @@ def bootstrap_state():
         st.session_state.bulk_final_decisions = {}
     if "bulk_action_history" not in st.session_state:
         st.session_state.bulk_action_history = []
+    if "support_ticket_history" not in st.session_state:
+        st.session_state.support_ticket_history = []
     if "active_queue_application" not in st.session_state:
         st.session_state.active_queue_application = None
     if "active_intake_source" not in st.session_state:

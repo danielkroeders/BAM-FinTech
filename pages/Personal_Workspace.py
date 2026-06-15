@@ -24,7 +24,7 @@ from src.formatting import (
     parse_eu_number,
 )
 from src.runtime import bootstrap_state
-from src.ui import render_sidebar
+from src.ui import render_sidebar, safe_page_link
 from src.workbench_features import (
     build_application_queue,
     credit_memo,
@@ -49,11 +49,12 @@ st.markdown(
         border-radius: 8px;
         padding: 0;
         margin: 0.35rem 0 0.8rem;
-        background: rgba(15, 23, 42, 0.26);
+        background: color-mix(in srgb, var(--cr-surface) 94%, transparent);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
         overflow: hidden;
     }
     .score-panel.low { border-top: 4px solid #22c55e; }
-    .score-panel.medium { border-top: 4px solid #eab308; }
+    .score-panel.medium { border-top: 4px solid #f59e0b; }
     .score-panel.high { border-top: 4px solid #ef4444; }
     .score-panel-header {
         align-items: center;
@@ -64,13 +65,13 @@ st.markdown(
         padding: 0.8rem 1rem 0.7rem;
     }
     .score-headline {
-        color: #f8fafc;
+        color: var(--cr-text);
         font-size: 2rem;
         font-weight: 800;
         line-height: 1.05;
     }
     .score-subtitle {
-        color: rgba(226, 232, 240, 0.76);
+        color: var(--cr-muted);
         font-size: 0.82rem;
         line-height: 1.35;
         margin-top: 0.25rem;
@@ -81,7 +82,7 @@ st.markdown(
         gap: 0;
     }
     .score-item {
-        border-right: 1px solid rgba(148, 163, 184, 0.14);
+        border-right: 1px solid rgba(148, 163, 184, 0.20);
         min-width: 0;
         padding: 0.75rem 1rem;
     }
@@ -89,7 +90,7 @@ st.markdown(
         border-right: none;
     }
     .score-label {
-        color: rgba(226, 232, 240, 0.72);
+        color: var(--cr-muted);
         font-size: 0.72rem;
         font-weight: 700;
         line-height: 1.1;
@@ -97,7 +98,7 @@ st.markdown(
         text-transform: uppercase;
     }
     .score-value {
-        color: #f8fafc;
+        color: var(--cr-text);
         font-size: 1.05rem;
         font-weight: 700;
         line-height: 1.2;
@@ -122,27 +123,28 @@ st.markdown(
         border-radius: 8px;
         margin: 0.25rem 0 0.9rem;
         padding: 0.9rem 1rem;
-        background: rgba(15, 23, 42, 0.18);
+        background: color-mix(in srgb, var(--cr-surface) 92%, transparent);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
     }
     .decision-panel.approve { border-left: 5px solid #22c55e; }
     .decision-panel.review,
-    .decision-panel.pending { border-left: 5px solid #eab308; }
+    .decision-panel.pending { border-left: 5px solid #f59e0b; }
     .decision-panel.reject { border-left: 5px solid #ef4444; }
     .decision-title {
-        color: #f8fafc;
+        color: var(--cr-text);
         font-size: 1.1rem;
         font-weight: 800;
         line-height: 1.25;
         margin-bottom: 0.25rem;
     }
     .decision-copy {
-        color: rgba(226, 232, 240, 0.82);
+        color: var(--cr-muted);
         font-size: 0.88rem;
         line-height: 1.45;
         margin-bottom: 0.55rem;
     }
     .decision-list {
-        color: rgba(226, 232, 240, 0.86);
+        color: var(--cr-muted);
         font-size: 0.85rem;
         line-height: 1.45;
         margin: 0;
@@ -157,7 +159,7 @@ st.markdown(
     .source-badge {
         border: 1px solid rgba(148, 163, 184, 0.24);
         border-radius: 999px;
-        color: #f8fafc;
+        color: var(--cr-text);
         display: inline-flex;
         font-size: 0.78rem;
         font-weight: 750;
@@ -165,25 +167,26 @@ st.markdown(
         line-height: 1;
         padding: 0.48rem 0.68rem;
     }
-    .source-badge.ready { background: rgba(34, 197, 94, 0.22); }
-    .source-badge.partial { background: rgba(234, 179, 8, 0.24); }
-    .source-badge.review { background: rgba(239, 68, 68, 0.22); }
+    .source-badge.ready { background: rgba(34, 197, 94, 0.14); }
+    .source-badge.partial { background: rgba(245, 158, 11, 0.16); }
+    .source-badge.review { background: rgba(239, 68, 68, 0.14); }
     .queue-panel {
         border: 1px solid rgba(148, 163, 184, 0.24);
         border-radius: 8px;
         margin: 0.35rem 0 1rem;
         padding: 0.9rem 1rem;
-        background: rgba(15, 23, 42, 0.16);
+        background: color-mix(in srgb, var(--cr-surface) 92%, transparent);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
     }
     .queue-panel-title {
-        color: #f8fafc;
+        color: var(--cr-text);
         font-size: 1rem;
         font-weight: 800;
         line-height: 1.2;
         margin-bottom: 0.25rem;
     }
     .queue-panel-copy {
-        color: rgba(226, 232, 240, 0.78);
+        color: var(--cr-muted);
         font-size: 0.86rem;
         line-height: 1.45;
         margin-bottom: 0.7rem;
@@ -194,16 +197,17 @@ st.markdown(
         border-radius: 8px;
         margin: 0.35rem 0 1rem;
         padding: 0.8rem 1rem;
-        background: rgba(22, 101, 52, 0.14);
+        background: rgba(34, 197, 94, 0.10);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
     }
     .active-case-title {
-        color: #f8fafc;
+        color: var(--cr-text);
         font-size: 0.98rem;
         font-weight: 800;
         margin-bottom: 0.2rem;
     }
     .active-case-copy {
-        color: rgba(226, 232, 240, 0.84);
+        color: var(--cr-muted);
         font-size: 0.84rem;
         line-height: 1.4;
     }
@@ -563,13 +567,33 @@ def _rerun_after_review():
     st.success("Review saved to the case audit trail.")
 
 
+def _upsert_portfolio_history(application_id, values):
+    for row in reversed(st.session_state.portfolio_history):
+        if row.get("application_id") == application_id:
+            row.update(values)
+            return
+    st.session_state.portfolio_history.append(values)
+
+
 def _store_prediction(application, prediction, explanation):
     st.session_state.last_application = application
     st.session_state.last_prediction = prediction
     st.session_state.last_explanation = explanation
     st.session_state.last_review = None
     st.session_state.last_email_link = None
-    st.session_state.portfolio_history.append({**application, **prediction, "review_action": "Pending", "final_decision": "Pending Review"})
+    score_event = {
+        "score_event_id": f"SCORE-{len(st.session_state.score_history) + 1:03d}",
+        "application_id": application["application_id"],
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "fraud_probability": prediction["fraud_probability"],
+        "grade": prediction["grade"],
+        "decision": prediction["decision"],
+    }
+    st.session_state.score_history.append(score_event)
+    _upsert_portfolio_history(
+        application["application_id"],
+        {**application, **prediction, "review_action": "Pending", "final_decision": "Pending Review"},
+    )
 
 
 def _update_latest_history(prediction, review):
@@ -598,7 +622,7 @@ def _review_form_body():
 
     with st.form("case_review_form"):
         action = st.selectbox("Analyst action", REVIEW_ACTIONS)
-        supervisor_email = st.text_input("Supervisor or review mailbox", value="supervisor@example.com")
+        supervisor_email = st.text_input("Supervisor or review mailbox", value="credit.review@rabobank.nl")
         send_email = st.checkbox("Prepare email with case analysis", value=True)
         analyst_note = st.text_area(
             "Analyst note",
@@ -1327,6 +1351,37 @@ if st.session_state.last_prediction:
     driver_rows = grouped_risk_drivers(application, signals)
     confidence_rows = model_confidence_rows(st.session_state.model_bundle.metrics, prediction, signals)
 
+    score_tab, evidence_tab, review_tab, history_tab = st.tabs(["Score", "Evidence", "Review", "History"])
+    with score_tab:
+        score_cols = st.columns(4)
+        score_cols[0].metric("Application risk score", _ratio(prediction["fraud_probability"]))
+        score_cols[1].metric("Risk grade", prediction["grade"])
+        score_cols[2].metric("Model recommendation", prediction["decision"])
+        score_cols[3].metric("Stressed DSCR", _score(signals["stressed_debt_service_coverage_ratio"]))
+        st.dataframe(pd.DataFrame(confidence_rows), width="stretch", hide_index=True)
+    with evidence_tab:
+        st.dataframe(pd.DataFrame(_data_readiness_rows(application, signals)), width="stretch", hide_index=True)
+    with review_tab:
+        review_cols = st.columns(3)
+        review_cols[0].metric("Final decision", final_decision)
+        review_cols[1].metric("Review status", review_status)
+        review_cols[2].metric("Score source", manual_status)
+        st.dataframe(pd.DataFrame({"Review condition": decision_conditions}), width="stretch", hide_index=True)
+    with history_tab:
+        score_events = [
+            row for row in st.session_state.score_history if row.get("application_id") == application["application_id"]
+        ]
+        review_events = [
+            row for row in st.session_state.review_history if row.get("application_id") == application["application_id"]
+        ]
+        history_cols = st.columns(2)
+        with history_cols[0]:
+            st.caption("Score events")
+            st.dataframe(score_events[-8:], width="stretch", hide_index=True)
+        with history_cols[1]:
+            st.caption("Review events")
+            st.dataframe(review_events[-8:], width="stretch", hide_index=True)
+
     st.subheader("Score Output")
     st.markdown(
         f"""
@@ -1376,8 +1431,9 @@ if st.session_state.last_prediction:
         unsafe_allow_html=True,
     )
     st.subheader("Decision Rationale")
-    st.caption("Explanation source: deterministic analyst explanation. Open AI Explainability to run a local or hosted model.")
+    st.caption("Explanation source: deterministic analyst explanation. Open LLM Integration to run a local or hosted model.")
     st.info(explanation)
+    safe_page_link("pages/LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
 
     terms_col, monitoring_col = st.columns(2)
     with terms_col:
@@ -1471,7 +1527,7 @@ if st.session_state.last_prediction:
     for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
         display_forecast[column] = display_forecast[column].apply(_money)
     display_forecast["Projected employees"] = display_forecast["Projected employees"].apply(format_integer)
-    with st.expander("Generated Five-Year Forecast", expanded=True):
+    with st.expander("Generated Five-Year Forecast", expanded=False):
         st.dataframe(display_forecast, width="stretch", hide_index=True)
 
     executive_rows = [
@@ -1515,7 +1571,7 @@ if st.session_state.last_prediction:
         {"Check": "Shared identifier", "Value": _score(application.get("shared_identifier_score", 0))},
         {"Check": "Narrative contradiction", "Value": _score(application.get("narrative_contradiction_score", 0))},
     ]
-    with st.expander("Document & Verification Review", expanded=True):
+    with st.expander("Document & Verification Review", expanded=False):
         review_left, review_right = st.columns(2)
         with review_left:
             st.dataframe(pd.DataFrame(document_rows), width="stretch", hide_index=True)
@@ -1549,7 +1605,7 @@ if st.session_state.last_prediction:
         {"Signal": "Related-party network risk", "Value": _score(signals["related_party_network_risk_score"]), "What it tells the banker": "Ownership, counterparty concentration, and shared identifier concerns."},
         {"Signal": "Narrative consistency risk", "Value": _score(signals["narrative_consistency_risk_score"]), "What it tells the banker": "Potential contradictions between applicant context, documents, and financials."},
     ]
-    with st.expander("Calculated Risk Signals", expanded=True):
+    with st.expander("Calculated Risk Signals", expanded=False):
         st.caption("Fraud and anomaly detection are one component of the broader credit-risk assessment.")
         st.dataframe(pd.DataFrame(signal_rows), width="stretch", hide_index=True)
 
