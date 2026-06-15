@@ -4,6 +4,12 @@ from html import escape
 import pandas as pd
 import streamlit as st
 
+from src.alignment_features import (
+    apply_scenario,
+    data_source_coverage_rows,
+    peer_benchmark_rows,
+    scenario_comparison_rows,
+)
 from src.case_workflow import (
     DEMO_SCENARIOS,
     REVIEW_ACTIONS,
@@ -13,6 +19,7 @@ from src.case_workflow import (
     similar_applications,
 )
 from src.data_pipeline import add_derived_features, build_forecast_table
+from src.demo_persistence import persist_demo_state
 from src.explanations import explain_prediction
 from src.formatting import (
     format_currency,
@@ -309,6 +316,7 @@ def _activate_intake_case(application, source):
     st.session_state.active_intake_source = source
     st.session_state.loan_example_scenario = "Custom application"
     _clear_scored_case()
+    persist_demo_state()
     rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
     if rerun:
         rerun()
@@ -318,6 +326,7 @@ def _clear_active_intake_case():
     st.session_state.active_queue_application = None
     st.session_state.active_intake_source = "Manual entry"
     _clear_scored_case()
+    persist_demo_state()
     rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
     if rerun:
         rerun()
@@ -594,6 +603,7 @@ def _store_prediction(application, prediction, explanation):
         application["application_id"],
         {**application, **prediction, "review_action": "Pending", "final_decision": "Pending Review"},
     )
+    persist_demo_state()
 
 
 def _update_latest_history(prediction, review):
@@ -689,6 +699,7 @@ def _review_form_body():
                 summary,
             )
             st.session_state.last_email_link = link
+        persist_demo_state()
         _rerun_after_review()
 
 
@@ -699,12 +710,8 @@ if hasattr(st, "dialog"):
         _review_form_body()
 
 
-header_left, header_right = st.columns([3, 1])
-with header_left:
-    st.title("Personal Workspace")
-    st.caption("Live analyst workspace for Ms. Cooper's current SME lending tasks.")
-with header_right:
-    st.metric("Active analyst", "Ms. Cooper")
+st.title("Personal Workspace")
+st.caption("Live analyst workspace for Ms. Cooper's current SME lending tasks.")
 
 st.subheader("Current Tasks")
 queue = build_application_queue(st.session_state.model_bundle, applications)
@@ -1434,6 +1441,7 @@ if st.session_state.last_prediction:
     st.caption("Explanation source: deterministic analyst explanation. Open LLM Integration to run a local or hosted model.")
     st.info(explanation)
     safe_page_link("pages/LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
+    safe_page_link("pages/SME_Credit_Health.py", "Open SME Credit Health Preview", ":material/monitor_heart:")
 
     terms_col, monitoring_col = st.columns(2)
     with terms_col:
@@ -1455,6 +1463,72 @@ if st.session_state.last_prediction:
     )
     st.markdown(f'<div class="badge-row">{badge_html}</div>', unsafe_allow_html=True)
     st.dataframe(pd.DataFrame(_data_readiness_rows(application, signals)), width="stretch", hide_index=True)
+    st.caption("MVP source coverage is simulated from the local case file. Production would connect consented bank feeds, accounting APIs, registry/KYB, and document ingestion.")
+    st.dataframe(pd.DataFrame(data_source_coverage_rows(application, signals)), width="stretch", hide_index=True)
+
+    with st.expander("Scenario Analysis", expanded=False):
+        st.caption("Use this to show how forward-looking evidence can move the risk profile before a final human decision.")
+        scenario_left, scenario_middle, scenario_right = st.columns(3)
+        with scenario_left:
+            revenue_growth_delta = st.slider(
+                "Revenue growth change",
+                min_value=-0.15,
+                max_value=0.20,
+                value=0.00,
+                step=0.01,
+                format="%.2f",
+            )
+            fcf_margin_delta = st.slider(
+                "FCF margin change",
+                min_value=-0.10,
+                max_value=0.15,
+                value=0.00,
+                step=0.01,
+                format="%.2f",
+            )
+        with scenario_middle:
+            operating_cost_pressure = st.slider(
+                "Operating cost pressure",
+                min_value=0.00,
+                max_value=0.15,
+                value=0.00,
+                step=0.01,
+                format="%.2f",
+            )
+            debt_reduction_delta = st.slider(
+                "Debt reduction plan change",
+                min_value=-0.20,
+                max_value=0.35,
+                value=0.00,
+                step=0.05,
+                format="%.2f",
+            )
+        with scenario_right:
+            contract_evidence = st.selectbox(
+                "Contract evidence",
+                ["Current file", "Signed and documented", "Unconfirmed"],
+            )
+            complete_documents = st.checkbox("Complete missing documents", value=False)
+        simulated_application = apply_scenario(
+            application,
+            revenue_growth_delta=revenue_growth_delta,
+            fcf_margin_delta=fcf_margin_delta,
+            operating_cost_pressure=operating_cost_pressure,
+            contract_evidence=contract_evidence,
+            complete_documents=complete_documents,
+            debt_reduction_delta=debt_reduction_delta,
+        )
+        scenario_prediction, scenario_rows = scenario_comparison_rows(
+            st.session_state.model_bundle,
+            application,
+            prediction,
+            simulated_application,
+        )
+        st.dataframe(pd.DataFrame(scenario_rows), width="stretch", hide_index=True)
+        st.caption(
+            f"Scenario output: grade {scenario_prediction['grade']} and model recommendation "
+            f"{scenario_prediction['decision']}. This is a what-if view, not a saved final decision."
+        )
 
     st.subheader("Risk Driver View")
     st.dataframe(pd.DataFrame(driver_rows), width="stretch", hide_index=True)
@@ -1666,5 +1740,15 @@ if st.session_state.last_prediction:
         display_similar["debt_service_coverage_ratio"] = display_similar["debt_service_coverage_ratio"].apply(_score)
     display_similar = display_similar.rename(columns={"fraud_probability": "Application risk score"})
     st.dataframe(display_similar, width="stretch", hide_index=True)
+
+    st.subheader("Peer Benchmark")
+    st.caption("Synthetic peer comparison for the applicant's sector and region where enough peers are available.")
+    st.dataframe(
+        pd.DataFrame(peer_benchmark_rows(st.session_state.model_bundle, applications, application, prediction)),
+        width="stretch",
+        hide_index=True,
+    )
 else:
     st.info("Submit the form to score an application.")
+
+persist_demo_state()

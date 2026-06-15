@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+from src.demo_persistence import persist_demo_state
 from src.formatting import format_currency, format_percent, format_score
 from src.runtime import bootstrap_state
 from src.table_views import application_table
@@ -125,6 +126,7 @@ with st.expander("Bulk Actions", expanded=False):
                 st.success(f"Rejected {created_count} case(s) and added the decision to the audit trail.")
             if skipped_count:
                 st.info(f"Skipped {skipped_count} already rejected case(s).")
+            persist_demo_state()
             rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
             if rerun:
                 rerun()
@@ -165,3 +167,5 @@ if not filtered.empty:
         open_application_in_workspace(selected.to_dict(), "Operations Desk")
 else:
     st.info("No applications match the selected filters.")
+
+persist_demo_state()

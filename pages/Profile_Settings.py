@@ -11,7 +11,7 @@ st.set_page_config(page_title="Profile & Settings", layout="wide")
 bootstrap_state()
 render_sidebar()
 
-PROFILE_TYPES = ["Internal analyst", "Team manager", "Risk lead", "Support specialist", "Read-only reviewer"]
+PROFILE_TYPES = ["Team Member", "Team Manager", "Risk Lead", "Support Specialist", "Read-only Reviewer"]
 PERMISSIONS = [
     "Credit review and manual decision approval",
     "Credit review",
@@ -87,14 +87,6 @@ def _option_index(options, value):
     return options.index(value) if value in options else 0
 
 
-def _short_permission(value):
-    labels = {
-        "Credit review and manual decision approval": "Review + approval",
-        "Read-only portfolio access": "Read-only",
-    }
-    return labels.get(value, value)
-
-
 def _integration_rows(profile):
     integrations = profile["integrations"]
     rows = []
@@ -117,7 +109,6 @@ if st.session_state.get("profile_settings_saved"):
     st.session_state.profile_settings_saved = False
 
 profile = get_profile()
-connected_apps = sum(1 for connected in profile["integrations"].values() if connected)
 
 st.title("Profile & Settings")
 st.caption("Manage analyst identity, connected channels, permissions, and account preferences.")
@@ -141,27 +132,17 @@ integration_rows = _integration_rows(profile)
 profile_tab, apps_tab, admin_tab = st.tabs(["Profile", "Personal Apps", "Admin Controls"])
 
 with profile_tab:
-    summary_cols = st.columns(5)
-    summary_cols[0].metric("ID", profile["user_id"])
-    summary_cols[1].metric("User type", profile["user_type"])
-    summary_cols[2].metric("Permission", _short_permission(profile["permission"]))
-    summary_cols[3].metric("Team manager", profile["team_manager"])
-    summary_cols[4].metric("Connected apps", f"{connected_apps}/{len(INTEGRATION_CATALOG)}")
     st.subheader("Profile")
     st.dataframe(profile_rows, width="stretch", hide_index=True)
 
 with apps_tab:
-    app_summary_cols = st.columns(3)
-    app_summary_cols[0].metric("Connected apps", f"{connected_apps}/{len(INTEGRATION_CATALOG)}")
-    app_summary_cols[1].metric("Preferred channel", profile["preferred_channel"])
-    app_summary_cols[2].metric("Preferred email app", profile["preferred_email_app"])
     st.subheader("Personal Connected Apps")
     st.dataframe(integration_rows, width="stretch", hide_index=True)
 
 with admin_tab:
     st.subheader("Admin Controls")
     st.caption("Update session preferences and controlled profile fields for the current demo workspace.")
-    admin_controls_enabled = st.checkbox("Enable role and manager controls", value=False)
+    admin_controls_enabled = st.checkbox("Enable controlled profile fields", value=False)
     with st.form("profile_settings_form"):
         identity_left, identity_right = st.columns(2)
         with identity_left:

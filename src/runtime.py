@@ -3,6 +3,7 @@ import os
 import streamlit as st
 
 from src.data_pipeline import BASE_NUMERIC_COLUMNS, ensure_seed_data
+from src.demo_persistence import persist_demo_state, restore_demo_state
 from src.modeling import train_model
 
 
@@ -43,6 +44,7 @@ def _model_bundle_has_current_metrics(model_bundle):
 
 
 def bootstrap_state():
+    restore_demo_state()
     if (
         "seed_data" not in st.session_state
         or not _seed_data_has_current_schema(st.session_state.seed_data)
@@ -120,3 +122,4 @@ def bootstrap_state():
         st.session_state.active_queue_application = None
     if "active_intake_source" not in st.session_state:
         st.session_state.active_intake_source = "Manual entry"
+    persist_demo_state()

@@ -6,6 +6,8 @@ from time import sleep
 
 import streamlit as st
 
+from src.demo_persistence import clear_demo_state, persist_demo_state
+
 
 PROFILE = {
     "bank": "Rabobank",
@@ -16,7 +18,7 @@ PROFILE = {
     "email": "alice.cooper@rabobank.nl",
     "role": "Credit Analyst",
     "team": "SME Credit Operations",
-    "user_type": "Internal analyst",
+    "user_type": "Team Member",
     "permission": "Credit review and manual decision approval",
     "team_manager": "Ravi Meijer",
     "slack_connected": True,
@@ -45,6 +47,7 @@ NAV_SECTIONS = [
         [
             ("Home", "Home.py", ":material/home:"),
             ("Personal Workspace", "pages/Personal_Workspace.py", ":material/person_search:"),
+            ("SME Credit Health", "pages/SME_Credit_Health.py", ":material/monitor_heart:"),
             ("LLM Integration", "pages/LLM_Integration.py", ":material/psychology:"),
         ],
     ),
@@ -100,6 +103,8 @@ def _sync_dark_mode_from_widget():
 
 def get_profile():
     profile = {**PROFILE, **st.session_state.get("user_profile", {})}
+    if profile.get("user_type") == "Internal analyst":
+        profile["user_type"] = "Team Member"
     profile["dark_mode"] = _is_dark_mode()
     saved_integrations = profile.get("integrations", {})
     profile["integrations"] = {
@@ -118,6 +123,8 @@ def get_profile():
 
 def save_profile(profile):
     updated_profile = {**PROFILE, **profile}
+    if updated_profile.get("user_type") == "Internal analyst":
+        updated_profile["user_type"] = "Team Member"
     dark_mode = updated_profile["dark_mode"] if "dark_mode" in updated_profile else _is_dark_mode()
     updated_profile["dark_mode"] = _set_dark_mode_preference(dark_mode)
     saved_integrations = updated_profile.get("integrations", {})
@@ -130,6 +137,7 @@ def save_profile(profile):
     updated_profile["user_id"] = updated_profile.get("user_id") or updated_profile.get("id", PROFILE["id"])
     updated_profile["id"] = updated_profile.get("id") or updated_profile["user_id"]
     st.session_state.user_profile = updated_profile
+    persist_demo_state()
     return updated_profile
 
 
@@ -167,6 +175,7 @@ def open_application_in_workspace(application, source="Workspace"):
     st.session_state.active_intake_source = source
     st.session_state.loan_example_scenario = "Custom application"
     _clear_scored_workspace_case()
+    persist_demo_state()
 
     switch_page = getattr(st, "switch_page", None)
     if switch_page:
@@ -577,6 +586,7 @@ def _complete_login():
     st.session_state.authenticated = True
     st.session_state.login_transition = True
     st.session_state.login_stage = "credentials"
+    persist_demo_state()
     _rerun()
 
 
@@ -628,14 +638,9 @@ def render_sidebar():
 
     _render_login_transition()
     profile = get_profile()
-    slack_status = "Slack connected" if profile.get("slack_connected") else "Slack disconnected"
-    teams_status = "Teams connected" if profile.get("teams_connected") else "Teams disconnected"
     st.markdown(
         """
         <style>
-        section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] {
-            padding-bottom: 7rem;
-        }
         .sidebar-section-label {
             color: rgba(100, 116, 139, 0.94);
             font-size: 0.74rem;
@@ -646,42 +651,16 @@ def render_sidebar():
             text-transform: uppercase;
         }
         .profile-sidebar-card {
-            position: fixed;
-            left: 0.75rem;
-            bottom: 0.75rem;
-            width: 14.5rem;
-            max-width: calc(100vw - 1.5rem);
-            border: 1px solid rgba(148, 163, 184, 0.28);
-            border-radius: 8px;
-            padding: 0.7rem 0.8rem;
-            background: rgba(15, 23, 42, 0.92);
-            color: #f8fafc;
-            z-index: 999;
-            box-shadow: 0 12px 28px rgba(2, 6, 23, 0.18);
-        }
-        .profile-sidebar-card .profile-label {
-            color: rgba(226, 232, 240, 0.72);
-            font-size: 0.72rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 0.35rem;
-            text-transform: uppercase;
+            border-top: 1px solid rgba(148, 163, 184, 0.24);
+            color: rgba(100, 116, 139, 0.96);
+            margin-top: 0.75rem;
+            padding-top: 0.65rem;
         }
         .profile-sidebar-card .profile-name {
-            font-size: 1rem;
+            font-size: 0.84rem;
             font-weight: 750;
-            line-height: 1.1;
-            margin-bottom: 0.15rem;
-        }
-        .profile-sidebar-card .profile-meta {
-            color: rgba(226, 232, 240, 0.82);
-            font-size: 0.78rem;
-            line-height: 1.35;
-        }
-        @media (max-width: 640px) {
-            .profile-sidebar-card {
-                display: none;
-            }
+            line-height: 1.2;
+            overflow-wrap: anywhere;
         }
         </style>
         """,
@@ -703,16 +682,16 @@ def render_sidebar():
         if st.button("Sign Out", width="stretch"):
             st.session_state.authenticated = False
             st.session_state.login_transition = False
+            persist_demo_state()
+            _rerun()
+        if st.button("Clear Demo State", width="stretch"):
+            clear_demo_state()
             _rerun()
         st.divider()
         st.markdown(
             f"""
             <div class="profile-sidebar-card">
-                <div class="profile-label">Signed in</div>
                 <div class="profile-name">{escape(profile["name"])}</div>
-                <div class="profile-meta">Bank: {escape(profile["bank"])}</div>
-                <div class="profile-meta">ID: {escape(profile["user_id"])} | {escape(profile["role"])}</div>
-                <div class="profile-meta">{escape(slack_status)} | {escape(teams_status)}</div>
             </div>
             """,
             unsafe_allow_html=True,

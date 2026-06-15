@@ -2,8 +2,10 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
+from src.alignment_features import api_contract_payloads
 from src.data_pipeline import NUMERIC_COLUMNS, add_derived_features
 from src.formatting import format_currency, format_score
+from src.modeling import score_application
 from src.runtime import bootstrap_state
 from src.ui import render_sidebar
 
@@ -164,6 +166,19 @@ governance_rows = pd.DataFrame(
     ]
 )
 st.dataframe(governance_rows, width="stretch", hide_index=True)
+
+st.subheader("Risk Score API Contract Preview")
+st.caption("MVP preview of how a lender could embed the score in an existing underwriting workflow. This is not a running external API yet.")
+api_application = st.session_state.last_application or applications.iloc[0].to_dict()
+api_prediction = st.session_state.last_prediction or score_application(bundle, api_application)
+request_json, response_json = api_contract_payloads(api_application, api_prediction, metrics)
+api_cols = st.columns(2)
+with api_cols[0]:
+    st.caption("Example request")
+    st.code(request_json, language="json")
+with api_cols[1]:
+    st.caption("Example response")
+    st.code(response_json, language="json")
 
 st.subheader("Top Feature Importances")
 importance_raw = bundle.feature_importance.head(20).copy()

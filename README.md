@@ -29,6 +29,7 @@ The app prepares a local portfolio on first run.
 
 The demo login screen uses a password step followed by a six-digit verification code step before opening the local workspace.
 The sidebar includes a dark-mode toggle, and the same preference can be saved from Profile & Settings.
+During a local demo, temporary page state is restored after browser refresh through a local `.tmp/demo_sessions` file keyed by the `demo_session` URL parameter. Use `Clear Demo State` in the sidebar to reset it.
 
 ## Walkthrough
 
@@ -39,10 +40,11 @@ For the research grounding behind the risk ratios, cash-flow signals, anomaly me
 2. Open `Personal Workspace` and choose an example case such as `A2M Logistics Loan`, `Low-risk established borrower`, `Credit stacking case`, or `Suspicious transfers`.
 3. Score the application, then point out the A-F grade, model recommendation, final-decision status, risk flags, structured explanation, similar historical applications, and downloadable case summary.
 4. Click `Open Case Review`, choose an analyst action, optionally prepare the email-ready analysis, and save the review to the audit trail.
-5. For approve/reject outcomes, show that manual score adjustment requires supervisor approval and supervisor email routing.
-6. Open `LLM Integration` to discuss deterministic, hosted, or local-model second review, qualitative AI review score, and SHAP driver analysis.
-7. Open `Operations Desk` to show the team workboard, evidence follow-up, bulk rejection, selected-case detail, and handoff into Personal Workspace.
-8. Open `Risk Dashboard` and `Model Insights` to show filtered portfolio monitoring, model metrics, grading thresholds, and feature importance.
+5. Open `SME Credit Health` to show the borrower-facing preview, peer benchmark, and what-if simulation for score improvement.
+6. For approve/reject outcomes, show that manual score adjustment requires supervisor approval and supervisor email routing.
+7. Open `LLM Integration` to discuss deterministic, hosted, or local-model second review, qualitative AI review score, and SHAP driver analysis.
+8. Open `Operations Desk` to show the team workboard, evidence follow-up, bulk rejection, selected-case detail, and handoff into Personal Workspace.
+9. Open `Risk Dashboard` and `Model Insights` to show filtered portfolio monitoring, model metrics, grading thresholds, feature importance, and the Risk Score API contract preview.
 
 ## Optional LLM Providers
 
@@ -63,9 +65,10 @@ Those values stay in Streamlit session state and are not written to the reposito
 
 - `Home.py`: employee homepage with current tasks, Slack Updates, and Calendar Today.
 - `pages/Personal_Workspace.py`: score one SME loan application, review evidence, save a final decision, and store the latest decision in session state.
+- `pages/SME_Credit_Health.py`: borrower-facing MVP preview with credit-health drivers, what-if simulation, evidence source coverage, and peer benchmarks.
 - `pages/Operations_Desk.py`: team workboard for incoming applications, evidence gaps, SLA status, and case handoff.
 - `pages/Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, live session decisions, and review audit history.
-- `pages/Model_Insights.py`: model metrics, confusion matrix, feature importances, grading thresholds, and derived signal design.
+- `pages/Model_Insights.py`: model metrics, confusion matrix, feature importances, grading thresholds, derived signal design, and API contract preview.
 - `pages/LLM_Integration.py`: LLM second-review integration view for the latest scored loan request.
 - `pages/Profile_Settings.py`: analyst profile, personal connected apps such as Slack/Teams, Gmail/Outlook, Drive/OneDrive/SharePoint, Zoom, user type, permissions, and team manager settings.
 - `pages/About.py`: definitions for workspace scoring dimensions and risk grade interpretation.

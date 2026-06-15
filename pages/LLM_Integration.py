@@ -2,6 +2,7 @@ import re
 
 import streamlit as st
 
+from src.demo_persistence import persist_demo_state
 from src.explanations import deterministic_explanation, explain_prediction
 from src.formatting import format_percent, format_score
 from src.runtime import bootstrap_state
@@ -213,6 +214,7 @@ else:
             st.session_state.llm_chat_error,
             st.session_state.llm_chat_explanation,
         )
+        persist_demo_state()
 
     explanation = st.session_state.get("llm_chat_explanation") or default_explanation
     source = st.session_state.get("llm_chat_source") or "Deterministic"
@@ -286,3 +288,5 @@ else:
         )
     except ImportError:
         st.warning("Install the `shap` dependency from requirements.txt to view SHAP driver analysis.")
+
+persist_demo_state()
