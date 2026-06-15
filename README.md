@@ -16,7 +16,7 @@ For Windows users, double-click:
 Run_App.bat
 ```
 
-The launcher creates a local `.venv`, installs dependencies from `requirements.txt`, and starts the Streamlit app.
+The launcher creates a local `.venv`, installs dependencies from `requirements.txt`, and starts the Streamlit app. Note, this process may take a few minutes. Its therefore suggested to run it manually, if possible. 
 
 ## Run manually through a terminal
 
@@ -75,9 +75,9 @@ Those values stay in Streamlit session state and are not written to the reposito
 
 | Grade | Application risk score | Action |
 | --- | --- | --- |
-| A | `< 0.15` | Approve |
-| B | `0.15 to < 0.28` | Approve |
-| C | `0.28 to < 0.42` | Manual Review |
-| D | `0.42 to < 0.58` | Manual Review |
-| E | `0.58 to < 0.74` | Reject |
-| F | `>= 0.74` | Reject |
+| A | `Below 0.15` | Approve |
+| B | `0.15 to 0.28` | Approve |
+| C | `0.28 to 0.42` | Manual Review |
+| D | `0.42 to 0.58` | Manual Review |
+| E | `0.58 to 0.74` | Reject |
+| F | `Above 0.74` | Reject |
