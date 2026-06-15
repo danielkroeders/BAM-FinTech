@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CredRisk.AI Pitch Deck</title>
+  <script>
+    if (new URLSearchParams(window.location.search).get("export") === "1") {
+      document.documentElement.classList.add("export-mode");
+    }
+  </script>
+  <style>
+    :root {
+      --ink: #17202f;
+      --muted: #667085;
+      --line: #d9e2ee;
+      --paper: #f7f9fc;
+      --navy: #10243f;
+      --blue: #285f9f;
+      --teal: #0e8f8f;
+      --green: #4f8f3a;
+      --amber: #b7761f;
+      --rose: #a54355;
+      --white: #ffffff;
+      --shadow: 0 22px 80px rgba(16, 36, 63, 0.17);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #e9eef5;
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    .deck-shell {
+      width: min(100%, 1180px);
+    }
+
+    .deck {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border-radius: 16px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 22px;
+      padding: 48px 56px 34px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(28px);
+      transition: opacity 180ms ease, transform 180ms ease;
+      background:
+        linear-gradient(110deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.94) 56%, rgba(247, 249, 252, 0.8) 100%),
+        var(--paper);
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    .slide.hero {
+      grid-template-columns: minmax(0, 0.95fr) minmax(300px, 0.75fr);
+      grid-template-rows: 1fr auto;
+      align-items: center;
+      gap: 38px;
+      padding: 52px 58px 38px;
+      background:
+        linear-gradient(90deg, rgba(16, 36, 63, 0.95) 0%, rgba(16, 36, 63, 0.86) 42%, rgba(16, 36, 63, 0.36) 100%),
+        url("../assets/login-risk-hero.png") center / cover no-repeat;
+      color: var(--white);
+    }
+
+    .slide.hero footer {
+      grid-column: 1 / -1;
+      color: rgba(255, 255, 255, 0.8);
+      border-color: rgba(255, 255, 255, 0.24);
+    }
+
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--teal);
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .hero .eyebrow {
+      color: #9de0d9;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      color: var(--navy);
+      font-weight: 850;
+      line-height: 1.03;
+    }
+
+    .hero h1,
+    .hero h2 {
+      color: var(--white);
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: clamp(54px, 7vw, 82px);
+    }
+
+    h2 {
+      max-width: 820px;
+      font-size: clamp(32px, 4.2vw, 48px);
+    }
+
+    .subtitle {
+      max-width: 690px;
+      margin: 24px 0 0;
+      color: var(--muted);
+      font-size: clamp(20px, 2.3vw, 29px);
+      line-height: 1.32;
+      font-weight: 500;
+    }
+
+    .hero .subtitle {
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .hero-panel {
+      align-self: end;
+      display: grid;
+      gap: 14px;
+      padding: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero-stat {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 13px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .hero-stat strong {
+      color: var(--white);
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .hero-stat span {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .content {
+      min-height: 0;
+      display: grid;
+      gap: 18px;
+      align-content: center;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 15px;
+    }
+
+    .card,
+    .metric,
+    .flow-step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 12px 38px rgba(16, 36, 63, 0.08);
+    }
+
+    .card {
+      padding: 20px;
+    }
+
+    .card h3,
+    .metric h3,
+    .flow-step h3 {
+      margin: 0 0 10px;
+      color: var(--navy);
+      font-size: 21px;
+      line-height: 1.18;
+    }
+
+    .card p,
+    .metric p,
+    .flow-step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.42;
+    }
+
+    .big-callout {
+      display: grid;
+      gap: 16px;
+      padding: 26px;
+      border-left: 8px solid var(--teal);
+      border-radius: 8px;
+      background: #edf8f7;
+    }
+
+    .big-callout strong {
+      color: var(--navy);
+      font-size: 34px;
+      line-height: 1.06;
+    }
+
+    .big-callout span {
+      max-width: 760px;
+      color: #3d5d67;
+      font-size: 19px;
+      line-height: 1.36;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      padding: 18px;
+      min-height: 136px;
+    }
+
+    .metric b {
+      display: block;
+      margin-bottom: 12px;
+      color: var(--blue);
+      font-size: 34px;
+      line-height: 1;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #eef4fb;
+      color: #24527f;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      align-items: center;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 166px;
+      padding: 17px;
+    }
+
+    .flow-step::after {
+      content: "";
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      width: 12px;
+      height: 2px;
+      background: var(--line);
+    }
+
+    .flow-step:last-child::after {
+      display: none;
+    }
+
+    .flow-step .number {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 14px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: var(--white);
+      font-weight: 800;
+    }
+
+    .demo-path {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .demo-row {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.86);
+    }
+
+    .demo-row b {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #e9f3f4;
+      color: var(--teal);
+      font-size: 20px;
+    }
+
+    .demo-row h3 {
+      margin: 0 0 4px;
+      color: var(--navy);
+      font-size: 20px;
+    }
+
+    .demo-row p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .grade-strip {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .grade {
+      min-height: 116px;
+      padding: 13px;
+      border-radius: 8px;
+      color: var(--white);
+    }
+
+    .grade strong {
+      display: block;
+      font-size: 32px;
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .grade span {
+      display: block;
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    .grade.a { background: #357849; }
+    .grade.b { background: #579642; }
+    .grade.c { background: #b6952c; }
+    .grade.d { background: #b8742a; }
+    .grade.e { background: #a95142; }
+    .grade.f { background: #7f3340; }
+
+    .closing {
+      display: grid;
+      gap: 28px;
+      align-content: center;
+      text-align: center;
+    }
+
+    .closing h2 {
+      justify-self: center;
+      max-width: 900px;
+    }
+
+    .closing .subtitle {
+      justify-self: center;
+      max-width: 760px;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--navy);
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+      padding: 8px 14px;
+    }
+
+    button:hover {
+      border-color: #a9bdd4;
+      background: #f9fbfd;
+    }
+
+    .progress {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 32px;
+      height: 5px;
+      border-radius: 999px;
+      background: #c9d5e4;
+    }
+
+    .dot.active {
+      background: var(--teal);
+    }
+
+    .export-mode body {
+      display: block;
+      padding: 0;
+      background: var(--white);
+    }
+
+    .export-mode .deck-shell {
+      width: 100vw;
+    }
+
+    .export-mode .deck {
+      width: 100vw;
+      height: 100vh;
+      aspect-ratio: auto;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .export-mode .slide.hero,
+    .export-mode .slide {
+      border-radius: 0;
+    }
+
+    .export-mode .controls {
+      display: none;
+    }
+
+    @media (max-width: 820px) {
+      body {
+        padding: 0;
+        display: block;
+        background: var(--white);
+      }
+
+      .deck-shell {
+        width: 100%;
+      }
+
+      .deck {
+        aspect-ratio: auto;
+        min-height: 100svh;
+        border-radius: 0;
+      }
+
+      .slide,
+      .slide.hero {
+        position: absolute;
+        display: grid;
+        grid-template-columns: 1fr;
+        padding: 30px 22px 28px;
+        gap: 22px;
+      }
+
+      .slide.hero {
+        background:
+          linear-gradient(90deg, rgba(16, 36, 63, 0.96) 0%, rgba(16, 36, 63, 0.82) 100%),
+          url("../assets/login-risk-hero.png") center / cover no-repeat;
+      }
+
+      .two-col,
+      .three-col,
+      .architecture,
+      .metric-grid,
+      .demo-path,
+      .grade-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .content {
+        align-content: start;
+      }
+
+      .flow-step::after {
+        display: none;
+      }
+
+      h1 {
+        font-size: 47px;
+      }
+
+      h2 {
+        font-size: 34px;
+      }
+
+      .subtitle,
+      .card p,
+      .metric p,
+      .flow-step p {
+        font-size: 17px;
+      }
+
+      .controls {
+        padding: 0 12px 12px;
+      }
+    }
+
+    @media print {
+      @page {
+        size: 16in 9in;
+        margin: 0;
+      }
+
+      body {
+        display: block;
+        padding: 0;
+        background: var(--white);
+      }
+
+      .deck-shell,
+      .deck {
+        width: 100%;
+      }
+
+      .deck {
+        height: auto;
+        aspect-ratio: auto;
+        overflow: visible;
+        box-shadow: none;
+        border-radius: 0;
+      }
+
+      .slide,
+      .slide.hero {
+        position: relative;
+        page-break-after: always;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        width: 16in;
+        height: 9in;
+        max-height: none;
+        border-radius: 0;
+      }
+
+      .controls {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck-shell" aria-label="CredRisk.AI pitch deck">
+    <section class="deck" id="deck">
+      <article class="slide hero active">
+        <div>
+          <p class="eyebrow">Pre-demo investor pitch</p>
+          <h1>CredRisk.AI</h1>
+          <p class="subtitle">An underwriter workbench that helps SME lenders move from scattered review to explainable, human-controlled credit decisions.</p>
+          <div class="tag-list" aria-label="Product themes">
+            <span class="tag">SME lending</span>
+            <span class="tag">Risk scoring</span>
+            <span class="tag">AI second review</span>
+            <span class="tag">Audit trail</span>
+          </div>
+        </div>
+        <aside class="hero-panel" aria-label="Deck highlights">
+          <div class="hero-stat">
+            <strong>A-F</strong>
+            <span>Clear risk grades mapped to model recommendations.</span>
+          </div>
+          <div class="hero-stat">
+            <strong>RF</strong>
+            <span>Random Forest baseline with validation metrics.</span>
+          </div>
+          <div class="hero-stat">
+            <strong>LLM</strong>
+            <span>Optional second reviewer, not an automatic final decision.</span>
+          </div>
+        </aside>
+        <footer>
+          <span>CredRisk.AI Underwriter Workbench</span>
+          <span>01</span>
+        </footer>
+      </article>
+
+      <article class="slide">
+        <header>
+          <p class="eyebrow">The problem</p>
+          <h2>SME underwriting is too manual for the risk hiding inside the file.</h2>
+        </header>
+        <div class="content two-col">
+          <div class="big-callout">
+            <strong>Analysts spend time collecting context before they can judge risk.</strong>
+            <span>Documents, financial ratios, fraud signals, portfolio exposure, and final decisions often live in separate tools.</span>
+          </div>
+          <div class="three-col" style="grid-template-columns: 1fr;">
+            <div class="card">
+              <h3>Slow triage</h3>
+              <p>High-risk cases wait in the same queue as clean applications.</p>
+            </div>
+            <div class="card">
+              <h3>Low transparency</h3>
+              <p>Analysts need to explain why a score moved, not just see a number.</p>
+            </div>
+            <div class="card">
+              <h3>Weak governance</h3>
+              <p>Model output, AI advice, and human final decisions must stay separate.</p>
+            </div>
+          </div>
+        </div>
+        <footer>
+          <span>Problem worth solving</span>
+          <span>02</span>
+        </footer>
+      </article>
+
+      <article class="slide">
+        <header>
+          <p class="eyebrow">The solution</p>
+          <h2>One workbench for scoring, explaining, reviewing, and monitoring SME loan applications.</h2>
+        </header>
+        <div class="content">
+          <div class="metric-grid">
+            <div class="metric">
+              <b>1</b>
+              <h3>Score</h3>
+              <p>RF model produces an application risk score and A-F grade.</p>
+            </div>
+            <div class="metric">
+              <b>2</b>
+              <h3>Explain</h3>
+              <p>Deterministic rationale and SHAP-style drivers make the score readable.</p>
+            </div>
+            <div class="metric">
+              <b>3</b>
+              <h3>Review</h3>
+              <p>The analyst records a final decision separately from the model.</p>
+            </div>
+            <div class="metric">
+              <b>4</b>
+              <h3>Monitor</h3>
+              <p>Queues, portfolio risk, and audit history keep operations visible.</p>
+            </div>
+          </div>
+          <div class="grade-strip" aria-label="A-F risk grade policy">
+            <div class="grade a"><strong>A</strong><span>Below 0.15<br>Approve</span></div>
+            <div class="grade b"><strong>B</strong><span>0.15 to 0.28<br>Approve</span></div>
+            <div class="grade c"><strong>C</strong><span>0.28 to 0.42<br>Manual review</span></div>
+            <div class="grade d"><strong>D</strong><span>0.42 to 0.58<br>Manual review</span></div>
+            <div class="grade e"><strong>E</strong><span>0.58 to 0.74<br>Reject</span></div>
+            <div class="grade f"><strong>F</strong><span>0.74 and above<br>Reject</span></div>
+          </div>
+        </div>
+        <footer>
+          <span>Product promise</span>
+          <span>03</span>
+        </footer>
+      </article>
+
+      <article class="slide">
+        <header>
+          <p class="eyebrow">Why this wins</p>
+          <h2>CredRisk.AI gives lenders speed without losing control.</h2>
+        </header>
+        <div class="content three-col">
+          <div class="card">
+            <h3>Operational speed</h3>
+            <p>Assigned tasks, workboard filters, bulk rejection, and case handoff reduce review friction.</p>
+          </div>
+          <div class="card">
+            <h3>Explainable confidence</h3>
+            <p>Risk drivers translate raw model signals into banker-readable rationale.</p>
+          </div>
+          <div class="card">
+            <h3>Human accountability</h3>
+            <p>The tool recommends; Ms. Cooper decides, documents, and routes supervisor review when needed.</p>
+          </div>
+          <div class="card">
+            <h3>AI where useful</h3>
+            <p>Hosted or local LLMs can challenge the baseline with a qualitative second review.</p>
+          </div>
+          <div class="card">
+            <h3>Bank-grade audit</h3>
+            <p>Session decisions, memo generation, and audit history support governance.</p>
+          </div>
+          <div class="card">
+            <h3>Scalable foundation</h3>
+            <p>The MVP can connect to PSD2, accounting, registry, KYB, and document pipelines.</p>
+          </div>
+        </div>
+        <footer>
+          <span>Differentiation</span>
+          <span>04</span>
+        </footer>
+      </article>
+
+      <article class="slide">
+        <header>
+          <p class="eyebrow">Architecture</p>
+          <h2>A compact MVP that maps the business plan into working software.</h2>
+        </header>
+        <div class="content architecture">
+          <div class="flow-step">
+            <span class="number">1</span>
+            <h3>Streamlit UI</h3>
+            <p>Home, workspace, operations desk, dashboards, settings, and support.</p>
+          </div>
+          <div class="flow-step">
+            <span class="number">2</span>
+            <h3>Data pipeline</h3>
+            <p>Synthetic SME portfolio, derived cash-flow, document, KYB, and anomaly signals.</p>
+          </div>
+          <div class="flow-step">
+            <span class="number">3</span>
+            <h3>RF model</h3>
+            <p>Scikit-learn pipeline with preprocessing, Random Forest, A-F grading, and metrics.</p>
+          </div>
+          <div class="flow-step">
+            <span class="number">4</span>
+            <h3>Explainability</h3>
+            <p>Deterministic rationale first, plus optional OpenAI or local LLM second review.</p>
+          </div>
+          <div class="flow-step">
+            <span class="number">5</span>
+            <h3>Runtime state</h3>
+            <p>Latest case, reviews, bulk actions, portfolio history, and audit trail in session.</p>
+          </div>
+        </div>
+        <footer>
+          <span>How it is built</span>
+          <span>05</span>
+        </footer>
+      </article>
+
+      <article class="slide">
+        <header>
+          <p class="eyebrow">Demo path</p>
+          <h2>What to watch when the product demo starts.</h2>
+        </header>
+        <div class="content demo-path">
+          <div class="demo-row">
+            <b>1</b>
+            <div>
+              <h3>Home</h3>
+              <p>Ms. Cooper starts from tasks, Slack updates, and today&apos;s calendar.</p>
+            </div>
+          </div>
+          <div class="demo-row">
+            <b>2</b>
+            <div>
+              <h3>Personal Workspace</h3>
+              <p>Score an assigned SME case and read the deterministic decision rationale.</p>
+            </div>
+          </div>
+          <div class="demo-row">
+            <b>3</b>
+            <div>
+              <h3>Case Review</h3>
+              <p>Save a final analyst decision, separate from the RF recommendation.</p>
+            </div>
+          </div>
+          <div class="demo-row">
+            <b>4</b>
+            <div>
+              <h3>Operations Desk</h3>
+              <p>Filter the team workboard and apply bulk action where appropriate.</p>
+            </div>
+          </div>
+          <div class="demo-row">
+            <b>5</b>
+            <div>
+              <h3>Risk Dashboard</h3>
+              <p>Monitor exposure, manual reviews, compliance queue, and audit history.</p>
+            </div>
+          </div>
+          <div class="demo-row">
+            <b>6</b>
+            <div>
+              <h3>AI Explainability</h3>
+              <p>Run an optional LLM second review and compare it against the RF baseline.</p>
+            </div>
+          </div>
+        </div>
+        <footer>
+          <span>Pre-demo bridge</span>
+          <span>06</span>
+        </footer>
+      </article>
+
+      <article class="slide">
+        <header>
+          <p class="eyebrow">Scale and risk</p>
+          <h2>The MVP is intentionally focused; the next layer is real data integration and governance hardening.</h2>
+        </header>
+        <div class="content two-col">
+          <div class="card">
+            <h3>Scale prerequisites</h3>
+            <p>Production data connectors, model monitoring, role-based access, document ingestion, secure secrets, and deployment controls.</p>
+            <div class="tag-list">
+              <span class="tag">PSD2</span>
+              <span class="tag">Accounting APIs</span>
+              <span class="tag">KYB registry</span>
+              <span class="tag">Document review</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Managed risks</h3>
+            <p>False positives, AI hallucination, data leakage, model drift, and over-reliance on automation are controlled through human review and auditability.</p>
+            <div class="tag-list">
+              <span class="tag">Human final decision</span>
+              <span class="tag">LLM fallback</span>
+              <span class="tag">Validation metrics</span>
+              <span class="tag">Audit trail</span>
+            </div>
+          </div>
+        </div>
+        <footer>
+          <span>What comes after MVP</span>
+          <span>07</span>
+        </footer>
+      </article>
+
+      <article class="slide">
+        <header>
+          <p class="eyebrow">Execution proof</p>
+          <h2>Built as a working MVP with a clear path to lender deployment.</h2>
+        </header>
+        <div class="content three-col">
+          <div class="card">
+            <h3>Product works</h3>
+            <p>The app implements the core value loop: scoring, explainability, analyst workflow, bulk operations, and monitoring.</p>
+          </div>
+          <div class="card">
+            <h3>Easy to run</h3>
+            <p>The workspace includes setup docs, a demo guide, requirements, and a Windows launcher for fast handoff.</p>
+          </div>
+          <div class="card">
+            <h3>AI governed</h3>
+            <p>Agent instructions and acceptance checks keep the build aligned with risk policy, page structure, and user workflow.</p>
+          </div>
+        </div>
+        <footer>
+          <span>Investor readiness</span>
+          <span>08</span>
+        </footer>
+      </article>
+
+      <article class="slide">
+        <div class="closing">
+          <p class="eyebrow">Now the demo</p>
+          <h2>CredRisk.AI turns SME underwriting from a file chase into an explainable decision workflow.</h2>
+          <p class="subtitle">The demo will show the product live: score a case, explain the score, record the human decision, review the portfolio, and run an AI second opinion.</p>
+        </div>
+        <footer>
+          <span>CredRisk.AI Underwriter Workbench</span>
+          <span>09</span>
+        </footer>
+      </article>
+    </section>
+
+    <nav class="controls" aria-label="Slide controls">
+      <div class="buttons">
+        <button type="button" id="prev" aria-label="Previous slide">Previous</button>
+        <button type="button" id="next" aria-label="Next slide">Next</button>
+        <button type="button" onclick="window.print()" aria-label="Print or export to PDF">Print/PDF</button>
+      </div>
+      <div class="progress" id="progress" aria-hidden="true"></div>
+      <span id="counter">1 / 9</span>
+    </nav>
+  </main>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const progress = document.getElementById("progress");
+    const counter = document.getElementById("counter");
+    let current = 0;
+
+    slides.forEach((_, index) => {
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.addEventListener("click", () => showSlide(index));
+      progress.appendChild(dot);
+    });
+
+    function showSlide(index) {
+      current = (index + slides.length) % slides.length;
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle("active", slideIndex === current);
+      });
+      Array.from(progress.children).forEach((dot, dotIndex) => {
+        dot.classList.toggle("active", dotIndex === current);
+      });
+      counter.textContent = `${current + 1} / ${slides.length}`;
+    }
+
+    document.getElementById("prev").addEventListener("click", () => showSlide(current - 1));
+    document.getElementById("next").addEventListener("click", () => showSlide(current + 1));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+        event.preventDefault();
+        showSlide(current + 1);
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        showSlide(current - 1);
+      }
+    });
+
+    const requestedSlide = Number(new URLSearchParams(window.location.search).get("slide"));
+    showSlide(Number.isInteger(requestedSlide) ? requestedSlide : 0);
+  </script>
+</body>
+</html>
