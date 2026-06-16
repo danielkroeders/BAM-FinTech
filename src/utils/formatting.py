@@ -9,23 +9,23 @@ def format_integer(value):
 
 
 def format_currency(value, decimals=0):
-    return f"\u20ac {format_number(value, decimals)}"
+    return f"€ {format_number(value, decimals)}"
 
 
 def format_currency_input(value):
-    return f"\u20ac{format_number(value, 2)}"
+    return f"€{format_number(value, 2)}"
 
 
 def parse_eu_number(value):
     text = (
         str(value)
         .strip()
-        .replace("\u20ac", "")
-        .replace("\u00e2\u201a\u00ac", "")
+        .replace("€", "")
+        .replace("â‚¬", "")
         .replace("EUR", "")
         .replace("eur", "")
         .replace(" ", "")
-        .replace("\u00a0", "")
+        .replace(" ", "")
     )
     if not text:
         raise ValueError("Enter a number.")

@@ -2,11 +2,11 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from src.formatting import format_currency, format_integer, format_percent
-from src.modeling import score_portfolio
-from src.runtime import bootstrap_state
-from src.table_views import application_table
-from src.ui import open_application_in_workspace, render_sidebar
+from src.utils.formatting import format_currency, format_integer, format_percent
+from src.core.modeling import score_portfolio
+from src.core.runtime import bootstrap_state
+from src.utils.table_views import application_table
+from src.ui.components import open_application_in_workspace, render_sidebar
 
 
 st.set_page_config(page_title="Risk Dashboard", layout="wide")

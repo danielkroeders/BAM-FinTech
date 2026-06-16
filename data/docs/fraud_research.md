@@ -51,7 +51,7 @@ The app computes these fields automatically from the demo portfolio and workspac
 
 ## Evaluation Measures
 
-The app reports standard and imbalance-aware metrics in `pages/Model_Insights.py`:
+The app reports standard and imbalance-aware metrics in `pages/4_Model_Insights.py`:
 
 - Accuracy
 - Balanced accuracy

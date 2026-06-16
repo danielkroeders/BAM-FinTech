@@ -2,9 +2,9 @@ import os
 
 import streamlit as st
 
-from src.data_pipeline import BASE_NUMERIC_COLUMNS, ensure_seed_data
-from src.demo_persistence import persist_demo_state, restore_demo_state
-from src.modeling import train_model
+from src.core.data_pipeline import BASE_NUMERIC_COLUMNS, ensure_seed_data
+from src.utils.demo_persistence import persist_demo_state, restore_demo_state
+from src.core.modeling import train_model
 
 
 @st.cache_data(show_spinner="Loading portfolio")

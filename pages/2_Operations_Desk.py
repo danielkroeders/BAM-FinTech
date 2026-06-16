@@ -3,12 +3,12 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-from src.demo_persistence import persist_demo_state
-from src.formatting import format_currency, format_percent, format_score
-from src.runtime import bootstrap_state
-from src.table_views import application_table
-from src.ui import open_application_in_workspace, render_sidebar
-from src.workbench_features import build_application_queue
+from src.utils.demo_persistence import persist_demo_state
+from src.utils.formatting import format_currency, format_percent, format_score
+from src.core.runtime import bootstrap_state
+from src.utils.table_views import application_table
+from src.ui.components import open_application_in_workspace, render_sidebar
+from src.features.workbench_features import build_application_queue
 
 
 st.set_page_config(page_title="Operations Desk", layout="wide")

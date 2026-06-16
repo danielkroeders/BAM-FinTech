@@ -3,8 +3,8 @@ from datetime import datetime
 
 import streamlit as st
 
-from src.runtime import bootstrap_state
-from src.ui import get_profile, render_sidebar
+from src.core.runtime import bootstrap_state
+from src.ui.components import get_profile, render_sidebar
 
 
 st.set_page_config(page_title="Support", layout="wide")

@@ -19,7 +19,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from src.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, TARGET_COLUMN, add_derived_features
+from src.core.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, TARGET_COLUMN, add_derived_features
 
 
 THRESHOLD_MAP = {"A": 0.15, "B": 0.28, "C": 0.42, "D": 0.58, "E": 0.74, "F": 1.0}

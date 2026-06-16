@@ -4,8 +4,8 @@ import json
 import pandas as pd
 import streamlit as st
 
-from src.data_pipeline import add_derived_features
-from src.formatting import format_currency, format_percent
+from src.core.data_pipeline import add_derived_features
+from src.utils.formatting import format_currency, format_percent
 
 
 def _api_key():

@@ -2,12 +2,12 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from src.alignment_features import api_contract_payloads
-from src.data_pipeline import NUMERIC_COLUMNS, add_derived_features
-from src.formatting import format_currency, format_score
-from src.modeling import score_application
-from src.runtime import bootstrap_state
-from src.ui import render_sidebar
+from src.features.alignment_features import api_contract_payloads
+from src.core.data_pipeline import NUMERIC_COLUMNS, add_derived_features
+from src.utils.formatting import format_currency, format_score
+from src.core.modeling import score_application
+from src.core.runtime import bootstrap_state
+from src.ui.components import render_sidebar
 
 
 st.set_page_config(page_title="Model Insights", layout="wide")

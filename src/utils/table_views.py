@@ -1,4 +1,4 @@
-from src.formatting import format_currency, format_integer, format_months, format_percent, format_score
+from src.utils.formatting import format_currency, format_integer, format_months, format_percent, format_score
 
 
 APPLICATION_COLUMN_LABELS = {

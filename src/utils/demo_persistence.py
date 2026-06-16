@@ -10,7 +10,7 @@ import streamlit as st
 SESSION_QUERY_KEY = "demo_session"
 SESSION_STATE_KEY = "demo_session_id"
 SESSION_LOADED_KEY = "demo_session_loaded"
-SESSION_DIR = Path(__file__).resolve().parents[1] / ".tmp" / "demo_sessions"
+SESSION_DIR = Path(__file__).resolve().parents[2] / ".tmp" / "demo_sessions"
 
 PERSISTED_KEYS = [
     "authenticated",

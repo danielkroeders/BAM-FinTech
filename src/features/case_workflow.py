@@ -4,9 +4,9 @@ from urllib.parse import quote
 import numpy as np
 import pandas as pd
 
-from src.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, add_derived_features
-from src.formatting import format_currency, format_months, format_percent, format_score
-from src.modeling import decision_from_grade, grade_from_probability
+from src.core.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, add_derived_features
+from src.utils.formatting import format_currency, format_months, format_percent, format_score
+from src.core.modeling import decision_from_grade, grade_from_probability
 
 
 DEMO_SCENARIOS = {

@@ -4,13 +4,13 @@ from html import escape
 import pandas as pd
 import streamlit as st
 
-from src.alignment_features import (
+from src.features.alignment_features import (
     apply_scenario,
     data_source_coverage_rows,
     peer_benchmark_rows,
     scenario_comparison_rows,
 )
-from src.case_workflow import (
+from src.features.case_workflow import (
     DEMO_SCENARIOS,
     REVIEW_ACTIONS,
     adjusted_prediction,
@@ -18,10 +18,10 @@ from src.case_workflow import (
     mailto_link,
     similar_applications,
 )
-from src.data_pipeline import add_derived_features, build_forecast_table
-from src.demo_persistence import persist_demo_state
-from src.explanations import explain_prediction
-from src.formatting import (
+from src.core.data_pipeline import add_derived_features, build_forecast_table
+from src.utils.demo_persistence import persist_demo_state
+from src.features.explanations import explain_prediction
+from src.utils.formatting import (
     format_currency,
     format_currency_input,
     format_integer,
@@ -30,9 +30,9 @@ from src.formatting import (
     format_score,
     parse_eu_number,
 )
-from src.runtime import bootstrap_state
-from src.ui import render_sidebar, safe_page_link
-from src.workbench_features import (
+from src.core.runtime import bootstrap_state
+from src.ui.components import render_sidebar, safe_page_link
+from src.features.workbench_features import (
     build_application_queue,
     credit_memo,
     data_source_badges,
@@ -1440,8 +1440,8 @@ if st.session_state.last_prediction:
     st.subheader("Decision Rationale")
     st.caption("Explanation source: deterministic analyst explanation. Open LLM Integration to run a local or hosted model.")
     st.info(explanation)
-    safe_page_link("pages/LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
-    safe_page_link("pages/SME_Credit_Health.py", "Open SME Credit Health Preview", ":material/monitor_heart:")
+    safe_page_link("pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
+    safe_page_link("pages/6_SME_Credit_Health.py", "Open SME Credit Health Preview", ":material/monitor_heart:")
 
     terms_col, monitoring_col = st.columns(2)
     with terms_col:

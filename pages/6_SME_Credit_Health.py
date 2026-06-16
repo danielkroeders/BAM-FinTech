@@ -1,19 +1,19 @@
 import pandas as pd
 import streamlit as st
 
-from src.alignment_features import (
+from src.features.alignment_features import (
     apply_scenario,
     data_source_coverage_rows,
     peer_benchmark_rows,
     scenario_comparison_rows,
     sme_action_rows,
 )
-from src.data_pipeline import add_derived_features, build_forecast_table
-from src.demo_persistence import persist_demo_state
-from src.formatting import format_currency, format_integer, format_months, format_percent, format_score
-from src.modeling import score_application, score_portfolio
-from src.runtime import bootstrap_state
-from src.ui import render_sidebar, safe_page_link
+from src.core.data_pipeline import add_derived_features, build_forecast_table
+from src.utils.demo_persistence import persist_demo_state
+from src.utils.formatting import format_currency, format_integer, format_months, format_percent, format_score
+from src.core.modeling import score_application, score_portfolio
+from src.core.runtime import bootstrap_state
+from src.ui.components import render_sidebar, safe_page_link
 
 
 st.set_page_config(page_title="SME Credit Health", layout="wide")
@@ -143,8 +143,8 @@ with forecast_tab:
 
 nav_cols = st.columns([1, 1, 3])
 with nav_cols[0]:
-    safe_page_link("pages/Personal_Workspace.py", "Open Underwriter View", ":material/person_search:")
+    safe_page_link("pages/1_Personal_Workspace.py", "Open Underwriter View", ":material/person_search:")
 with nav_cols[1]:
-    safe_page_link("pages/Risk_Dashboard.py", "Open Portfolio View", ":material/monitoring:")
+    safe_page_link("pages/3_Risk_Dashboard.py", "Open Portfolio View", ":material/monitoring:")
 
 persist_demo_state()

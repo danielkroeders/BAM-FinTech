@@ -19,6 +19,8 @@ This is not a production underwriting, legal, or compliance decision system. Hig
 
 ### 1. Home
 
+First enter the login screen. Enter any 6 digit code you cn think of. Enter another random 6 digit code in the two step authorization screen.
+
 Start on the home page.
 
 Say:

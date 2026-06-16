@@ -64,15 +64,15 @@ Those values stay in Streamlit session state and are not written to the reposito
 ## Pages
 
 - `Home.py`: employee homepage with current tasks, Slack Updates, and Calendar Today.
-- `pages/Personal_Workspace.py`: score one SME loan application, review evidence, save a final decision, and store the latest decision in session state.
-- `pages/SME_Credit_Health.py`: borrower-facing MVP preview with credit-health drivers, what-if simulation, evidence source coverage, and peer benchmarks.
-- `pages/Operations_Desk.py`: team workboard for incoming applications, evidence gaps, SLA status, and case handoff.
-- `pages/Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, live session decisions, and review audit history.
-- `pages/Model_Insights.py`: model metrics, confusion matrix, feature importances, grading thresholds, derived signal design, and API contract preview.
-- `pages/LLM_Integration.py`: LLM second-review integration view for the latest scored loan request.
-- `pages/Profile_Settings.py`: analyst profile, personal connected apps such as Slack/Teams, Gmail/Outlook, Drive/OneDrive/SharePoint, Zoom, user type, permissions, and team manager settings.
-- `pages/About.py`: definitions for workspace scoring dimensions and risk grade interpretation.
-- `pages/Support.py`: representative email contacts, support request form, scripted live chat, and FAQ.
+- `pages/1_Personal_Workspace.py`: score one SME loan application, review evidence, save a final decision, and store the latest decision in session state.
+- `pages/6_SME_Credit_Health.py`: borrower-facing MVP preview with credit-health drivers, what-if simulation, evidence source coverage, and peer benchmarks.
+- `pages/2_Operations_Desk.py`: team workboard for incoming applications, evidence gaps, SLA status, and case handoff.
+- `pages/3_Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, live session decisions, and review audit history.
+- `pages/4_Model_Insights.py`: model metrics, confusion matrix, feature importances, grading thresholds, derived signal design, and API contract preview.
+- `pages/5_LLM_Integration.py`: LLM second-review integration view for the latest scored loan request.
+- `pages/7_Profile_Settings.py`: analyst profile, personal connected apps such as Slack/Teams, Gmail/Outlook, Drive/OneDrive/SharePoint, Zoom, user type, permissions, and team manager settings.
+- `pages/8_About.py`: definitions for workspace scoring dimensions and risk grade interpretation.
+- `pages/9_Support.py`: representative email contacts, support request form, scripted live chat, and FAQ.
 
 ## A-F Risk Grade Mapping
 

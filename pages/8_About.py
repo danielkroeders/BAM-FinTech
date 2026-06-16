@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
 
-from src.runtime import bootstrap_state
-from src.ui import render_sidebar
+from src.core.runtime import bootstrap_state
+from src.ui.components import render_sidebar
 
 
 st.set_page_config(page_title="About", layout="wide")

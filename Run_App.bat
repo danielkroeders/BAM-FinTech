@@ -42,7 +42,7 @@ echo Starting Streamlit app...
 echo A browser window should open automatically.
 echo If it does not, open http://localhost:8501
 echo.
-"%VENV_PY%" -m streamlit run Home.py --server.headless=false --browser.gatherUsageStats=false
+"%VENV_PY%" -m streamlit run app.py --server.headless=false --browser.gatherUsageStats=false
 goto end
 
 :create_venv

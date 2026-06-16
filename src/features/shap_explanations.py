@@ -1,7 +1,7 @@
 import pandas as pd
 
-from src.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, add_derived_features
-from src.formatting import format_currency, format_months, format_percent, format_score
+from src.core.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, add_derived_features
+from src.utils.formatting import format_currency, format_months, format_percent, format_score
 
 
 def _fraud_class_values(values):

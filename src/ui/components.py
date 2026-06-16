@@ -6,7 +6,7 @@ from time import sleep
 
 import streamlit as st
 
-from src.demo_persistence import clear_demo_state, persist_demo_state
+from src.utils.demo_persistence import clear_demo_state, persist_demo_state
 
 
 PROFILE = {
@@ -46,25 +46,25 @@ NAV_SECTIONS = [
         "Credit Work",
         [
             ("Home", "Home.py", ":material/home:"),
-            ("Personal Workspace", "pages/Personal_Workspace.py", ":material/person_search:"),
-            ("SME Credit Health", "pages/SME_Credit_Health.py", ":material/monitor_heart:"),
-            ("LLM Integration", "pages/LLM_Integration.py", ":material/psychology:"),
+            ("Personal Workspace", "pages/1_Personal_Workspace.py", ":material/person_search:"),
+            ("SME Credit Health", "pages/6_SME_Credit_Health.py", ":material/monitor_heart:"),
+            ("LLM Integration", "pages/5_LLM_Integration.py", ":material/psychology:"),
         ],
     ),
     (
         "Operations & Risk",
         [
-            ("Operations Desk", "pages/Operations_Desk.py", ":material/view_list:"),
-            ("Risk Dashboard", "pages/Risk_Dashboard.py", ":material/monitoring:"),
-            ("Model Insights", "pages/Model_Insights.py", ":material/analytics:"),
+            ("Operations Desk", "pages/2_Operations_Desk.py", ":material/view_list:"),
+            ("Risk Dashboard", "pages/3_Risk_Dashboard.py", ":material/monitoring:"),
+            ("Model Insights", "pages/4_Model_Insights.py", ":material/analytics:"),
         ],
     ),
     (
         "Account & Help",
         [
-            ("Profile & Settings", "pages/Profile_Settings.py", ":material/manage_accounts:"),
-            ("Support", "pages/Support.py", ":material/support_agent:"),
-            ("About", "pages/About.py", ":material/info:"),
+            ("Profile & Settings", "pages/7_Profile_Settings.py", ":material/manage_accounts:"),
+            ("Support", "pages/9_Support.py", ":material/support_agent:"),
+            ("About", "pages/8_About.py", ":material/info:"),
         ],
     ),
 ]
@@ -73,7 +73,7 @@ DARK_MODE_STATE_KEY = "dark_mode_preference"
 DARK_MODE_WIDGET_KEY = "dark_mode_toggle"
 
 
-def _set_dark_mode_preference(value, profile=None):
+def _set_dark_mode_preference(value=False, profile=None):
     dark_mode = bool(value)
     st.session_state[DARK_MODE_STATE_KEY] = dark_mode
     st.session_state.dark_mode = dark_mode
@@ -179,9 +179,9 @@ def open_application_in_workspace(application, source="Workspace"):
 
     switch_page = getattr(st, "switch_page", None)
     if switch_page:
-        switch_page("pages/Personal_Workspace.py")
+        switch_page("pages/1_Personal_Workspace.py")
     st.success("Case loaded into Personal Workspace.")
-    _page_link("pages/Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
+    _page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
 
 
 def _rerun():
@@ -346,6 +346,11 @@ def _render_global_theme():
             filter: brightness(1.04);
             transform: translateY(-1px);
             box-shadow: 0 14px 28px rgba(37, 99, 235, 0.18);
+        }
+        .stButton > button p,
+        .stDownloadButton > button p,
+        div[data-testid="stFormSubmitButton"] button p {
+            color: #ffffff;
         }
         a {
             color: var(--cr-blue);

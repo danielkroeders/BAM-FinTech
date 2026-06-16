@@ -2,9 +2,9 @@ import json
 
 import pandas as pd
 
-from src.data_pipeline import add_derived_features
-from src.formatting import format_currency, format_months, format_percent, format_score
-from src.modeling import score_application, score_portfolio
+from src.core.data_pipeline import add_derived_features
+from src.utils.formatting import format_currency, format_months, format_percent, format_score
+from src.core.modeling import score_application, score_portfolio
 
 
 def _number(value, default=0.0):

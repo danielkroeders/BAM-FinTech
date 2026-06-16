@@ -2,11 +2,11 @@ from datetime import datetime
 
 import streamlit as st
 
-from src.formatting import format_integer
-from src.runtime import bootstrap_state
-from src.table_views import application_table
-from src.ui import get_profile, open_application_in_workspace, render_sidebar, safe_page_link
-from src.workbench_features import build_application_queue
+from src.utils.formatting import format_integer
+from src.core.runtime import bootstrap_state
+from src.utils.table_views import application_table
+from src.ui.components import get_profile, open_application_in_workspace, render_sidebar, safe_page_link
+from src.features.workbench_features import build_application_queue
 
 
 st.set_page_config(page_title="CredRisk.AI Home", layout="wide")
@@ -47,9 +47,9 @@ if action_cols[1].button("Continue Selected Task", width="stretch"):
     open_application_in_workspace(selected_task, "Home")
 with action_cols[2]:
     if st.session_state.last_application and st.session_state.last_prediction:
-        safe_page_link("pages/Personal_Workspace.py", "Open Last Scored Case", ":material/rate_review:")
+        safe_page_link("pages/1_Personal_Workspace.py", "Open Last Scored Case", ":material/rate_review:")
     else:
-        safe_page_link("pages/Operations_Desk.py", "Review Pending Work", ":material/view_list:")
+        safe_page_link("pages/2_Operations_Desk.py", "Review Pending Work", ":material/view_list:")
 
 st.subheader("Current Tasks")
 task_display = application_table(
@@ -74,9 +74,9 @@ st.dataframe(task_display, width="stretch", hide_index=True)
 
 link_cols = st.columns([1, 1, 3])
 with link_cols[0]:
-    safe_page_link("pages/Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
+    safe_page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
 with link_cols[1]:
-    safe_page_link("pages/LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
+    safe_page_link("pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
 
 ops_left, ops_right = st.columns(2)
 with ops_left:

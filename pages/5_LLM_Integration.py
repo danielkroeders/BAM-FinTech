@@ -2,12 +2,12 @@ import re
 
 import streamlit as st
 
-from src.demo_persistence import persist_demo_state
-from src.explanations import deterministic_explanation, explain_prediction
-from src.formatting import format_percent, format_score
-from src.runtime import bootstrap_state
-from src.shap_explanations import shap_driver_table
-from src.ui import render_sidebar, safe_page_link
+from src.utils.demo_persistence import persist_demo_state
+from src.features.explanations import deterministic_explanation, explain_prediction
+from src.utils.formatting import format_percent, format_score
+from src.core.runtime import bootstrap_state
+from src.features.shap_explanations import shap_driver_table
+from src.ui.components import render_sidebar, safe_page_link
 
 
 st.set_page_config(page_title="LLM Integration", layout="wide")
@@ -94,7 +94,7 @@ def _record_llm_run(signature, application, prediction, provider, source, error,
 
 if not application or not prediction:
     st.info("No application has been scored yet. Use Personal Workspace to create the first decision.")
-    safe_page_link("pages/Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
+    safe_page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
 else:
     signature = (
         f"{application.get('application_id', '')}:"

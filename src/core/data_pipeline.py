@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-SEED_DIR = Path(__file__).resolve().parents[1] / "data" / "seed"
+SEED_DIR = Path(__file__).resolve().parents[2] / "data" / "seed"
 
 BASE_NUMERIC_COLUMNS = [
     "requested_amount",
