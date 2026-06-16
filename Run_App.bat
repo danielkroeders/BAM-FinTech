@@ -6,8 +6,8 @@ cd /d "%~dp0"
 set "VENV_PY=.venv\Scripts\python.exe"
 
 echo.
-echo B2B Loan Fraud Intelligence
-echo ---------------------------
+echo CredRisk.AI Underwriter Workbench
+echo ---------------------------------
 
 if not exist "Home.py" (
     echo Home.py was not found. Please run this file from the project folder.
@@ -42,7 +42,7 @@ echo Starting Streamlit app...
 echo A browser window should open automatically.
 echo If it does not, open http://localhost:8501
 echo.
-"%VENV_PY%" -m streamlit run app.py --server.headless=false --browser.gatherUsageStats=false
+"%VENV_PY%" -m streamlit run Home.py --server.headless=false --browser.gatherUsageStats=false
 goto end
 
 :create_venv

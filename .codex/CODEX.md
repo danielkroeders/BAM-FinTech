@@ -1,6 +1,40 @@
-# Codex Instructions: Recreate The CredRisk.AI Underwriter Workbench
+# Codex Reconstruction Brief: CredRisk.AI Underwriter Workbench
 
-Build and maintain **CredRisk.AI Underwriter Workbench** as a Streamlit application for SME lending analysts. The product should feel like a real bank employee workspace already in motion: Ms. Cooper starts from her workday, opens assigned cases, scores applications, reviews evidence, records final decisions, monitors portfolio risk, and can optionally run an AI second review.
+This file is the canonical handoff for rebuilding and maintaining this repository in a fresh Codex session with no prior conversation context.
+
+## Exact Reproduction Rule
+
+There are two valid reconstruction modes:
+
+1. Exact byte-for-byte repository restore.
+   - Preferred path: clone the GitHub remote and check out the intended commit.
+   - Remote: `https://github.com/danielkroeders/BAM-FinTech.git`
+   - Last upstream commit inspected before this handoff edit: `7b27b03c3c17fc001ed6dee1a18d71912701eb8a`
+   - After `codex.md` is committed, use the commit that contains this file instead of the inspected hash above.
+   - Commands:
+
+```bash
+git clone https://github.com/danielkroeders/BAM-FinTech.git
+cd BAM-FinTech
+git checkout <commit-that-contains-codex.md>
+```
+
+2. Functional rebuild from this document alone.
+   - Use this file as the full product and engineering specification.
+   - Recreate the source tree, install dependencies, generate deterministic seed CSVs, and run the app from `Home.py`.
+   - Binary assets such as PDFs, PPTX files, JPEGs, and PNGs cannot be inferred byte-for-byte from prose. If no Git remote or archive is available, recreate placeholders only where the app requires a file path, then document the limitation.
+
+For a future Codex to reproduce the current repository exactly from only one Markdown file, append a base64 zip archive of the repository to this file and include extraction instructions. Without a cloneable remote or embedded archive, exact binary reproduction is impossible.
+
+## Repository Identity
+
+Project name: `CredRisk.AI Underwriter Workbench`
+
+App type: Streamlit application for SME lending analysts.
+
+Primary user: Ms. Alice Cooper, a credit analyst working a daily portfolio queue.
+
+Product stance: This is decision support, not a production underwriting, legal, or compliance decision system. ML and AI outputs never become the final decision by themselves.
 
 Launch command:
 
@@ -10,174 +44,487 @@ streamlit run Home.py
 
 Do not create or use `app.py`.
 
-## Product Shape
+## Dependency Contract
 
-The application is an operational lending workbench, not a landing page. It supports:
+Python 3.10+ is recommended.
 
-- RF model scoring for SME loan applications.
-- A-F risk grading and model recommendations.
-- Case-level evidence readiness and calculated risk signals.
-- Analyst final decisions that remain separate from model recommendations.
-- Bulk actions on the team workboard.
-- Portfolio monitoring and review audit history.
-- Deterministic explanations by default.
-- Optional hosted or local LLM second-review output from the AI Explainability page only.
-
-High-risk outputs require human compliance review. Never present model or LLM output as a final legal, credit, or compliance determination.
-
-## Required Structure
-
-Keep this Streamlit page layout:
+`requirements.txt` must contain:
 
 ```text
-Home.py
-pages/
-  Personal_Workspace.py
-  Operations_Desk.py
-  Risk_Dashboard.py
-  Model_Insights.py
-  LLM_Chat.py
-  About.py
-  Support.py
-src/
-  __init__.py
-  case_workflow.py
-  data_pipeline.py
-  explanations.py
-  formatting.py
-  modeling.py
-  runtime.py
-  shap_explanations.py
-  ui.py
-  workbench_features.py
-data/
-  seed/
-docs/
-  fraud_research.md
-README.md
-DEMO.md
-Run_App.bat
-requirements.txt
+streamlit
+pandas
+numpy
+scikit-learn
+openai
+shap
+pypdf
 ```
 
-Do not recreate `pages/Loan_Intake.py` or `pages/Application_Queue.py`; those concepts are now `Personal_Workspace.py` and `Operations_Desk.py`.
+The Windows launcher `Run_App.bat` must:
 
-## Page Requirements
+- create `.venv` if missing,
+- install `requirements.txt`,
+- start `streamlit run Home.py`,
+- never call `app.py`.
 
-### Home
+## File Manifest
 
-`Home.py` is Ms. Cooper's employee homepage. It must show only:
+Keep this repository shape:
 
-- Welcome message for Ms. Cooper.
-- Current tasks table.
-- `Slack Updates`.
-- `Calendar Today`.
+```text
+.
+|-- .codex/
+|   |-- CODEX.md
+|-- .streamlit/
+|   |-- config.toml
+|-- codex.md
+|-- README.md
+|-- DEMO.md
+|-- requirements.txt
+|-- Run_App.bat
+|-- Home.py
+|-- BP.pdf
+|-- FinTech Assignment 2-1.pdf
+|-- as2 grading.jpeg
+|-- as2 overview.jpeg
+|-- as2 req.jpeg
+|-- docs/
+|   |-- CredRiskAI_Pitchdeck.html
+|   |-- CredRiskAI_Pitchdeck.pdf
+|   |-- CredRiskAI_Pitchdeck.pptx
+|   |-- CredRiskAI_Pitchdeck_Speaker_Notes.md
+|-- data/
+|   |-- assets/
+|   |   |-- login-risk-hero.png
+|   |-- docs/
+|   |   |-- fraud_research.md
+|   |   |-- research PDF files used as supporting material
+|   |-- seed/
+|   |   |-- applications.csv
+|   |   |-- cash_flows.csv
+|   |   |-- company_profiles.csv
+|   |   |-- decisions.csv
+|   |   |-- forecasts.csv
+|   |   |-- transactions.csv
+|   |-- seeds/
+|       |-- mirror of the seed CSVs for compatibility
+|-- pages/
+|   |-- 1_Personal_Workspace.py
+|   |-- 2_Operations_Desk.py
+|   |-- 3_Risk_Dashboard.py
+|   |-- 4_Model_Insights.py
+|   |-- 5_LLM_Integration.py
+|   |-- 6_SME_Credit_Health.py
+|   |-- 7_Profile_Settings.py
+|   |-- 8_About.py
+|   |-- 9_Support.py
+|-- src/
+|   |-- __init__.py
+|   |-- core/
+|   |   |-- __init__.py
+|   |   |-- data_pipeline.py
+|   |   |-- modeling.py
+|   |   |-- runtime.py
+|   |-- features/
+|   |   |-- __init__.py
+|   |   |-- alignment_features.py
+|   |   |-- case_workflow.py
+|   |   |-- explanations.py
+|   |   |-- shap_explanations.py
+|   |   |-- workbench_features.py
+|   |-- ui/
+|   |   |-- __init__.py
+|   |   |-- components.py
+|   |-- utils/
+|       |-- __init__.py
+|       |-- demo_persistence.py
+|       |-- formatting.py
+|       |-- table_views.py
+```
 
-Do not put source-status panels, connected-data panels, portfolio charts, RF model metrics, product walkthrough content, or explanation controls on Home.
+If `docs/CredRiskAI_Pitchdeck_Speaker_Notes.md` is ignored by `.gitignore`, either remove that ignore rule before committing the handoff or treat the notes as a local-only companion file. A clone of GitHub will only contain files that are committed.
 
-### Personal Workspace
+## Product Rules
 
-`pages/Personal_Workspace.py` is the case work surface. It must:
+- The app is an operational workspace, not a landing page.
+- The SME loan application is applicant-provided information. It is the first contact point between the applicant data and the analyst.
+- Do not require prior bank review, banker review input, plan confidence score, supervisor approval, or any field that suggests the application has already been reviewed before the analyst sees it.
+- Keep the analyst final decision separate from the ML recommendation and separate from any AI second review.
+- Allow the analyst to review the application manually, inspect ML output, inspect the AI review, and then save a final action.
+- Use clear banker language. Avoid unexplained abbreviations and internal placeholders.
+- High-risk outputs require human analyst or compliance handling before communication to the applicant.
+- Do not include secrets, live customer data, or real production credentials.
 
-- Let Ms. Cooper start an assigned case, start the A2M example case, or use manual entry.
-- Keep clearly marked example cases available for presentations.
-- Group intake fields around company profile, loan request, financial snapshot, five-year plan, applicant narrative, executive context, documents, verification, and advanced signals.
-- Score an application through the RF model.
-- Store latest application, prediction, deterministic explanation, and session history.
-- Show score output near the top: application risk score, risk grade, model recommendation, final decision status, review status, and stressed DSCR.
-- Show `Decision Rationale` immediately after the score panel. This rationale is deterministic in Personal Workspace.
-- Keep model recommendation separate from analyst final decision.
-- Provide case review, audit summary download, credit memo generation, similar historical applications, decision timeline, calculated risk signals, data readiness, recommended terms, and monitoring preview.
+## Navigation And Pages
 
-Data Readiness must use plain banker language. Avoid shorthand like "support no" or unexplained scores. Use labels such as:
+### Home.py
 
-- `Forecast support document received: Yes/No`.
-- `Banker confidence score: 0,38 / 1,00`.
-- `Financial statements received: Yes/No`.
+Purpose: employee homepage for Ms. Cooper.
+
+Required content:
+
+- demo authentication flow with password and six-digit verification step,
+- sidebar profile area with dark-mode toggle and demo state reset,
+- welcome message for Ms. Cooper,
+- current tasks table,
+- Slack Updates,
+- Calendar Today,
+- summary metrics focused on assigned work, high-priority work, due-this-week items, and evidence follow-up.
+
+Do not turn Home into a marketing page. Keep source status panels, model controls, and explanation controls out of Home.
+
+### pages/1_Personal_Workspace.py
+
+Purpose: single-case work surface.
+
+Required flow:
+
+1. Pick an assigned case, select a demo scenario, or enter a custom application.
+2. Choose the supervised ML model.
+3. Score the application.
+4. Read the score output and deterministic rationale.
+5. Review evidence readiness, calculated signals, similar cases, recommended terms, monitoring preview, and timeline.
+6. Optionally open case review and save an analyst final decision.
+7. Optionally continue to LLM Integration for an AI second review.
+
+Required scenario options:
+
+- `A2M Logistics Loan`
+- `Low-risk established borrower`
+- `Credit stacking case`
+- `Suspicious transfers`
+- `High country-risk borrower`
+- `Custom application`
+
+Required input groups:
+
+- company profile,
+- loan request,
+- financial snapshot,
+- five-year plan,
+- applicant narrative,
+- executive context,
+- documents and verification,
+- advanced signals.
+
+Required score output near the top:
+
+- application risk score,
+- A-F grade,
+- selected ML model label,
+- model recommendation,
+- final decision status,
+- review status,
+- stressed DSCR.
+
+The page must show hover info boxes for key Personal Workspace metrics and labels. Implement these as small `?` help affordances using the local `.hover-help` styling pattern.
+
+Data readiness labels must be plain:
+
+- `Forecast support document received: Yes/No`
+- `Financial statements received: Yes/No`
+- `Bank statements received: Yes/No`
+- `Tax return received: Yes/No`
+- `Ownership/KYB documents received: Yes/No`
 - `Decision use: Checks liquidity and whether free cash flow can cover estimated debt service.`
 
-### Operations Desk
+Do not use `forecast_plan_confidence_score`. If an old CSV contains that column, drop it.
 
-`pages/Operations_Desk.py` is the team workboard. It must:
+### pages/2_Operations_Desk.py
 
-- Show open work items, manual/compliance work, evidence follow-up, rejected-today count, filters, task table, and selected-case detail.
-- Support selecting multiple visible cases and applying `Reject Selected Cases`.
-- Record bulk rejections in `review_history`, `portfolio_history`, and `bulk_final_decisions`.
-- Link into Personal Workspace for single-case work.
+Purpose: team workboard.
 
-### Risk Dashboard
+Required content:
 
-`pages/Risk_Dashboard.py` must show:
+- open work items,
+- manual or compliance work,
+- evidence follow-up,
+- rejected-today count,
+- filters,
+- task table,
+- selected-case detail,
+- bulk rejection for selected visible cases,
+- handoff into Personal Workspace for a single case.
 
-- Portfolio filters.
-- Filtered exposure.
-- Manual review queue.
-- Compliance review queue.
-- Highest-risk applications.
-- Live session decisions.
-- Analyst review audit trail.
+Bulk rejections must update:
 
-### Model Insights
+- `review_history`,
+- `portfolio_history`,
+- `bulk_final_decisions`,
+- `bulk_action_history`.
 
-`pages/Model_Insights.py` must show:
+### pages/3_Risk_Dashboard.py
 
-- Accuracy, balanced accuracy, precision, recall, F1, ROC-AUC, average precision, MCC, false-positive/false-negative rates, review-rate and error-cost metrics.
-- Precision at top 5%, 10%, and 20% review queues.
-- Confusion matrix.
-- A-F grading thresholds.
-- Governance notes.
-- Feature importances.
-- Research-backed derived signals.
+Purpose: portfolio monitoring.
 
-### AI Explainability
+Required content:
 
-`pages/LLM_Chat.py` is the only place where hosted or local LLM calls may run.
+- portfolio filters,
+- filtered exposure,
+- manual review queue,
+- compliance review queue,
+- highest-risk applications,
+- live session decisions,
+- analyst review audit trail.
 
-The flow must be:
+### pages/4_Model_Insights.py
 
-1. Score an application in Personal Workspace.
-2. Open AI Explainability.
-3. Show the RF model baseline first.
-4. Show deterministic explanation by default.
-5. Let the user choose `Deterministic`, `OpenAI API`, or `Local server`.
-6. Let the user choose `Detailed analyst memo` or `Concise summary`.
-7. Call the chosen LLM provider only after the user clicks `Run Explanation`.
-8. Render the returned output on the page.
+Purpose: model governance and comparison.
 
-The RF baseline must show:
+Required content:
 
-- RF application risk score.
-- RF grade.
-- RF recommendation.
-- RF ROC-AUC.
-- RF recall.
-- RF precision.
-- Balanced accuracy.
-- Precision at top 10%.
+- model selector for Random Forest and Logistic Regression,
+- accuracy,
+- balanced accuracy,
+- precision,
+- recall,
+- F1,
+- ROC-AUC,
+- average precision,
+- MCC,
+- false-positive rate,
+- false-negative rate,
+- review-rate metrics,
+- estimated error costs,
+- precision at top 5, 10, and 20 percent review queues,
+- confusion matrix,
+- A-F thresholds,
+- governance notes,
+- feature importances,
+- research-backed derived signals,
+- risk score API contract preview.
 
-LLM output must act as a second reviewer. The prompt must ask the LLM to:
+### pages/5_LLM_Integration.py
 
-- Use the RF model output, RF validation metrics, and loan intake inputs as evidence.
-- Run its own qualitative assessment.
-- Say whether it agrees, partially agrees, or disagrees with the RF recommendation.
-- Output exactly one line in the form `AI review score: NN/100`.
-- Output exactly one line in the form `AI suggested grade: X`.
-- Use the same A-F thresholds as the RF model.
-- Explain if the case looks more severe or less severe than the RF grade, for example "more like grade E than RF grade C".
-- Suggest follow-up actions and questions.
-- Avoid inventing facts or claiming legal certainty.
+Purpose: optional AI second review for the latest scored application.
 
-The UI must parse the AI review score, compute the implied A-F grade, and compare it with the RF grade. If the LLM's written grade conflicts with the implied grade, show a warning and treat the implied grade as the normalized comparison.
+Required flow:
 
-### About
+1. If no case has been scored, show a no-case state.
+2. Show the selected ML model baseline first.
+3. Show deterministic explanation by default.
+4. Let the user choose `Deterministic`, `OpenAI API`, or `Local server`.
+5. Let the user choose `Detailed analyst memo` or `Concise summary`.
+6. Call a hosted or local LLM only after the user clicks `Run LLM Review`.
+7. Parse the returned AI review score and AI suggested grade.
+8. Compare the normalized AI grade with the selected ML model grade.
 
-`pages/About.py` defines scoring dimensions and derived risk signals. Keep it explanatory and banker-readable.
+The LLM prompt must ask for:
 
-### Support
+- independent AI credit assessment,
+- agreement, partial agreement, or disagreement with the ML recommendation,
+- exactly one line matching `AI review score: NN/100`,
+- exactly one line matching `AI suggested grade: X`,
+- A-F mapping using the same thresholds as the ML model,
+- follow-up actions and questions,
+- no invented facts,
+- no legal certainty.
 
-`pages/Support.py` provides representative contacts, support request form, scripted chat, and FAQ.
+Local LLM defaults:
 
-## Decisioning Policy
+```text
+LOCAL_LLM_BASE_URL=http://localhost:1234/v1
+LOCAL_LLM_MODEL=local-model
+LOCAL_LLM_API_KEY=local
+```
+
+Local URL normalization must accept server root, `/v1`, or a pasted `/chat/completions` path and call the correct OpenAI-compatible chat completions endpoint.
+
+### pages/6_SME_Credit_Health.py
+
+Purpose: borrower-facing MVP preview.
+
+Required content:
+
+- borrower credit-health score view,
+- score drivers,
+- what-if simulation,
+- evidence source coverage,
+- peer benchmarks.
+
+### pages/7_Profile_Settings.py
+
+Purpose: analyst profile and connected-app simulation.
+
+Required content:
+
+- analyst profile fields,
+- user type and permissions,
+- dark-mode preference,
+- simulated connected apps such as Slack, Teams, Gmail, Outlook, Drive, OneDrive, SharePoint, and Zoom,
+- team manager settings where relevant.
+
+### pages/8_About.py
+
+Purpose: explain scoring dimensions and derived signals in banker-readable language.
+
+### pages/9_Support.py
+
+Purpose: representative support surface.
+
+Required content:
+
+- email contacts,
+- support request form,
+- scripted live chat,
+- FAQ.
+
+## Data Contract
+
+The canonical generated seed path is `data/seed`. The app may also keep `data/seeds` as a mirrored compatibility directory.
+
+`src/core/data_pipeline.py` must expose:
+
+- `BASE_NUMERIC_COLUMNS`
+- `DERIVED_NUMERIC_COLUMNS`
+- `NUMERIC_COLUMNS`
+- `CATEGORICAL_COLUMNS`
+- `TARGET_COLUMN`
+- `DEPRECATED_COLUMNS = ["forecast_plan_confidence_score"]`
+- `add_derived_features(frame)`
+- `generate_seed_data(rows=1200, seed=42)`
+- `load_seed_data()`
+- `ensure_seed_data()`
+
+Base numeric columns:
+
+```text
+requested_amount, term_months, interest_rate, annual_revenue, years_in_business,
+existing_debt, num_recent_loans, late_payment_ratio, suspicious_transfer_ratio,
+collateral_ratio, employees, country_risk_score, free_cash_flow, monthly_burn_rate,
+cash_flow_to_revenue_ratio, expected_runway_months, forecast_revenue_cagr,
+forecast_employee_cagr, forecast_fcf_margin_year5, planned_debt_reduction_pct,
+current_ratio, quick_ratio, receivables_days, payables_days, inventory_days,
+financial_statements_uploaded, bank_statements_uploaded, tax_return_uploaded,
+ownership_docs_uploaded, forecast_support_uploaded, document_edit_count,
+late_stage_change_count, process_deviation_score, email_domain_age_months,
+website_age_months, bank_account_age_months, location_mismatch_score,
+duplicate_contact_score, related_party_exposure_score,
+counterparty_concentration_score, shared_identifier_score,
+narrative_contradiction_score
+```
+
+Derived numeric columns:
+
+```text
+debt_to_revenue_ratio, request_to_revenue_ratio, loan_velocity_score,
+payment_stress_score, collateral_gap_ratio, external_financing_pressure,
+financial_distress_score, transaction_anomaly_score, company_scale_mismatch_score,
+governance_complexity_score, cash_flow_pressure_score, runway_risk_score,
+cash_conversion_risk_score, forecast_plan_aggressiveness_score,
+forecast_execution_risk_score, forecast_hiring_efficiency_risk_score,
+forecast_debt_service_risk_score, annual_interest_expense, annual_debt_service,
+debt_service_coverage_ratio, stressed_annual_debt_service,
+stressed_debt_service_coverage_ratio, interest_rate_risk_score,
+debt_service_stress_score, cash_conversion_cycle_days,
+document_completeness_score, document_quality_risk_score,
+process_integrity_risk_score, identity_verification_risk_score,
+working_capital_pressure_score, financial_statement_anomaly_score,
+related_party_network_risk_score, narrative_consistency_risk_score
+```
+
+Categorical columns:
+
+```text
+industry, region, company_type
+```
+
+Target column:
+
+```text
+is_fraud
+```
+
+Seed CSVs:
+
+- `applications.csv`
+- `company_profiles.csv`
+- `cash_flows.csv`
+- `forecasts.csv`
+- `transactions.csv`
+- `decisions.csv`
+
+If seed files are missing, stale, or have placeholder names, `ensure_seed_data()` must regenerate them with `generate_seed_data(rows=1200, seed=42)`.
+
+## ML Scoring Contract
+
+`src/core/modeling.py` must use scikit-learn and expose:
+
+- `ModelSpec`
+- `ModelBundle`
+- `train_model(applications)`
+- `grade_from_probability(probability)`
+- `decision_from_grade(grade)`
+- `rule_flags(application)`
+- `score_application(model_bundle, application, model_key=None)`
+- `score_portfolio(model_bundle, applications, model_key=None)`
+
+Supported models:
+
+- `random_forest`: label `Random Forest`
+- `logistic_regression`: label `Logistic Regression`
+
+The default model key is `random_forest`.
+
+Both models must output a continuous risk score between `0` and `1` using `predict_proba(...)[..., 1]`.
+
+Shared preprocessing:
+
+- `Pipeline`
+- `ColumnTransformer`
+- numeric median imputation
+- numeric `StandardScaler`
+- categorical most-frequent imputation
+- categorical `OneHotEncoder(handle_unknown="ignore")`
+
+Random Forest classifier:
+
+```text
+RandomForestClassifier(
+    n_estimators=220,
+    min_samples_leaf=4,
+    random_state=42,
+    class_weight="balanced",
+)
+```
+
+Logistic Regression classifier:
+
+```text
+LogisticRegression(
+    max_iter=2500,
+    class_weight="balanced",
+    solver="lbfgs",
+)
+```
+
+Metrics required for each model:
+
+- accuracy,
+- balanced accuracy,
+- precision,
+- recall,
+- F1,
+- ROC-AUC,
+- average precision,
+- MCC,
+- precision at 5, 10, and 20 percent,
+- false-positive rate,
+- false-negative rate,
+- predicted review rate,
+- estimated review cost,
+- estimated false-positive cost,
+- estimated false-negative cost,
+- estimated total error cost,
+- confusion matrix counts.
+
+Feature importance:
+
+- use `feature_importances_` for Random Forest,
+- use absolute coefficients for Logistic Regression,
+- normalize names by removing `numeric__` and `categorical__`.
+
+## Risk Grade Policy
 
 Use this A-F grade mapping everywhere:
 
@@ -198,158 +545,258 @@ C or D: Manual Review
 E or F: Reject
 ```
 
-The RF model recommendation is never the final analyst decision. Final decision is saved through review workflow or bulk action.
+`Manual Review` is a post-score analyst workflow state. It is not a required prior bank review input.
 
-## Model And Data Requirements
+## Work Queue Contract
 
-`src/modeling.py` must use scikit-learn with:
-
-- `Pipeline`.
-- `ColumnTransformer`.
-- numeric imputation with median.
-- numeric scaling with `StandardScaler`.
-- categorical imputation with most frequent value.
-- categorical encoding with `OneHotEncoder(handle_unknown="ignore")`.
-- `RandomForestClassifier`.
-
-Expose:
-
-- `ModelBundle`.
-- `train_model(applications)`.
-- `grade_from_probability(probability)`.
-- `decision_from_grade(grade)`.
-- `rule_flags(application)`.
-- `score_application(model_bundle, application)`.
-- `score_portfolio(model_bundle, applications)`.
-
-`src/data_pipeline.py` must keep the local portfolio data available automatically and maintain derived features for:
-
-- debt pressure.
-- request-to-revenue exposure.
-- loan velocity.
-- payment stress.
-- collateral gap.
-- transaction anomaly.
-- company scale mismatch.
-- governance complexity.
-- free cash flow.
-- monthly burn.
-- cash-flow-to-revenue.
-- runway risk.
-- cash conversion.
-- five-year forecast realism.
-- interest-rate and debt-service stress.
-- document completeness and document quality.
-- process integrity.
-- identity/KYB verification.
-- working-capital pressure.
-- financial-statement anomaly.
-- related-party network risk.
-- narrative consistency.
-
-Keep cash-flow fields, forecast fields, document/KYB fields, applicant narrative, and executive context in the case file.
-
-## Explanations
-
-`src/explanations.py` must provide:
-
-- deterministic explanation that works without any API key or local model.
-- OpenAI API explanation through `OPENAI_API_KEY`.
-- local model explanation through an OpenAI-compatible chat-completions endpoint.
-- local URL normalization so server root, `/v1`, or an accidentally pasted `/chat/completions` path still resolves to the correct base URL.
-- visible fallback error messages when LLM calls fail.
-
-Local LLM fields are entered on AI Explainability and kept only in Streamlit session state. Do not write server URLs or tokens to files.
-
-Local defaults:
+`src/features/workbench_features.py` must define:
 
 ```text
-LOCAL_LLM_BASE_URL=http://localhost:1234/v1
-LOCAL_LLM_MODEL=local-model
-LOCAL_LLM_API_KEY=local
+ALICE_ANALYST = "Ms. Cooper"
+ALICE_MAX_TASKS = 20
+ALICE_SAME_DAY_TASKS = 2
+ALICE_THIS_WEEK_TASKS = 5
 ```
 
-## Runtime State
+Alice Cooper's assigned queue must be capped at 20 tasks:
 
-`src/runtime.py` must initialize:
+- exactly 2 same-day SLA tasks when enough same-day cases exist,
+- exactly 5 due-this-week tasks when enough eligible cases exist,
+- remaining Alice tasks due next week,
+- include manual/compliance and missing-document work in the visible metrics,
+- assign all other cases to `M. van Dijk` or `S. Jansen`.
 
-- `seed_data`.
-- `model_bundle`.
-- `portfolio_history`.
-- `review_history`.
-- `last_application`.
-- `last_prediction`.
-- `last_explanation`.
-- `last_explanation_source`.
-- `last_explanation_error`.
-- `last_review`.
-- `last_email_link`.
-- `show_review_dialog`.
-- LLM page state: provider, latest output, source, error, case signature, local URL/model/token.
-- bulk action state.
-- active case state.
+Queue status logic:
 
-Every page must call `bootstrap_state()` before using shared state.
+- grade E or F: `Compliance review`,
+- document completeness below 0.8: `Request documents`,
+- grade C or D: `Manual review`,
+- otherwise: `Ready for approval`.
 
-## UI And Copy Rules
+SLA defaults:
 
-- Keep the UI operational and compact.
-- Do not make a marketing landing page.
-- Do not use app-facing words that reveal staging or sample data, except for clearly marked example cases in Personal Workspace.
-- Use employee language: current tasks, workboard, evidence follow-up, case review, final decision, audit trail, supervisor routing.
-- Keep data-source readiness inside Personal Workspace because readiness differs per applicant.
-- Use European formatting helpers from `src/formatting.py`.
-- Use `width="stretch"` instead of deprecated `use_container_width=True`.
-- Keep buttons and tables readable on desktop and mobile.
-- Never include secrets or real customer data.
+- A or B: `Next week`,
+- C or D: `This week`,
+- E or F: `Same day`.
 
-## Documentation
+## Runtime State Contract
+
+Every Streamlit page must call `bootstrap_state()` before using shared state.
+
+`src/core/runtime.py` must initialize:
+
+- `seed_data`
+- `model_bundle`
+- `portfolio_history`
+- `score_history`
+- `review_history`
+- `last_application`
+- `last_prediction`
+- `last_explanation`
+- `last_explanation_source`
+- `last_explanation_error`
+- `last_review`
+- `last_email_link`
+- `show_review_dialog`
+- `use_llm_explanations`
+- `llm_chat_provider`
+- `llm_chat_explanation`
+- `llm_chat_source`
+- `llm_chat_error`
+- `llm_chat_signature`
+- `llm_review_history`
+- `llm_provider`
+- `selected_ml_model`
+- `explanation_model`
+- local LLM base URL, model, API key, and draft settings
+- `bulk_final_decisions`
+- `bulk_action_history`
+- `support_ticket_history`
+- `active_queue_application`
+- `active_intake_source`
+
+Default `selected_ml_model` is `random_forest`, and it must be reset if the selected key is not in the trained model registry.
+
+## Explanation Contract
+
+`src/features/explanations.py` must provide:
+
+- deterministic explanation that works offline,
+- hosted OpenAI explanation through `OPENAI_API_KEY`,
+- local OpenAI-compatible server explanation,
+- local URL normalization,
+- visible fallback errors,
+- deterministic fallback when hosted or local calls fail.
+
+The deterministic explanation must include:
+
+- decision,
+- grade,
+- application risk score,
+- applicant context,
+- top risk drivers,
+- mitigating factors,
+- recommended analyst action,
+- compliance note.
+
+The LLM explanation must use selected ML model output and metrics, not hard-coded Random Forest text.
+
+## Review Workflow Contract
+
+`src/features/case_workflow.py` owns demo scenarios, review rows, audit exports, and final-decision separation.
+
+Analyst final decisions are saved after scoring. They do not rewrite the model score or AI review. Keep these concepts separate:
+
+- applicant-provided loan application,
+- selected ML model recommendation,
+- deterministic or LLM AI review,
+- analyst final decision,
+- audit history.
+
+## UI And Styling Contract
+
+- Operational, compact, bank-workbench feel.
+- No marketing landing page.
+- No visible developer or sample-data caveats except clearly marked presentation examples.
+- Use European formatting helpers from `src/utils/formatting.py`.
+- Use custom components from `src/ui/components.py` where they already exist.
+- Use `width="stretch"` rather than deprecated `use_container_width=True` in new Streamlit tables and charts.
+- Use hover help/info boxes for dense workspace metrics.
+- Keep labels readable on desktop and mobile.
+- Do not add unrelated decorative visuals.
+
+`.streamlit/config.toml` should keep sidebar navigation hidden and use the light theme:
+
+```toml
+[client]
+showSidebarNavigation = false
+
+[theme]
+base = "light"
+primaryColor = "#14B8A6"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0F172A"
+```
+
+## Documentation Contract
 
 Maintain:
 
-- `README.md`: product summary, Windows launcher, manual launch, LLM provider setup, page overview, A-F grade policy.
-- `DEMO.md`: walkthrough runbook for presentations.
-- `docs/fraud_research.md`: research grounding for derived signals.
+- `README.md`: product summary, setup, `Run_App.bat`, manual launch, walkthrough, LLM providers, page overview, A-F grade policy.
+- `DEMO.md`: presentation runbook.
+- `docs/CredRiskAI_Pitchdeck.html`: browser pitch deck.
+- `docs/CredRiskAI_Pitchdeck.pdf`: exported pitch deck.
+- `docs/CredRiskAI_Pitchdeck.pptx`: slide deck file.
+- `docs/CredRiskAI_Pitchdeck_Speaker_Notes.md`: speaker notes when included in the handoff.
+- `data/docs/fraud_research.md`: research grounding for derived signals.
 
-`README.md` must mention `Run_App.bat` before manual command-line setup.
+Pitch materials must describe:
 
-## Dependencies
+- SME-provided application as the first data-to-analyst contact point,
+- supervised ML scoring with Random Forest and Logistic Regression,
+- optional deterministic, hosted, or local AI second review,
+- analyst review of the application and AI output,
+- no plan confidence score,
+- no prior bank-review requirement.
 
-Required runtime dependencies:
+## Rebuild Steps For A Fresh Codex
 
-```text
-streamlit
-pandas
-numpy
-scikit-learn
-openai
-shap
-pypdf
-```
+If starting from an empty folder and no cloneable remote:
 
-Python 3.10+ is recommended.
+1. Create the file tree above.
+2. Write `requirements.txt`.
+3. Implement `src/core/data_pipeline.py` with the data contract and deterministic generator.
+4. Implement `src/core/modeling.py` with the two-model registry and risk grade policy.
+5. Implement `src/core/runtime.py` with all session-state keys.
+6. Implement utilities in `src/utils/formatting.py`, `src/utils/table_views.py`, and `src/utils/demo_persistence.py`.
+7. Implement reusable UI helpers in `src/ui/components.py`.
+8. Implement case, explanation, SHAP, alignment, and workbench feature modules under `src/features`.
+9. Implement `Home.py` and all pages under `pages/` with the page contracts above.
+10. Create documentation files from the documentation contract.
+11. Create or import binary assets. For exact reproduction, obtain them from the remote repo or a repository archive.
+12. Run seed generation by importing `ensure_seed_data()`.
+13. Run compile checks and the ML smoke test.
+14. Start Streamlit with `streamlit run Home.py`.
 
-## Acceptance Checks
+## Verification Commands
 
-Before finishing meaningful changes, verify:
+Compile:
 
 ```bash
 python -m compileall src Home.py pages
+```
+
+Model and queue smoke test:
+
+```bash
+python - <<'PY'
+from src.core.data_pipeline import ensure_seed_data
+from src.core.modeling import train_model
+from src.features.workbench_features import build_application_queue
+
+seed = ensure_seed_data()
+bundle = train_model(seed["applications"])
+assert {"random_forest", "logistic_regression"}.issubset(bundle.models)
+
+for key in ["random_forest", "logistic_regression"]:
+    queue = build_application_queue(bundle, seed["applications"], model_key=key)
+    alice = queue[queue["assigned_analyst"].eq("Ms. Cooper")]
+    assert len(alice) <= 20
+    assert alice["sla"].eq("Same day").sum() <= 2
+    assert alice["sla"].eq("This week").sum() <= 5
+    sample = seed["applications"].iloc[0].to_dict()
+    prediction = bundle.score_one(sample, model_key=key)
+    assert 0 <= prediction["fraud_probability"] <= 1
+    assert prediction["model_key"] == key
+print("smoke ok")
+PY
+```
+
+PowerShell equivalent:
+
+```powershell
+@'
+from src.core.data_pipeline import ensure_seed_data
+from src.core.modeling import train_model
+from src.features.workbench_features import build_application_queue
+
+seed = ensure_seed_data()
+bundle = train_model(seed["applications"])
+assert {"random_forest", "logistic_regression"}.issubset(bundle.models)
+
+for key in ["random_forest", "logistic_regression"]:
+    queue = build_application_queue(bundle, seed["applications"], model_key=key)
+    alice = queue[queue["assigned_analyst"].eq("Ms. Cooper")]
+    assert len(alice) <= 20
+    assert alice["sla"].eq("Same day").sum() <= 2
+    assert alice["sla"].eq("This week").sum() <= 5
+    sample = seed["applications"].iloc[0].to_dict()
+    prediction = bundle.score_one(sample, model_key=key)
+    assert 0 <= prediction["fraud_probability"] <= 1
+    assert prediction["model_key"] == key
+print("smoke ok")
+'@ | python -
+```
+
+Run app:
+
+```bash
 streamlit run Home.py
 ```
 
 Functional checks:
 
-- Home loads and shows only current tasks, Slack Updates, and Calendar Today.
-- Personal Workspace scores an application and shows deterministic Decision Rationale near the score output.
-- Personal Workspace Data Readiness uses clear evidence labels.
-- Case review saves final decision separately from model recommendation.
-- Operations Desk supports bulk rejection and audit history.
-- Risk Dashboard shows manual/compliance queues and session history.
-- Model Insights shows metrics, thresholds, confusion matrix, and feature importance.
-- AI Explainability handles no-scored-case state.
-- AI Explainability shows RF baseline metrics.
-- AI Explainability runs no LLM call until `Run Explanation` is clicked.
-- AI Explainability can run deterministic, OpenAI API, or local-server explanations.
-- AI Explainability extracts AI review score, maps it to A-F grade thresholds, and compares it to RF grade.
-- App works without `OPENAI_API_KEY` and without a local model.
+- Home loads after demo login and shows Ms. Cooper's workday.
+- Personal Workspace can score assigned, demo, and custom applications.
+- Hover help boxes appear for dense Personal Workspace metrics.
+- Random Forest and Logistic Regression both return 0-1 risk scores.
+- Data readiness uses plain evidence labels.
+- No plan confidence score appears anywhere.
+- No prior bank-review requirement appears anywhere.
+- Analyst final decision remains separate from model recommendation and AI review.
+- Operations Desk bulk rejection records audit history.
+- Risk Dashboard shows queues and live session decisions.
+- Model Insights compares model metrics and feature importances.
+- LLM Integration makes no hosted/local call until `Run LLM Review` is clicked.
+- App works without `OPENAI_API_KEY` and without a local LLM server.
