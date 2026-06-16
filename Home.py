@@ -38,18 +38,14 @@ metric_cols[2].metric("Evidence Follow-Up", format_integer(evidence_follow_up))
 metric_cols[3].metric("Reviews Saved", format_integer(reviews_saved))
 
 st.subheader("Quick Actions")
-action_cols = st.columns([2, 1, 1])
+action_cols = st.columns([2, 1, 1], vertical_alignment="bottom")
 task_options = [f"{row.application_id} - {row.company_name} | Grade {row.grade}" for row in my_tasks.head(20).itertuples()]
 selected_task_label = action_cols[0].selectbox("Continue task", task_options)
 selected_task_id = selected_task_label.split(" - ", 1)[0]
 selected_task = my_tasks[my_tasks["application_id"] == selected_task_id].iloc[0].to_dict()
 if action_cols[1].button("Continue Selected Task", width="stretch"):
     open_application_in_workspace(selected_task, "Home")
-with action_cols[2]:
-    if st.session_state.last_application and st.session_state.last_prediction:
-        safe_page_link("pages/1_Personal_Workspace.py", "Open Last Scored Case", ":material/rate_review:")
-    else:
-        safe_page_link("pages/2_Operations_Desk.py", "Review Pending Work", ":material/view_list:")
+
 
 st.subheader("Current Tasks")
 task_display = application_table(
@@ -77,6 +73,8 @@ with link_cols[0]:
     safe_page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
 with link_cols[1]:
     safe_page_link("pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
+with link_cols[2]:
+    safe_page_link("pages/2_Operations_Desk.py", "Review Pending Work", ":material/view_list:")
 
 ops_left, ops_right = st.columns(2)
 with ops_left:
