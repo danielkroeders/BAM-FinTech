@@ -15,7 +15,8 @@ render_sidebar()
 profile = get_profile()
 
 applications = st.session_state.seed_data["applications"]
-workboard = build_application_queue(st.session_state.model_bundle, applications)
+selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
+workboard = build_application_queue(st.session_state.model_bundle, applications, model_key=selected_model_key)
 
 analyst_name = profile["display_name"]
 welcome_name = profile["name"]
@@ -24,8 +25,8 @@ if my_tasks.empty:
     my_tasks = workboard.head(12).copy()
 
 high_priority = int(my_tasks["grade"].isin(["E", "F"]).sum())
+due_this_week = int((my_tasks["sla"] == "This week").sum())
 evidence_follow_up = int((my_tasks["missing_documents"] > 0).sum())
-reviews_saved = len(st.session_state.review_history)
 now_label = datetime.now().strftime("%A %H:%M")
 
 st.title(f"Welcome, {welcome_name}")
@@ -34,8 +35,8 @@ st.caption(f"{profile['role']} at {profile['bank']} | Operations console | {now_
 metric_cols = st.columns(4)
 metric_cols[0].metric("My Open Tasks", format_integer(len(my_tasks)))
 metric_cols[1].metric("High Priority", format_integer(high_priority))
-metric_cols[2].metric("Evidence Follow-Up", format_integer(evidence_follow_up))
-metric_cols[3].metric("Reviews Saved", format_integer(reviews_saved))
+metric_cols[2].metric("Due This Week", format_integer(due_this_week))
+metric_cols[3].metric("Evidence Follow-Up", format_integer(evidence_follow_up))
 
 st.subheader("Quick Actions")
 action_cols = st.columns([2, 1, 1], vertical_alignment="bottom")

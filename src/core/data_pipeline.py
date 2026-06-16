@@ -27,7 +27,6 @@ BASE_NUMERIC_COLUMNS = [
     "forecast_employee_cagr",
     "forecast_fcf_margin_year5",
     "planned_debt_reduction_pct",
-    "forecast_plan_confidence_score",
     "current_ratio",
     "quick_ratio",
     "receivables_days",
@@ -93,6 +92,7 @@ NUMERIC_COLUMNS = BASE_NUMERIC_COLUMNS + DERIVED_NUMERIC_COLUMNS
 CATEGORICAL_COLUMNS = ["industry", "region", "company_type"]
 TARGET_COLUMN = "is_fraud"
 FORECAST_YEARS = range(1, 6)
+DEPRECATED_COLUMNS = ["forecast_plan_confidence_score"]
 
 NAME_PREFIXES = [
     "Alder",
@@ -239,7 +239,6 @@ def add_derived_features(frame):
     forecast_employee_cagr = _numeric(enriched, "forecast_employee_cagr", 0.04).clip(-0.10, 0.60)
     forecast_fcf_margin_year5 = _numeric(enriched, "forecast_fcf_margin_year5", 0.08).clip(-0.30, 0.40)
     planned_debt_reduction = _numeric(enriched, "planned_debt_reduction_pct", 0.20).clip(0, 1)
-    forecast_confidence = _numeric(enriched, "forecast_plan_confidence_score", 0.55).clip(0, 1)
     current_ratio = _numeric(enriched, "current_ratio", 1.5).clip(0, 6)
     quick_ratio = _numeric(enriched, "quick_ratio", 1.1).clip(0, 5)
     receivables_days = _numeric(enriched, "receivables_days", 45).clip(0, 180)
@@ -262,6 +261,19 @@ def add_derived_features(frame):
     counterparty_concentration_score = _numeric(enriched, "counterparty_concentration_score", 0.20).clip(0, 1)
     shared_identifier_score = _numeric(enriched, "shared_identifier_score", 0.02).clip(0, 1)
     narrative_contradiction_base = _numeric(enriched, "narrative_contradiction_score", 0).clip(0, 1)
+    narrative_text = _combined_text(
+        enriched,
+        [
+            "loan_purpose_context",
+            "current_business_context",
+            "future_business_context",
+            "ceo_context",
+            "cfo_context",
+            "coo_context",
+        ],
+    )
+    narrative_present = narrative_text.str.strip().ne("").astype(float)
+    plan_evidence_strength = (0.55 * forecast_support_uploaded + 0.45 * narrative_present).clip(0, 1)
 
     debt_to_revenue = (existing_debt / revenue).clip(0, 3)
     request_to_revenue = (requested_amount / revenue).clip(0, 2)
@@ -300,13 +312,13 @@ def add_derived_features(frame):
         0.40 * aggressive_revenue_growth
         + 0.25 * hiring_growth_gap
         + 0.25 * fcf_improvement_need
-        + 0.10 * (1 - forecast_confidence)
+        + 0.10 * (1 - plan_evidence_strength)
     ).clip(0, 1)
     forecast_execution_risk = (
         0.35 * plan_aggressiveness
         + 0.25 * cash_conversion_risk
         + 0.20 * runway_risk
-        + 0.20 * (1 - forecast_confidence)
+        + 0.20 * (1 - plan_evidence_strength)
     ).clip(0, 1)
 
     annual_interest_expense = (requested_amount * interest_rate * (term_months.clip(upper=12) / 12)).clip(lower=0)
@@ -381,17 +393,6 @@ def add_derived_features(frame):
         + 0.10 * suspicious_transfer_ratio
     ).clip(0, 1)
 
-    narrative_text = _combined_text(
-        enriched,
-        [
-            "loan_purpose_context",
-            "current_business_context",
-            "future_business_context",
-            "ceo_context",
-            "cfo_context",
-            "coo_context",
-        ],
-    )
     cash_strength_claim = narrative_text.str.contains("positive cash|strong cash|healthy cash|profitable|stable collections", regex=True)
     flat_staff_claim = narrative_text.str.contains("flat|unchanged|no hiring|staffing will remain flat", regex=True)
     debt_reduction_claim = narrative_text.str.contains("reduce debt|debt reduction|deleverag|repay debt", regex=True)
@@ -403,7 +404,7 @@ def add_derived_features(frame):
         + 0.20 * (documentation_claim & (document_completeness < 0.80)).astype(float)
     ).clip(0, 1)
     numeric_contradiction = (
-        0.35 * (forecast_execution_risk * (1 - forecast_confidence))
+        0.35 * (forecast_execution_risk * (1 - plan_evidence_strength))
         + 0.25 * debt_reduction_strain
         + 0.20 * (cash_conversion_risk * forecast_revenue_cagr.clip(lower=0) / 0.45).clip(0, 1)
         + 0.20 * document_quality_risk
@@ -417,7 +418,6 @@ def add_derived_features(frame):
     enriched["forecast_employee_cagr"] = forecast_employee_cagr.round(4)
     enriched["forecast_fcf_margin_year5"] = forecast_fcf_margin_year5.round(4)
     enriched["planned_debt_reduction_pct"] = planned_debt_reduction.round(4)
-    enriched["forecast_plan_confidence_score"] = forecast_confidence.round(4)
     enriched["debt_to_revenue_ratio"] = debt_to_revenue.round(4)
     enriched["request_to_revenue_ratio"] = request_to_revenue.round(4)
     enriched["loan_velocity_score"] = loan_velocity.round(4)
@@ -609,14 +609,7 @@ def generate_seed_data(rows=1200, seed=42):
         + 0.10 * (free_cash_flow > 0)
         - 0.08 * (expected_runway_months < 9)
     ).clip(0, 0.75)
-    forecast_plan_confidence_score = (
-        0.70
-        - 0.30 * (forecast_revenue_cagr > 0.24)
-        - 0.22 * (expected_runway_months < 9)
-        - 0.18 * (cash_flow_margin < 0)
-        - 0.10 * (years_in_business < 2)
-        + rng.normal(0, 0.08, rows)
-    ).clip(0.15, 0.95)
+    weak_plan_evidence = (forecast_revenue_cagr > 0.24) | (expected_runway_months < 9) | (cash_flow_margin < 0)
     current_ratio = (
         1.65
         + 2.0 * cash_flow_margin
@@ -665,7 +658,7 @@ def generate_seed_data(rows=1200, seed=42):
         + 0.06 * (free_cash_flow > 0)
         - 0.16 * short_history_signal
         - 0.12 * (country_risk_score > 0.55)
-        - 0.10 * (forecast_plan_confidence_score < 0.45)
+        - 0.10 * weak_plan_evidence
     ).clip(0.18, 0.98)
     financial_statements_uploaded = rng.binomial(1, document_probability)
     bank_statements_uploaded = rng.binomial(1, (document_probability - 0.04).clip(0.10, 0.98))
@@ -684,14 +677,14 @@ def generate_seed_data(rows=1200, seed=42):
         + 0.65 * missing_document_count
         + 2.4 * suspicious_transfer_ratio
         + 1.2 * short_history_signal
-        + 1.0 * (forecast_plan_confidence_score < 0.45)
+        + 1.0 * weak_plan_evidence
     ).clip(0, 18)
     late_stage_change_count = rng.poisson(
         0.25
         + 0.28 * missing_document_count
         + 1.6 * suspicious_transfer_ratio
         + 0.9 * (late_payment_ratio > 0.18)
-        + 0.7 * (forecast_plan_confidence_score < 0.40)
+        + 0.7 * weak_plan_evidence
     ).clip(0, 10)
     process_deviation_score = (
         rng.beta(1.2, 8.0, rows)
@@ -711,7 +704,7 @@ def generate_seed_data(rows=1200, seed=42):
         years_in_business * 9
         + rng.normal(8, 20, rows)
         - 15 * short_history_signal
-        - 8 * (forecast_plan_confidence_score < 0.45)
+        - 8 * weak_plan_evidence
     ).clip(0, 240)
     bank_account_age_months = (
         years_in_business * 8
@@ -752,7 +745,7 @@ def generate_seed_data(rows=1200, seed=42):
     narrative_contradiction_score = (
         rng.beta(1.1, 10.0, rows)
         + 0.18 * (forecast_revenue_cagr > 0.24)
-        + 0.14 * (forecast_plan_confidence_score < 0.40)
+        + 0.14 * weak_plan_evidence
         + 0.12 * (free_cash_flow < 0)
         + 0.08 * (missing_document_count >= 2)
     ).clip(0, 1)
@@ -785,7 +778,6 @@ def generate_seed_data(rows=1200, seed=42):
             "forecast_employee_cagr": forecast_employee_cagr.round(4),
             "forecast_fcf_margin_year5": forecast_fcf_margin_year5.round(4),
             "planned_debt_reduction_pct": planned_debt_reduction_pct.round(4),
-            "forecast_plan_confidence_score": forecast_plan_confidence_score.round(4),
             "current_ratio": current_ratio.round(4),
             "quick_ratio": quick_ratio.round(4),
             "receivables_days": receivables_days.round(1),
@@ -902,7 +894,7 @@ def generate_seed_data(rows=1200, seed=42):
 
 
 def load_seed_data():
-    applications = pd.read_csv(SEED_DIR / "applications.csv")
+    applications = pd.read_csv(SEED_DIR / "applications.csv").drop(columns=DEPRECATED_COLUMNS, errors="ignore")
     cash_flows = pd.read_csv(SEED_DIR / "cash_flows.csv")
     forecasts = pd.read_csv(SEED_DIR / "forecasts.csv")
     cash_flow_columns = [

@@ -58,7 +58,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-portfolio = score_portfolio(st.session_state.model_bundle, st.session_state.seed_data["applications"])
+selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
+portfolio = score_portfolio(
+    st.session_state.model_bundle,
+    st.session_state.seed_data["applications"],
+    model_key=selected_model_key,
+)
 
 
 def _bordered_container():

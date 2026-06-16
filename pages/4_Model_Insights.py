@@ -15,11 +15,38 @@ bootstrap_state()
 render_sidebar()
 
 bundle = st.session_state.model_bundle
-metrics = bundle.metrics
 applications = add_derived_features(st.session_state.seed_data["applications"])
 
 st.title("Model Insights")
 st.caption("Supervised SME application-risk model performance, grading policy, and research-backed signal design.")
+
+model_options = bundle.model_options()
+model_keys = [key for key, _ in model_options]
+saved_model_key = st.session_state.get("selected_ml_model", bundle.default_model_key)
+selected_model_key = saved_model_key if saved_model_key in model_keys else bundle.default_model_key
+selected_model_key = st.selectbox(
+    "ML scoring technique",
+    model_keys,
+    index=model_keys.index(selected_model_key),
+    format_func=bundle.label_for,
+)
+st.session_state.selected_ml_model = selected_model_key
+metrics = bundle.metrics_for(selected_model_key)
+
+model_comparison = pd.DataFrame(
+    [
+        {
+            "Technique": spec.label,
+            "Output": "0-1 probability",
+            "ROC-AUC": format_score(spec.metrics.get("roc_auc", 0), 3),
+            "Balanced accuracy": format_score(spec.metrics.get("balanced_accuracy", 0), 3),
+            "Precision top 10%": format_score(spec.metrics.get("precision_at_10pct", 0), 3),
+        }
+        for spec in bundle.models.values()
+    ]
+)
+st.dataframe(model_comparison, width="stretch", hide_index=True)
+st.caption("Plain Linear Regression was considered but not exposed because its raw output is not naturally bounded to 0-1; Logistic Regression is the probability-style linear baseline.")
 
 metric_catalog = {
     "Accuracy": "accuracy",
@@ -145,7 +172,7 @@ governance_rows = pd.DataFrame(
     [
         {
             "Area": "Data lineage",
-            "Control": "Application records are prepared locally and enriched with derived ratios, verification metadata, and review outcomes.",
+            "Control": "SME application records are prepared locally and enriched with derived ratios and evidence-source indicators.",
         },
         {
             "Area": "Human review",
@@ -153,7 +180,7 @@ governance_rows = pd.DataFrame(
         },
         {
             "Area": "Audit trail",
-            "Control": "Case review captures final decision, analyst action, notes, supervisor mailbox, and manual score adjustment status.",
+            "Control": "Case review captures final decision, analyst action, and analyst notes separately from model output.",
         },
         {
             "Area": "Threshold policy",
@@ -170,8 +197,9 @@ st.dataframe(governance_rows, width="stretch", hide_index=True)
 st.subheader("Risk Score API Contract Preview")
 st.caption("MVP preview of how a lender could embed the score in an existing underwriting workflow. This is not a running external API yet.")
 api_application = st.session_state.last_application or applications.iloc[0].to_dict()
-api_prediction = st.session_state.last_prediction or score_application(bundle, api_application)
-request_json, response_json = api_contract_payloads(api_application, api_prediction, metrics)
+api_prediction = st.session_state.last_prediction or score_application(bundle, api_application, model_key=selected_model_key)
+api_metrics = bundle.metrics_for(api_prediction.get("model_key", selected_model_key))
+request_json, response_json = api_contract_payloads(api_application, api_prediction, api_metrics)
 api_cols = st.columns(2)
 with api_cols[0]:
     st.caption("Example request")
@@ -181,7 +209,7 @@ with api_cols[1]:
     st.code(response_json, language="json")
 
 st.subheader("Top Feature Importances")
-importance_raw = bundle.feature_importance.head(20).copy()
+importance_raw = bundle.feature_importance_for(selected_model_key).head(20).copy()
 importance_display = importance_raw.copy()
 importance_display["importance"] = importance_display["importance"].apply(lambda value: format_score(value, 4))
 st.dataframe(importance_display, width="stretch", hide_index=True)
@@ -223,7 +251,6 @@ derived_signals = pd.DataFrame(
         {"Signal": "forecast_employee_cagr", "Purpose": "Captures expected employee growth supporting the revenue plan."},
         {"Signal": "forecast_fcf_margin_year5", "Purpose": "Represents the target year-five free-cash-flow margin."},
         {"Signal": "planned_debt_reduction_pct", "Purpose": "Represents the applicant's planned debt reduction over five years."},
-        {"Signal": "forecast_plan_confidence_score", "Purpose": "Captures confidence in the applicant's five-year plan."},
         {"Signal": "forecast_plan_aggressiveness_score", "Purpose": "Flags ambitious growth and margin plans that may not be supported by current signals."},
         {"Signal": "forecast_execution_risk_score", "Purpose": "Combines plan ambition, liquidity risk, and confidence into a forecast execution signal."},
         {"Signal": "forecast_hiring_efficiency_risk_score", "Purpose": "Measures whether headcount growth supports projected revenue growth."},

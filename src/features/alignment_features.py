@@ -57,17 +57,11 @@ def apply_scenario(
     )
 
     if contract_evidence == "Signed and documented":
-        scenario["forecast_plan_confidence_score"] = _bounded(
-            _number(scenario.get("forecast_plan_confidence_score")) + 0.18
-        )
         scenario["narrative_contradiction_score"] = _bounded(
             _number(scenario.get("narrative_contradiction_score")) - 0.10
         )
         scenario["forecast_support_uploaded"] = 1
     elif contract_evidence == "Unconfirmed":
-        scenario["forecast_plan_confidence_score"] = _bounded(
-            _number(scenario.get("forecast_plan_confidence_score")) - 0.14
-        )
         scenario["narrative_contradiction_score"] = _bounded(
             _number(scenario.get("narrative_contradiction_score")) + 0.12
         )
@@ -87,8 +81,9 @@ def apply_scenario(
     return scenario
 
 
-def scenario_comparison_rows(model_bundle, application, baseline_prediction, scenario_application):
-    scenario_prediction = score_application(model_bundle, scenario_application)
+def scenario_comparison_rows(model_bundle, application, baseline_prediction, scenario_application, model_key=None):
+    selected_key = model_key or baseline_prediction.get("model_key")
+    scenario_prediction = score_application(model_bundle, scenario_application, model_key=selected_key)
     base_signals = add_derived_features(pd.DataFrame([application])).iloc[0]
     scenario_signals = add_derived_features(pd.DataFrame([scenario_application])).iloc[0]
     return scenario_prediction, [
@@ -109,9 +104,9 @@ def scenario_comparison_rows(model_bundle, application, baseline_prediction, sce
             "Scenario": format_currency(scenario_application.get("free_cash_flow", 0)),
         },
         {
-            "Measure": "Forecast confidence",
-            "Current file": format_score(application.get("forecast_plan_confidence_score", 0)),
-            "Scenario": format_score(scenario_application.get("forecast_plan_confidence_score", 0)),
+            "Measure": "Forecast support",
+            "Current file": _yes_no(application.get("forecast_support_uploaded", 0)),
+            "Scenario": _yes_no(scenario_application.get("forecast_support_uploaded", 0)),
         },
         {
             "Measure": "Document completeness",
@@ -126,8 +121,9 @@ def scenario_comparison_rows(model_bundle, application, baseline_prediction, sce
     ]
 
 
-def peer_benchmark_rows(model_bundle, applications, application, prediction):
-    scored = score_portfolio(model_bundle, applications)
+def peer_benchmark_rows(model_bundle, applications, application, prediction, model_key=None):
+    selected_key = model_key or prediction.get("model_key")
+    scored = score_portfolio(model_bundle, applications, model_key=selected_key)
     app_signals = add_derived_features(pd.DataFrame([application])).iloc[0]
     industry_peers = scored[scored["industry"].eq(application.get("industry"))].copy()
     regional_peers = industry_peers[industry_peers["region"].eq(application.get("region"))].copy()
@@ -320,7 +316,7 @@ def api_contract_payloads(application, prediction, metrics):
         "grade": prediction.get("grade"),
         "model_recommendation": prediction.get("decision"),
         "model_context": {
-            "model_type": "RandomForestClassifier",
+            "model_type": prediction.get("model_label", "ML model"),
             "roc_auc": round(_number(metrics.get("roc_auc")), 4),
             "balanced_accuracy": round(_number(metrics.get("balanced_accuracy")), 4),
             "precision_at_10pct": round(_number(metrics.get("precision_at_10pct")), 4),
@@ -333,14 +329,16 @@ def api_contract_payloads(application, prediction, metrics):
     return json.dumps(request, indent=2), json.dumps(response, indent=2)
 
 
-def latest_or_sample_application(seed_data, model_bundle):
+def latest_or_sample_application(seed_data, model_bundle, model_key=None):
     applications = seed_data["applications"]
-    scored = score_portfolio(model_bundle, applications)
+    scored = score_portfolio(model_bundle, applications, model_key=model_key)
     sample = scored.sort_values("fraud_probability", ascending=False).iloc[len(scored) // 3].to_dict()
     prediction = {
         "fraud_probability": sample["fraud_probability"],
         "grade": sample["grade"],
         "decision": sample["decision"],
+        "model_key": sample.get("model_key"),
+        "model_label": sample.get("model_label"),
         "flags": [],
     }
     return sample, prediction

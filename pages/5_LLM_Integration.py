@@ -58,19 +58,19 @@ def _grade_from_review_score(score):
     return "F"
 
 
-def _grade_comparison(ai_grade, rf_grade):
-    if not ai_grade or not rf_grade:
+def _grade_comparison(ai_grade, model_grade, model_label):
+    if not ai_grade or not model_grade:
         return None
     grade_rank = {grade: index for index, grade in enumerate("ABCDEF")}
     ai_rank = grade_rank.get(ai_grade)
-    rf_rank = grade_rank.get(rf_grade)
-    if ai_rank is None or rf_rank is None:
+    model_rank = grade_rank.get(model_grade)
+    if ai_rank is None or model_rank is None:
         return None
-    if ai_rank > rf_rank:
-        return f"More severe than RF grade {rf_grade}"
-    if ai_rank < rf_rank:
-        return f"Less severe than RF grade {rf_grade}"
-    return f"Aligned with RF grade {rf_grade}"
+    if ai_rank > model_rank:
+        return f"More severe than {model_label} grade {model_grade}"
+    if ai_rank < model_rank:
+        return f"Less severe than {model_label} grade {model_grade}"
+    return f"Aligned with {model_label} grade {model_grade}"
 
 
 def _record_llm_run(signature, application, prediction, provider, source, error, explanation):
@@ -85,7 +85,8 @@ def _record_llm_run(signature, application, prediction, provider, source, error,
             "Provider": provider,
             "Source": source,
             "Status": "Fallback" if error else "Completed",
-            "RF grade": prediction.get("grade"),
+            "Model": prediction.get("model_label", "ML model"),
+            "Model grade": prediction.get("grade"),
             "AI review score": f"{ai_review_score}/100" if ai_review_score is not None else "N/A",
             "AI grade": ai_grade or "N/A",
         }
@@ -108,16 +109,18 @@ else:
         st.session_state.llm_chat_error = None
         st.session_state.llm_chat_signature = signature
 
-    st.subheader("RF Model Baseline")
-    metrics = st.session_state.model_bundle.metrics
+    model_key = prediction.get("model_key", st.session_state.get("selected_ml_model", "random_forest"))
+    model_label = prediction.get("model_label", st.session_state.model_bundle.label_for(model_key))
+    metrics = st.session_state.model_bundle.metrics_for(model_key)
+    st.subheader(f"{model_label} Model Baseline")
     rf_cols = st.columns(4)
-    rf_cols[0].metric("RF application risk score", format_percent(prediction["fraud_probability"]))
-    rf_cols[1].metric("RF grade", prediction["grade"])
-    rf_cols[2].metric("RF recommendation", prediction["decision"])
-    rf_cols[3].metric("RF ROC-AUC", format_score(metrics.get("roc_auc", 0), 3))
+    rf_cols[0].metric("Application risk score", format_percent(prediction["fraud_probability"]))
+    rf_cols[1].metric("Model grade", prediction["grade"])
+    rf_cols[2].metric("Model recommendation", prediction["decision"])
+    rf_cols[3].metric("Model ROC-AUC", format_score(metrics.get("roc_auc", 0), 3))
     metric_cols = st.columns(4)
-    metric_cols[0].metric("RF recall", format_score(metrics.get("recall", 0), 3))
-    metric_cols[1].metric("RF precision", format_score(metrics.get("precision", 0), 3))
+    metric_cols[0].metric("Model recall", format_score(metrics.get("recall", 0), 3))
+    metric_cols[1].metric("Model precision", format_score(metrics.get("precision", 0), 3))
     metric_cols[2].metric("Balanced accuracy", format_score(metrics.get("balanced_accuracy", 0), 3))
     metric_cols[3].metric("Precision top 10%", format_score(metrics.get("precision_at_10pct", 0), 3))
 
@@ -125,7 +128,7 @@ else:
 
     st.subheader("Run LLM Review")
     st.caption(
-        "The RF model provides the baseline score. A hosted or local LLM can then act as a second reviewer, "
+        f"The {model_label} model provides the baseline score. A hosted or local LLM can then act as a second reviewer, "
         "produce an AI review score, map it back to the A-F grade policy, and suggest follow-up actions."
     )
     with st.form("llm_explanation_form"):
@@ -236,18 +239,18 @@ else:
     ai_text_grade = _extract_ai_grade(explanation)
     ai_implied_grade = _grade_from_review_score(ai_review_score)
     ai_grade = ai_implied_grade or ai_text_grade
-    comparison = _grade_comparison(ai_grade, prediction["grade"])
+    comparison = _grade_comparison(ai_grade, prediction["grade"], model_label)
     if ai_review_score is not None:
         ai_cols = st.columns(3)
         ai_cols[0].metric("AI review score", f"{ai_review_score}/100")
         ai_cols[1].metric("AI implied grade", ai_grade or "N/A")
-        ai_cols[2].metric("AI vs RF grade", comparison or "N/A")
+        ai_cols[2].metric("AI vs model grade", comparison or "N/A")
         if ai_text_grade and ai_implied_grade and ai_text_grade != ai_implied_grade:
             st.warning(
                 f"The LLM wrote grade {ai_text_grade}, but {ai_review_score}/100 maps to grade {ai_implied_grade} "
                 "under the configured thresholds. Treat the implied grade as the normalized comparison."
             )
-        st.caption("AI grade uses the same A-F thresholds as the RF score. This is a qualitative second-review score, not a calibrated probability.")
+        st.caption("AI grade uses the same A-F thresholds as the selected ML score. This is a qualitative second-review score, not a calibrated probability.")
     st.info(explanation)
 
     current_history = [
@@ -283,7 +286,7 @@ else:
         display_table["SHAP contribution"] = display_table["SHAP contribution"].apply(lambda value: format_score(value, 4))
         st.dataframe(display_table, width="stretch", hide_index=True)
         st.caption(
-            "Positive SHAP contributions push the application risk score higher. Negative contributions push it lower. "
+            "Tree SHAP is shown for the Random Forest baseline. Positive contributions push the application risk score higher; negative contributions push it lower. "
             "Categorical one-hot features are grouped back to their original fields for readability."
         )
     except ImportError:

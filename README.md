@@ -39,16 +39,15 @@ For the research grounding behind the risk ratios, cash-flow signals, anomaly me
 1. Start on `Home.py` and introduce the app as Ms. Cooper's operations console with current tasks, Slack Updates, and today's calendar.
 2. Open `Personal Workspace` and choose an example case such as `A2M Logistics Loan`, `Low-risk established borrower`, `Credit stacking case`, or `Suspicious transfers`.
 3. Score the application, then point out the A-F grade, model recommendation, final-decision status, risk flags, structured explanation, similar historical applications, and downloadable case summary.
-4. Click `Open Case Review`, choose an analyst action, optionally prepare the email-ready analysis, and save the review to the audit trail.
+4. Click `Open Case Review`, choose an analyst action, add a note, and save the review to the audit trail.
 5. Open `SME Credit Health` to show the borrower-facing preview, peer benchmark, and what-if simulation for score improvement.
-6. For approve/reject outcomes, show that manual score adjustment requires supervisor approval and supervisor email routing.
-7. Open `LLM Integration` to discuss deterministic, hosted, or local-model second review, qualitative AI review score, and SHAP driver analysis.
-8. Open `Operations Desk` to show the team workboard, evidence follow-up, bulk rejection, selected-case detail, and handoff into Personal Workspace.
-9. Open `Risk Dashboard` and `Model Insights` to show filtered portfolio monitoring, model metrics, grading thresholds, feature importance, and the Risk Score API contract preview.
+6. Open `LLM Integration` to discuss deterministic, hosted, or local-model second review, qualitative AI review score, and SHAP driver analysis.
+7. Open `Operations Desk` to show the team workboard, evidence follow-up, bulk rejection, selected-case detail, and handoff into Personal Workspace.
+8. Open `Risk Dashboard` and `Model Insights` to show filtered portfolio monitoring, model comparison, grading thresholds, feature importance, and the Risk Score API contract preview.
 
 ## Optional LLM Providers
 
-The app works without an LLM by using deterministic explanations. The RF model remains the baseline score; hosted or local LLMs can act as a second reviewer on the LLM Integration page, produce a qualitative `AI review score`, map that score back to the A-F grade policy, and suggest follow-up actions.
+The app works without an LLM by using deterministic explanations. The supervised ML layer can score with Random Forest or Logistic Regression, both returning a continuous 0-1 application risk score. Hosted or local LLMs can act as a second reviewer on the LLM Integration page, produce a qualitative `AI review score`, map that score back to the A-F grade policy, and suggest follow-up actions.
 
 For hosted explanations, set `OPENAI_API_KEY` in Streamlit secrets or the environment, then choose `OpenAI API` on the LLM Integration page and click `Run LLM Review`.
 

@@ -16,7 +16,8 @@ bootstrap_state()
 render_sidebar()
 
 applications = st.session_state.seed_data["applications"]
-queue = build_application_queue(st.session_state.model_bundle, applications)
+selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
+queue = build_application_queue(st.session_state.model_bundle, applications, model_key=selected_model_key)
 final_decisions = st.session_state.bulk_final_decisions
 queue["final_decision"] = queue["application_id"].apply(
     lambda application_id: final_decisions.get(application_id, {}).get("final_decision", "Pending")
@@ -100,8 +101,6 @@ with st.expander("Bulk Actions", expanded=False):
                     "application_id": application_id,
                     "timestamp": timestamp,
                     "action": "Bulk Reject",
-                    "supervisor_email": "",
-                    "send_email": False,
                     "analyst_note": bulk_note,
                     "manual_adjustment": False,
                     "final_probability": row["fraud_probability"],

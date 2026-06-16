@@ -1,5 +1,4 @@
 from datetime import datetime
-from urllib.parse import quote
 
 import numpy as np
 import pandas as pd
@@ -34,7 +33,6 @@ DEMO_SCENARIOS = {
         "forecast_employee_cagr": 0.07,
         "forecast_fcf_margin_year5": 0.08,
         "planned_debt_reduction_pct": 0.25,
-        "forecast_plan_confidence_score": 0.45,
         "current_ratio": 0.95,
         "quick_ratio": 0.65,
         "receivables_days": 68,
@@ -87,7 +85,6 @@ DEMO_SCENARIOS = {
         "forecast_employee_cagr": 0.07,
         "forecast_fcf_margin_year5": 0.15,
         "planned_debt_reduction_pct": 0.35,
-        "forecast_plan_confidence_score": 0.82,
         "current_ratio": 2.40,
         "quick_ratio": 2.05,
         "receivables_days": 34,
@@ -140,7 +137,6 @@ DEMO_SCENARIOS = {
         "forecast_employee_cagr": 0.06,
         "forecast_fcf_margin_year5": 0.08,
         "planned_debt_reduction_pct": 0.42,
-        "forecast_plan_confidence_score": 0.38,
         "current_ratio": 0.92,
         "quick_ratio": 0.64,
         "receivables_days": 82,
@@ -193,7 +189,6 @@ DEMO_SCENARIOS = {
         "forecast_employee_cagr": 0.08,
         "forecast_fcf_margin_year5": 0.10,
         "planned_debt_reduction_pct": 0.30,
-        "forecast_plan_confidence_score": 0.31,
         "current_ratio": 0.72,
         "quick_ratio": 0.48,
         "receivables_days": 96,
@@ -246,7 +241,6 @@ DEMO_SCENARIOS = {
         "forecast_employee_cagr": 0.05,
         "forecast_fcf_margin_year5": 0.07,
         "planned_debt_reduction_pct": 0.25,
-        "forecast_plan_confidence_score": 0.36,
         "current_ratio": 0.82,
         "quick_ratio": 0.55,
         "receivables_days": 85,
@@ -286,18 +280,6 @@ def _yes_no(value):
     return "Yes" if float(value or 0) >= 0.5 else "No"
 
 
-def adjusted_prediction(base_prediction, manual_probability):
-    probability = float(manual_probability)
-    grade = grade_from_probability(probability)
-    return {
-        **base_prediction,
-        "fraud_probability": probability,
-        "grade": grade,
-        "decision": decision_from_grade(grade),
-        "manual_adjustment": True,
-    }
-
-
 def case_summary(application, prediction, explanation, review=None):
     derived = add_derived_features(pd.DataFrame([application])).iloc[0]
     flags = prediction.get("flags") or []
@@ -324,7 +306,6 @@ def case_summary(application, prediction, explanation, review=None):
         f"Forecast employee CAGR: {format_percent(application.get('forecast_employee_cagr', 0))}",
         f"Year 5 FCF margin target: {format_percent(application.get('forecast_fcf_margin_year5', 0))}",
         f"Planned debt reduction: {format_percent(application.get('planned_debt_reduction_pct', 0))}",
-        f"Plan confidence score: {format_score(application.get('forecast_plan_confidence_score', 0))}",
         f"Current ratio: {format_score(application.get('current_ratio', 0))}",
         f"Quick ratio: {format_score(application.get('quick_ratio', 0))}",
         f"Cash conversion cycle: {format_score(derived.get('cash_conversion_cycle_days', 0), 0)} days",
@@ -375,21 +356,18 @@ def case_summary(application, prediction, explanation, review=None):
                 "Analyst review:",
                 f"Final decision: {review.get('final_decision', review.get('action', ''))}",
                 f"Model recommendation: {review.get('model_recommendation', '')}",
-                f"Supervisor email: {review.get('supervisor_email', '')}",
                 f"Analyst note: {review.get('analyst_note', '')}",
             ]
         )
     return "\n".join(lines)
 
 
-def mailto_link(recipient, subject, body):
-    return f"mailto:{recipient}?subject={quote(subject)}&body={quote(body)}"
-
-
-def similar_applications(model_bundle, applications, application, limit=5):
+def similar_applications(model_bundle, applications, application, limit=5, model_key=None):
+    selected_key = model_bundle._key(model_key)
+    pipeline = model_bundle.pipeline_for(selected_key)
     portfolio = add_derived_features(applications)
     application_features = add_derived_features(pd.DataFrame([application])).iloc[0]
-    probabilities = model_bundle.pipeline.predict_proba(portfolio[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1]
+    probabilities = pipeline.predict_proba(portfolio[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1]
     portfolio["fraud_probability"] = probabilities
     portfolio["grade"] = [grade_from_probability(probability) for probability in probabilities]
     portfolio["decision"] = [decision_from_grade(grade) for grade in portfolio["grade"]]

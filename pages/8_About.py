@@ -134,11 +134,6 @@ dimensions = [
         "Why it matters": "Debt reduction plans can be strained when current cash-flow pressure is high.",
     },
     {
-        "Dimension": "Plan confidence score",
-        "Definition": "Banker-assessed confidence in the five-year plan from 0 to 1.",
-        "Why it matters": "Lower confidence increases execution risk and supports manual review.",
-    },
-    {
         "Dimension": "Current and quick ratios",
         "Definition": "Liquidity ratios summarizing current assets and liquid assets against current liabilities.",
         "Why it matters": "Weak short-term liquidity can reveal stress not visible from revenue alone.",
@@ -152,11 +147,6 @@ dimensions = [
         "Dimension": "Document checklist",
         "Definition": "Present/not-present status for financial statements, bank statements, tax return, KYB, and forecast support.",
         "Why it matters": "Missing support can reduce audit readiness and increase manual review priority.",
-    },
-    {
-        "Dimension": "Document edits and late-stage changes",
-        "Definition": "Observed resubmission or change counts after initial intake.",
-        "Why it matters": "Repeated edits or late changes can indicate process anomalies or weak documentation quality.",
     },
     {
         "Dimension": "Digital identity age",
@@ -223,12 +213,12 @@ derived_dimensions = [
     },
     {
         "Signal": "Forecast plan aggressiveness score",
-        "Definition": "Combines aggressive revenue growth, hiring gap, FCF improvement need, and low confidence.",
+        "Definition": "Combines aggressive revenue growth, hiring gap, FCF improvement need, and missing forecast support.",
         "Why it matters": "Ambitious plans can be risky when current operating signals do not support them.",
     },
     {
         "Signal": "Forecast execution risk score",
-        "Definition": "Combines plan aggressiveness, cash conversion risk, runway risk, and plan confidence.",
+        "Definition": "Combines plan aggressiveness, cash conversion risk, runway risk, forecast support, and applicant narrative coverage.",
         "Why it matters": "Helps analysts judge whether the five-year plan is credible.",
     },
     {
@@ -273,13 +263,13 @@ derived_dimensions = [
     },
     {
         "Signal": "Document quality risk score",
-        "Definition": "Combines missing documents, document edits, late-stage changes, and process deviation.",
+        "Definition": "Combines missing documents with any available process metadata.",
         "Why it matters": "Weak documentation quality can reduce auditability and increase review burden.",
     },
     {
         "Signal": "Process integrity risk score",
-        "Definition": "Combines workflow deviation, late-stage changes, and document edit behavior.",
-        "Why it matters": "Business-process fraud literature emphasizes deviations from normal review flows.",
+        "Definition": "Uses system-supplied process metadata when available; defaults to neutral during applicant-first intake.",
+        "Why it matters": "Keeps internal workflow signals separate from the SME-provided application.",
     },
     {
         "Signal": "Identity verification risk score",

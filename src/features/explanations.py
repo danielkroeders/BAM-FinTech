@@ -61,8 +61,8 @@ def deterministic_explanation(application, prediction):
         mitigants.append("Free cash flow is positive.")
     if float(application.get("expected_runway_months", 0)) >= 12:
         mitigants.append("Expected runway is at least 12 months.")
-    if float(application.get("forecast_plan_confidence_score", 0)) >= 0.7:
-        mitigants.append("Five-year plan confidence is relatively strong.")
+    if float(application.get("forecast_support_uploaded", 0)) >= 0.5:
+        mitigants.append("Forecast support evidence is present.")
     if float(derived.get("debt_service_coverage_ratio", 0)) >= 1.25:
         mitigants.append("Free cash flow covers estimated annual debt service.")
     if float(derived.get("stressed_debt_service_coverage_ratio", 0)) >= 1.0:
@@ -93,11 +93,12 @@ def deterministic_explanation(application, prediction):
 
 def _llm_messages(application, prediction, detail_level="Detailed analyst memo", model_metrics=None):
     metrics = model_metrics or {}
+    model_label = prediction.get("model_label", "ML model")
     model_context = {
-        "model_type": "RandomForestClassifier risk model",
-        "rf_application_risk_score": prediction.get("fraud_probability"),
-        "rf_grade": prediction.get("grade"),
-        "rf_recommendation": prediction.get("decision"),
+        "model_type": model_label,
+        "application_risk_score": prediction.get("fraud_probability"),
+        "model_grade": prediction.get("grade"),
+        "model_recommendation": prediction.get("decision"),
         "validation_metrics": {
             "roc_auc": metrics.get("roc_auc"),
             "recall": metrics.get("recall"),
@@ -117,27 +118,27 @@ def _llm_messages(application, prediction, detail_level="Detailed analyst memo",
     }
     if detail_level == "Concise summary":
         instruction = (
-            "Act as an independent AI credit reviewer. Use the Random Forest score and loan intake inputs as evidence. "
-            "Provide sections for RF model baseline, AI independent assessment, Top risk drivers, Mitigating factors, "
+            f"Act as an independent AI credit reviewer. Use the {model_label} score and loan intake inputs as evidence. "
+            "Provide sections for ML model baseline, AI independent assessment, Top risk drivers, Mitigating factors, "
             "Recommended analyst action, and Compliance note. Include one line exactly like 'AI review score: NN/100' "
             "where 0 is lower risk and 100 is higher risk. Include one line exactly like 'AI suggested grade: X' "
-            "using the same A-F grade thresholds provided. If your AI grade differs from the RF grade, say whether the case "
-            "looks more severe or less severe, for example 'more like grade E than RF grade C'. Keep it brief. "
+            "using the same A-F grade thresholds provided. If your AI grade differs from the model grade, say whether the case "
+            "looks more severe or less severe, for example 'more like grade E than model grade C'. Keep it brief. "
             "Do not invent facts or claim legal certainty."
         )
     else:
         instruction = (
             "Act as an independent AI credit reviewer and write a detailed credit-risk analyst memo. "
-            "Use the Random Forest score, RF model validation metrics, and loan intake inputs as evidence, but do not merely restate the RF result. "
-            "Run your own qualitative assessment of the case and explain whether you agree, partially agree, or disagree with the RF recommendation. "
+            f"Use the {model_label} score, selected model validation metrics, and loan intake inputs as evidence, but do not merely restate the model result. "
+            "Run your own qualitative assessment of the case and explain whether you agree, partially agree, or disagree with the selected model recommendation. "
             "Include one line exactly like 'AI review score: NN/100' where 0 is lower risk and 100 is higher risk. "
             "Treat this AI review score as an independent qualitative review score, not as a calibrated probability. "
             "Convert that score into an A-F grade using the same grade thresholds provided and include one line exactly like "
-            "'AI suggested grade: X'. If your AI grade is worse than the RF grade, explicitly say the case looks more severe, "
-            "for example 'more like grade E than RF grade C', and explain why. If your AI grade is better than the RF grade, "
-            "explicitly say the case looks less severe, for example 'more like grade B than RF grade C', and explain why. "
-            "If the grades match, explain why the RF grade is directionally supported. "
-            "Use these sections: RF model baseline, AI independent assessment, Agreement with RF model, AI suggested grade rationale, Key risk drivers, "
+            "'AI suggested grade: X'. If your AI grade is worse than the model grade, explicitly say the case looks more severe, "
+            "for example 'more like grade E than model grade C', and explain why. If your AI grade is better than the model grade, "
+            "explicitly say the case looks less severe, for example 'more like grade B than model grade C', and explain why. "
+            "If the grades match, explain why the model grade is directionally supported. "
+            "Use these sections: ML model baseline, AI independent assessment, Agreement with ML model, AI suggested grade rationale, Key risk drivers, "
             "Mitigating factors, Evidence and data readiness, Recommended analyst action, Follow-up questions, "
             "and Compliance note. Explain what each important signal means in practical lending terms, "
             "connect the recommendation to the applicant facts, and be specific about what the analyst should verify next. "

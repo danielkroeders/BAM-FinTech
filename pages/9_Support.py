@@ -48,7 +48,7 @@ FAQ_ITEMS = [
     ),
     (
         "Can analysts override the model result?",
-        "Yes. The Case Review workflow stores the final decision separately from the model recommendation and records supervisor approval for manual score adjustment.",
+        "Yes. The Case Review workflow stores the analyst's final action separately from the model recommendation and AI review output.",
     ),
     (
         "How should high-risk outcomes be handled?",
@@ -71,7 +71,7 @@ def _support_response(message):
     if any(word in text for word in ["document", "kyb", "upload", "checklist"]):
         return (
             "The workspace uses document checklist statuses to track whether financial statements, "
-            "bank statements, tax returns, KYB docs, and forecast support have already been reviewed."
+            "bank statements, tax returns, KYB docs, and forecast support are present in the applicant file."
         )
     if any(word in text for word in ["score", "grade", "risk", "flag"]):
         return (

@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 
 import pandas as pd
+from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -23,17 +25,62 @@ from src.core.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, TARGET_
 
 
 THRESHOLD_MAP = {"A": 0.15, "B": 0.28, "C": 0.42, "D": 0.58, "E": 0.74, "F": 1.0}
+DEFAULT_MODEL_KEY = "random_forest"
+MODEL_LABELS = {
+    "random_forest": "Random Forest",
+    "logistic_regression": "Logistic Regression",
+}
+
+
+@dataclass
+class ModelSpec:
+    key: str
+    label: str
+    pipeline: Pipeline
+    metrics: dict
+    feature_importance: pd.DataFrame
 
 
 @dataclass
 class ModelBundle:
-    pipeline: Pipeline
-    metrics: dict
-    feature_importance: pd.DataFrame
+    models: dict
     threshold_map: dict
+    default_model_key: str = DEFAULT_MODEL_KEY
 
-    def score_one(self, application):
-        return score_application(self, application)
+    def _key(self, model_key=None):
+        if model_key in self.models:
+            return model_key
+        return self.default_model_key
+
+    @property
+    def pipeline(self):
+        return self.models[self.default_model_key].pipeline
+
+    @property
+    def metrics(self):
+        return self.models[self.default_model_key].metrics
+
+    @property
+    def feature_importance(self):
+        return self.models[self.default_model_key].feature_importance
+
+    def model_options(self):
+        return [(key, spec.label) for key, spec in self.models.items()]
+
+    def label_for(self, model_key=None):
+        return self.models[self._key(model_key)].label
+
+    def pipeline_for(self, model_key=None):
+        return self.models[self._key(model_key)].pipeline
+
+    def metrics_for(self, model_key=None):
+        return self.models[self._key(model_key)].metrics
+
+    def feature_importance_for(self, model_key=None):
+        return self.models[self._key(model_key)].feature_importance
+
+    def score_one(self, application, model_key=None):
+        return score_application(self, application, model_key=model_key)
 
 
 def _one_hot_encoder():
@@ -43,17 +90,7 @@ def _one_hot_encoder():
         return OneHotEncoder(handle_unknown="ignore", sparse=False)
 
 
-def _precision_at_top_percent(y_true, probabilities, percent=0.10):
-    scored = pd.DataFrame({"actual": y_true, "probability": probabilities}).sort_values("probability", ascending=False)
-    top_n = max(1, int(len(scored) * percent))
-    return float(scored.head(top_n)["actual"].mean())
-
-
-def train_model(applications):
-    applications = add_derived_features(applications)
-    X = applications[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS]
-    y = applications[TARGET_COLUMN]
-
+def _preprocessor():
     numeric_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -66,26 +103,23 @@ def train_model(applications):
             ("onehot", _one_hot_encoder()),
         ]
     )
-    preprocessor = ColumnTransformer(
+    return ColumnTransformer(
         transformers=[
             ("numeric", numeric_pipeline, NUMERIC_COLUMNS),
             ("categorical", categorical_pipeline, CATEGORICAL_COLUMNS),
         ]
     )
-    pipeline = Pipeline(
-        steps=[
-            ("preprocessor", preprocessor),
-            ("classifier", RandomForestClassifier(n_estimators=220, min_samples_leaf=4, random_state=42, class_weight="balanced")),
-        ]
-    )
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
-    pipeline.fit(X_train, y_train)
 
-    predictions = pipeline.predict(X_test)
-    probabilities = pipeline.predict_proba(X_test)[:, 1]
+def _precision_at_top_percent(y_true, probabilities, percent=0.10):
+    scored = pd.DataFrame({"actual": y_true, "probability": probabilities}).sort_values("probability", ascending=False)
+    top_n = max(1, int(len(scored) * percent))
+    return float(scored.head(top_n)["actual"].mean())
+
+
+def _metrics(y_test, predictions, probabilities):
     tn, fp, fn, tp = confusion_matrix(y_test, predictions).ravel()
-    metrics = {
+    return {
         "accuracy": accuracy_score(y_test, predictions),
         "balanced_accuracy": balanced_accuracy_score(y_test, predictions),
         "precision": precision_score(y_test, predictions, zero_division=0),
@@ -110,16 +144,68 @@ def train_model(applications):
         "tp": int(tp),
     }
 
+
+def _feature_names(pipeline):
     feature_names = pipeline.named_steps["preprocessor"].get_feature_names_out()
-    feature_names = [name.replace("numeric__", "").replace("categorical__", "") for name in feature_names]
-    importances = pipeline.named_steps["classifier"].feature_importances_
-    feature_importance = (
-        pd.DataFrame({"feature": feature_names, "importance": importances})
+    return [name.replace("numeric__", "").replace("categorical__", "") for name in feature_names]
+
+
+def _feature_importance(pipeline):
+    feature_names = _feature_names(pipeline)
+    model = pipeline.named_steps["classifier"]
+    if hasattr(model, "feature_importances_"):
+        values = model.feature_importances_
+    elif hasattr(model, "coef_"):
+        values = abs(model.coef_[0])
+    else:
+        values = [0] * len(feature_names)
+    return (
+        pd.DataFrame({"feature": feature_names, "importance": values})
         .sort_values("importance", ascending=False)
         .reset_index(drop=True)
     )
 
-    return ModelBundle(pipeline=pipeline, metrics=metrics, feature_importance=feature_importance, threshold_map=THRESHOLD_MAP)
+
+def train_model(applications):
+    applications = add_derived_features(applications)
+    X = applications[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS]
+    y = applications[TARGET_COLUMN]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
+
+    classifiers = {
+        "random_forest": RandomForestClassifier(
+            n_estimators=220,
+            min_samples_leaf=4,
+            random_state=42,
+            class_weight="balanced",
+        ),
+        "logistic_regression": LogisticRegression(
+            max_iter=2500,
+            class_weight="balanced",
+            solver="lbfgs",
+        ),
+    }
+    models = {}
+    base_preprocessor = _preprocessor()
+    for key, classifier in classifiers.items():
+        pipeline = Pipeline(
+            steps=[
+                ("preprocessor", clone(base_preprocessor)),
+                ("classifier", classifier),
+            ]
+        )
+        pipeline.fit(X_train, y_train)
+        predictions = pipeline.predict(X_test)
+        probabilities = pipeline.predict_proba(X_test)[:, 1]
+        models[key] = ModelSpec(
+            key=key,
+            label=MODEL_LABELS[key],
+            pipeline=pipeline,
+            metrics=_metrics(y_test, predictions, probabilities),
+            feature_importance=_feature_importance(pipeline),
+        )
+
+    return ModelBundle(models=models, threshold_map=THRESHOLD_MAP)
 
 
 def grade_from_probability(probability):
@@ -180,8 +266,8 @@ def rule_flags(application):
         flags.append("Expected runway is under six months.")
     if float(derived["cash_conversion_risk_score"]) >= 0.55:
         flags.append("Cash conversion is weak relative to reported revenue.")
-    if float(derived["forecast_revenue_cagr"]) >= 0.25 and float(derived["forecast_plan_confidence_score"]) < 0.45:
-        flags.append("Five-year revenue growth forecast is aggressive with low plan confidence.")
+    if float(derived["forecast_revenue_cagr"]) >= 0.25 and not application.get("forecast_support_uploaded"):
+        flags.append("Five-year revenue growth forecast is aggressive and forecast support is missing.")
     if float(derived["forecast_plan_aggressiveness_score"]) >= 0.45:
         flags.append("Five-year plan assumptions appear aggressive relative to current operating signals.")
     if float(derived["forecast_execution_risk_score"]) >= 0.50:
@@ -217,22 +303,30 @@ def rule_flags(application):
     return flags
 
 
-def score_application(model_bundle, application):
+def score_application(model_bundle, application, model_key=None):
+    selected_key = model_bundle._key(model_key)
+    pipeline = model_bundle.pipeline_for(selected_key)
     frame = add_derived_features(pd.DataFrame([application]))
-    probability = float(model_bundle.pipeline.predict_proba(frame[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1][0])
+    probability = float(pipeline.predict_proba(frame[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1][0])
     grade = grade_from_probability(probability)
     return {
         "fraud_probability": probability,
         "grade": grade,
         "decision": decision_from_grade(grade),
         "flags": rule_flags(application),
+        "model_key": selected_key,
+        "model_label": model_bundle.label_for(selected_key),
     }
 
 
-def score_portfolio(model_bundle, applications):
+def score_portfolio(model_bundle, applications, model_key=None):
+    selected_key = model_bundle._key(model_key)
+    pipeline = model_bundle.pipeline_for(selected_key)
     scored = add_derived_features(applications)
-    probabilities = model_bundle.pipeline.predict_proba(scored[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1]
+    probabilities = pipeline.predict_proba(scored[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1]
     scored["fraud_probability"] = probabilities
     scored["grade"] = [grade_from_probability(probability) for probability in probabilities]
     scored["decision"] = [decision_from_grade(grade) for grade in scored["grade"]]
+    scored["model_key"] = selected_key
+    scored["model_label"] = model_bundle.label_for(selected_key)
     return scored

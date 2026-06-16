@@ -28,7 +28,8 @@ st.info(
 )
 
 applications = st.session_state.seed_data["applications"]
-portfolio = score_portfolio(st.session_state.model_bundle, applications)
+selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
+portfolio = score_portfolio(st.session_state.model_bundle, applications, model_key=selected_model_key)
 
 case_options = []
 if st.session_state.get("last_application") and st.session_state.get("last_prediction"):
@@ -48,7 +49,7 @@ if selected_case.startswith("Latest scored case"):
 else:
     selected_id = selected_case.split(" - ", 1)[0]
     application = portfolio[portfolio["application_id"] == selected_id].iloc[0].to_dict()
-    prediction = score_application(st.session_state.model_bundle, application)
+    prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
 
 signals = add_derived_features(pd.DataFrame([application])).iloc[0]
 
@@ -107,6 +108,7 @@ scenario_prediction, scenario_rows = scenario_comparison_rows(
     application,
     prediction,
     scenario_application,
+    model_key=prediction.get("model_key", selected_model_key),
 )
 st.dataframe(pd.DataFrame(scenario_rows), width="stretch", hide_index=True)
 st.caption(
@@ -118,7 +120,15 @@ benchmark_tab, sources_tab, forecast_tab = st.tabs(["Peer Benchmark", "Evidence 
 with benchmark_tab:
     st.caption("Synthetic peer view for the sector and region where enough comparable cases exist.")
     st.dataframe(
-        pd.DataFrame(peer_benchmark_rows(st.session_state.model_bundle, applications, application, prediction)),
+        pd.DataFrame(
+            peer_benchmark_rows(
+                st.session_state.model_bundle,
+                applications,
+                application,
+                prediction,
+                model_key=prediction.get("model_key", selected_model_key),
+            )
+        ),
         width="stretch",
         hide_index=True,
     )

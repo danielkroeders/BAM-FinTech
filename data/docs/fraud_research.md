@@ -43,7 +43,6 @@ The app computes these fields automatically from the demo portfolio and workspac
 | `forecast_employee_cagr` | Operational capacity and execution feasibility. | Compares planned headcount growth with revenue growth. |
 | `forecast_fcf_margin_year5` | Cash-flow quality and margin improvement assumptions. | Captures whether management expects cash conversion to improve materially. |
 | `planned_debt_reduction_pct` | Financing pressure and debt service credibility. | Measures whether the applicant expects to reduce leverage during the forecast horizon. |
-| `forecast_plan_confidence_score` | Governance, auditability, and documentation confidence. | Captures banker confidence in the applicant's plan quality. |
 | `forecast_plan_aggressiveness_score` | Forecast realism and anomaly-style plan review. | Flags ambitious plans when current signals do not support them. |
 | `forecast_execution_risk_score` | Combined plan, liquidity, and confidence risk. | Measures whether the five-year plan is difficult to execute. |
 | `forecast_hiring_efficiency_risk_score` | Operational scale consistency. | Flags revenue growth that may be under-supported by employee growth. |
@@ -86,4 +85,4 @@ The newer papers in `docs/` expand the demo beyond classic transaction and ratio
 | Trust, auditability, and human review | Document completeness, case summaries, manual final decision, review trail, and model-insight signal definitions. |
 | Narrative consistency | CEO/CFO/COO/applicant context is compared with financial, forecast, and document signals through a narrative consistency risk score. |
 
-These additions are intentionally lightweight for the MVP: the banker selects whether expected documents are already present, and the model uses synthetic metadata as if the documents had been reviewed upstream.
+These additions are intentionally lightweight for the MVP: the SME-provided file marks whether expected documents are present, and internal process metadata defaults to neutral until connected systems supply it.

@@ -643,8 +643,8 @@
             <span>Clear risk grades mapped to model recommendations.</span>
           </div>
           <div class="hero-stat">
-            <strong>RF</strong>
-            <span>Random Forest baseline with validation metrics.</span>
+            <strong>ML</strong>
+            <span>Random Forest or Logistic Regression scoring.</span>
           </div>
           <div class="hero-stat">
             <strong>LLM</strong>
@@ -698,7 +698,7 @@
             <div class="metric">
               <b>1</b>
               <h3>Score</h3>
-              <p>RF model produces an application risk score and A-F grade.</p>
+              <p>SME-provided application data is scored by Random Forest or Logistic Regression as a 0-1 risk score.</p>
             </div>
             <div class="metric">
               <b>2</b>
@@ -743,11 +743,11 @@
           </div>
           <div class="card">
             <h3>Explainable confidence</h3>
-            <p>Risk drivers translate raw model signals into banker-readable rationale.</p>
+            <p>Risk drivers translate raw model signals into analyst-readable rationale.</p>
           </div>
           <div class="card">
             <h3>Human accountability</h3>
-            <p>The tool recommends; Ms. Cooper decides, documents, and routes supervisor review when needed.</p>
+            <p>The tool recommends; Ms. Cooper records the final analyst action separately.</p>
           </div>
           <div class="card">
             <h3>AI where useful</h3>
@@ -786,8 +786,8 @@
           </div>
           <div class="flow-step">
             <span class="number">3</span>
-            <h3>RF model</h3>
-            <p>Scikit-learn pipeline with preprocessing, Random Forest, A-F grading, and metrics.</p>
+            <h3>ML models</h3>
+            <p>Scikit-learn preprocessing with Random Forest and Logistic Regression options, A-F grading, and metrics.</p>
           </div>
           <div class="flow-step">
             <span class="number">4</span>
@@ -830,7 +830,7 @@
             <b>3</b>
             <div>
               <h3>Case Review</h3>
-              <p>Save a final analyst decision, separate from the RF recommendation.</p>
+              <p>Save a final analyst decision, separate from the selected ML recommendation.</p>
             </div>
           </div>
           <div class="demo-row">
@@ -851,7 +851,7 @@
             <b>6</b>
             <div>
               <h3>AI Explainability</h3>
-              <p>Run an optional LLM second review and compare it against the RF baseline.</p>
+              <p>Run an optional LLM second review and compare it against the selected ML baseline.</p>
             </div>
           </div>
         </div>

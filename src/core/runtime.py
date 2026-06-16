@@ -33,14 +33,16 @@ def _seed_data_has_named_companies(seed_data):
 
 
 def _model_bundle_has_current_metrics(model_bundle):
+    models = getattr(model_bundle, "models", None)
+    if not isinstance(models, dict) or "random_forest" not in models or "logistic_regression" not in models:
+        return False
     required_metrics = {
         "precision_at_5pct",
         "precision_at_10pct",
         "precision_at_20pct",
         "estimated_total_error_cost",
     }
-    metrics = getattr(model_bundle, "metrics", {})
-    return all(key in metrics for key in required_metrics)
+    return all(all(key in spec.metrics for key in required_metrics) for spec in models.values())
 
 
 def bootstrap_state():
@@ -91,6 +93,10 @@ def bootstrap_state():
         st.session_state.llm_review_history = []
     if "llm_provider" not in st.session_state:
         st.session_state.llm_provider = "OpenAI API"
+    if "selected_ml_model" not in st.session_state:
+        st.session_state.selected_ml_model = "random_forest"
+    elif st.session_state.selected_ml_model not in st.session_state.model_bundle.models:
+        st.session_state.selected_ml_model = "random_forest"
     if "explanation_model" not in st.session_state:
         st.session_state.explanation_model = "gpt-4.1-mini"
     env_local_base_url = os.getenv("LOCAL_LLM_BASE_URL", "")
