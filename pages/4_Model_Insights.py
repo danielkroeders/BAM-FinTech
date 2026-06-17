@@ -68,6 +68,27 @@ metric_catalog = {
     "Estimated False Negative Cost": "estimated_false_negative_cost",
     "Estimated Total Error Cost": "estimated_total_error_cost",
 }
+metric_help = {
+    "Accuracy": "Share of all predictions that are correct. Misleading when high-risk cases are rare — prefer Balanced Accuracy.",
+    "Balanced Accuracy": "Average accuracy across high-risk and low-risk classes. Corrects for class imbalance; a fairer headline score than raw Accuracy.",
+    "Precision": "Of every application the model flags as high-risk, the share that truly is. High Precision means fewer good applicants wrongly declined.",
+    "Recall": "Of every genuinely high-risk application, the share the model catches. High Recall means fewer defaults slip through undetected.",
+    "F1": "Harmonic mean of Precision and Recall. Useful when you need a single number that balances both miss types.",
+    "ROC-AUC": "Probability that the model ranks a random high-risk case above a random low-risk one. 0.5 = coin flip; 1.0 = perfect separation.",
+    "Average Precision": "Area under the Precision-Recall curve. More informative than ROC-AUC when defaults are rare; penalises models that miss the tail.",
+    "MCC": "Matthews Correlation Coefficient — a single quality score robust to class imbalance. Ranges from −1 (worse than random) to +1 (perfect).",
+    "Precision At Top 5%": "Of the 5% of applications the model scores as highest-risk, the share that are genuinely high-risk. Relevant for a very selective review queue.",
+    "Precision At Top 10%": "Of the top-decile highest-risk applications, the share that are genuinely high-risk. The primary queue-efficiency metric for most review teams.",
+    "Precision At Top 20%": "Of the top quintile, the share that are genuinely high-risk. Useful when bandwidth allows a broader review sweep.",
+    "False Positive Rate": "Share of low-risk applicants incorrectly flagged as high-risk. Drives unnecessary review cost and approval friction for good customers.",
+    "False Negative Rate": "Share of high-risk applicants the model misses entirely. Each miss is a potential default that reaches the portfolio undetected.",
+    "Predicted Review Rate": "Fraction of all applications the model routes to manual review under current thresholds. Directly sets analyst workload.",
+    "Estimated Review Cost": "Total estimated cost of manually reviewing every flagged case at current review-rate and cost assumptions.",
+    "Estimated False Positive Cost": "Revenue lost by declining or over-scrutinising applications that would have performed well.",
+    "Estimated False Negative Cost": "Expected default losses from high-risk applications the model approved or under-flagged.",
+    "Estimated Total Error Cost": "Sum of false-positive (lost revenue) and false-negative (default loss) costs. The primary financial headline for portfolio risk.",
+}
+
 default_metric_labels = [
     "Balanced Accuracy",
     "Precision",
@@ -96,7 +117,7 @@ for index, label in enumerate(selected_metric_labels):
     key = metric_catalog[label]
     col = cols[index % 4]
     value = format_currency(metrics[key]) if key.startswith("estimated_") else format_score(metrics[key], 3)
-    col.metric(label, value)
+    col.metric(label, value, help=metric_help.get(label))
 
 queue_rows = pd.DataFrame(
     [
