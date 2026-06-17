@@ -239,7 +239,7 @@ with chart_cols[1]:
 if filtered.empty:
     st.info("No applications match the selected filters.")
 else:
-    action_cols = st.columns([2, 1])
+    action_cols = st.columns([2, 1], vertical_alignment="bottom")
     open_options = [
         f"{row.application_id} - {row.company_name} | Grade {row.grade} | {format_percent(row.fraud_probability)}"
         for row in filtered.sort_values("fraud_probability", ascending=False).head(50).itertuples()
