@@ -215,19 +215,19 @@ governance_rows = pd.DataFrame(
 )
 st.dataframe(governance_rows, width="stretch", hide_index=True)
 
-st.subheader("Risk Score API Contract Preview")
-st.caption("MVP preview of how a lender could embed the score in an existing underwriting workflow. This is not a running external API yet.")
-api_application = st.session_state.last_application or applications.iloc[0].to_dict()
-api_prediction = st.session_state.last_prediction or score_application(bundle, api_application, model_key=selected_model_key)
-api_metrics = bundle.metrics_for(api_prediction.get("model_key", selected_model_key))
-request_json, response_json = api_contract_payloads(api_application, api_prediction, api_metrics)
-api_cols = st.columns(2)
-with api_cols[0]:
-    st.caption("Example request")
-    st.code(request_json, language="json")
-with api_cols[1]:
-    st.caption("Example response")
-    st.code(response_json, language="json")
+# st.subheader("Risk Score API Contract Preview")
+# st.caption("MVP preview of how a lender could embed the score in an existing underwriting workflow. This is not a running external API yet.")
+# api_application = st.session_state.last_application or applications.iloc[0].to_dict()
+# api_prediction = st.session_state.last_prediction or score_application(bundle, api_application, model_key=selected_model_key)
+# api_metrics = bundle.metrics_for(api_prediction.get("model_key", selected_model_key))
+# request_json, response_json = api_contract_payloads(api_application, api_prediction, api_metrics)
+# api_cols = st.columns(2)
+# with api_cols[0]:
+#     st.caption("Example request")
+#     st.code(request_json, language="json")
+# with api_cols[1]:
+#     st.caption("Example response")
+#     st.code(response_json, language="json")
 
 st.subheader("Top Feature Importances")
 importance_raw = bundle.feature_importance_for(selected_model_key).head(20).copy()
@@ -246,7 +246,7 @@ importance_chart = (
     .configure_axis(domain=False, gridColor="rgba(148, 163, 184, 0.28)", labelColor="#475569")
     .configure_view(strokeOpacity=0)
 )
-st.altair_chart(importance_chart, width="stretch")
+# st.altair_chart(importance_chart, width="stretch")
 
 st.subheader("Research-Backed Derived Signals")
 derived_signals = pd.DataFrame(
