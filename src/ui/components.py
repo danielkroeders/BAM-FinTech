@@ -672,7 +672,16 @@ def render_sidebar():
         unsafe_allow_html=True,
     )
     with st.sidebar:
-        st.header("Workspace")
+        hdr_col, dm_col = st.columns([3, 1])
+        hdr_col.header("Workspace")
+        st.session_state[DARK_MODE_WIDGET_KEY] = _is_dark_mode()
+        dm_col.toggle(
+            "Dark mode",
+            key=DARK_MODE_WIDGET_KEY,
+            on_change=_sync_dark_mode_from_widget,
+            label_visibility="collapsed",
+            help="Toggle dark mode",
+        )
         for section_label, links in NAV_SECTIONS:
             st.markdown(
                 f'<div class="sidebar-section-label">{escape(section_label)}</div>',
@@ -680,18 +689,8 @@ def render_sidebar():
             )
             for label, page, icon in links:
                 _page_link(page, label, icon)
-        st.session_state[DARK_MODE_WIDGET_KEY] = _is_dark_mode()
-        st.toggle("Dark mode", key=DARK_MODE_WIDGET_KEY, on_change=_sync_dark_mode_from_widget)
         profile["dark_mode"] = _is_dark_mode()
         st.session_state.user_profile = profile
-        if st.button("Sign Out", width="stretch"):
-            st.session_state.authenticated = False
-            st.session_state.login_transition = False
-            persist_demo_state()
-            _rerun()
-        if st.button("Clear Demo State", width="stretch"):
-            clear_demo_state()
-            _rerun()
         st.divider()
         st.markdown(
             f"""
@@ -701,3 +700,8 @@ def render_sidebar():
             """,
             unsafe_allow_html=True,
         )
+        if st.button("Sign Out", width="stretch"):
+            st.session_state.authenticated = False
+            st.session_state.login_transition = False
+            persist_demo_state()
+            _rerun()
