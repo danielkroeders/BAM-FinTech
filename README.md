@@ -70,6 +70,7 @@ Those values stay in Streamlit session state and are not written to the reposito
 - `pages/4_Model_Insights.py`: model metrics, confusion matrix, feature importances, grading thresholds, derived signal design, and API contract preview.
 - `pages/5_LLM_Integration.py`: LLM second-review integration view for the latest scored loan request.
 - `pages/7_Profile_Settings.py`: analyst profile, personal connected apps such as Slack/Teams, Gmail/Outlook, Drive/OneDrive/SharePoint, Zoom, user type, permissions, and team manager settings.
+- `pages/10_Tutorials.py`: searchable panel-based learning hub with detailed guides and feature maps for every application page.
 - `pages/8_About.py`: definitions for workspace scoring dimensions and risk grade interpretation.
 - `pages/9_Support.py`: representative email contacts, support request form, scripted live chat, and FAQ.
 

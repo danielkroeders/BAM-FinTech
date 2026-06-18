@@ -46,6 +46,8 @@ PERSISTED_KEYS = [
     "active_intake_source",
     "loan_example_scenario",
     "profile_settings_saved",
+    "demo_prompt_remembered",
+    "demo_prompt_choice",
 ]
 
 

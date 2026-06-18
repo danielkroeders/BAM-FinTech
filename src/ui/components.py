@@ -63,6 +63,7 @@ NAV_SECTIONS = [
         "Account & Help",
         [
             ("Profile & Settings", "pages/7_Profile_Settings.py", ":material/manage_accounts:"),
+            ("Tutorials", "pages/10_Tutorials.py", ":material/school:"),
             ("Support", "pages/9_Support.py", ":material/support_agent:"),
             ("About", "pages/8_About.py", ":material/info:"),
         ],
@@ -71,6 +72,13 @@ NAV_SECTIONS = [
 
 DARK_MODE_STATE_KEY = "dark_mode_preference"
 DARK_MODE_WIDGET_KEY = "dark_mode_toggle"
+DEMO_PROMPT_REMEMBERED_KEY = "demo_prompt_remembered"
+DEMO_PROMPT_CHOICE_KEY = "demo_prompt_choice"
+DEMO_PROMPT_HANDLED_KEY = "demo_prompt_handled_this_session"
+DEMO_PROMPT_CHECKBOX_KEY = "demo_prompt_remember_checkbox"
+
+# Enable this after the YouTube demo has been published.
+# DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=YOUR_VIDEO_ID"
 
 
 def _set_dark_mode_preference(value=False, profile=None):
@@ -591,6 +599,8 @@ def _complete_login():
     st.session_state.authenticated = True
     st.session_state.login_transition = True
     st.session_state.login_stage = "credentials"
+    st.session_state[DEMO_PROMPT_HANDLED_KEY] = False
+    st.session_state[DEMO_PROMPT_CHECKBOX_KEY] = False
     persist_demo_state()
     _rerun()
 
@@ -635,6 +645,68 @@ def _render_login_transition():
     )
 
 
+def _save_demo_prompt_choice(choice):
+    remember_choice = bool(st.session_state.get(DEMO_PROMPT_CHECKBOX_KEY, False))
+    st.session_state[DEMO_PROMPT_CHOICE_KEY] = choice
+    st.session_state[DEMO_PROMPT_REMEMBERED_KEY] = remember_choice
+    st.session_state[DEMO_PROMPT_HANDLED_KEY] = True
+    persist_demo_state()
+
+
+def _demo_prompt_body():
+    st.markdown(
+        """
+        <div style="font-size:1.2rem;font-weight:850;color:var(--cr-text);margin-bottom:.35rem;">
+            First time? Check out our demo for an in-depth dive into our app!
+        </div>
+        <div style="color:var(--cr-muted);line-height:1.5;margin-bottom:.75rem;">
+            You can also explore the page-by-page tutorials inside the workspace.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption("The YouTube demo link will be enabled after the video is published.")
+
+    # Uncomment when DEMO_VIDEO_URL is available. st.link_button opens external links in a new tab.
+    # st.link_button("Watch Demo on YouTube", DEMO_VIDEO_URL, width="stretch")
+
+    st.checkbox(
+        "Remember my choice for next time",
+        key=DEMO_PROMPT_CHECKBOX_KEY,
+        help="When selected, this welcome prompt will not appear on later logins for this saved demo session.",
+    )
+    tutorial_col, skip_col = st.columns(2)
+    if tutorial_col.button("Browse Tutorials", width="stretch", key="demo_prompt_tutorials"):
+        _save_demo_prompt_choice("tutorials")
+        st.switch_page("pages/10_Tutorials.py")
+    if skip_col.button("Skip this step", width="stretch", key="demo_prompt_skip"):
+        _save_demo_prompt_choice("skip")
+        _rerun()
+
+
+if hasattr(st, "dialog"):
+
+    @st.dialog("Welcome to CredRisk.AI", dismissible=False)
+    def _demo_prompt_dialog():
+        _demo_prompt_body()
+
+
+def _render_demo_prompt():
+    if DEMO_PROMPT_CHECKBOX_KEY not in st.session_state:
+        st.session_state[DEMO_PROMPT_CHECKBOX_KEY] = False
+    if st.session_state.get(DEMO_PROMPT_REMEMBERED_KEY, False):
+        return
+    if st.session_state.get(DEMO_PROMPT_HANDLED_KEY, False):
+        return
+
+    if hasattr(st, "dialog"):
+        _demo_prompt_dialog()
+        return
+
+    with st.container(border=True):
+        _demo_prompt_body()
+
+
 def render_sidebar():
     _render_global_theme()
     if not st.session_state.get("authenticated"):
@@ -642,6 +714,7 @@ def render_sidebar():
         st.stop()
 
     _render_login_transition()
+    _render_demo_prompt()
     profile = get_profile()
     st.markdown(
         """
@@ -703,5 +776,7 @@ def render_sidebar():
         if st.button("Sign Out", width="stretch"):
             st.session_state.authenticated = False
             st.session_state.login_transition = False
+            st.session_state[DEMO_PROMPT_HANDLED_KEY] = False
+            st.session_state[DEMO_PROMPT_CHECKBOX_KEY] = False
             persist_demo_state()
             _rerun()

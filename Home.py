@@ -69,12 +69,14 @@ task_display = application_table(
 )
 st.dataframe(task_display, width="stretch", hide_index=True)
 
-link_cols = st.columns([1, 1, 3])
+link_cols = st.columns([1, 1, 1, 2])
 with link_cols[0]:
     safe_page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
 with link_cols[1]:
     safe_page_link("pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
 with link_cols[2]:
+    safe_page_link("pages/10_Tutorials.py", "Open Tutorials", ":material/school:")
+with link_cols[3]:
     safe_page_link("pages/2_Operations_Desk.py", "Review Pending Work", ":material/view_list:")
 
 ops_left, ops_right = st.columns(2)
