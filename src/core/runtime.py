@@ -4,6 +4,7 @@ import streamlit as st
 
 from src.core.data_pipeline import BASE_NUMERIC_COLUMNS, ensure_seed_data
 from src.utils.demo_persistence import persist_demo_state, restore_demo_state
+from src.utils.llm_profiles import load_local_llm_profile
 from src.core.modeling import train_model
 
 
@@ -99,13 +100,14 @@ def bootstrap_state():
         st.session_state.selected_ml_model = "random_forest"
     if "explanation_model" not in st.session_state:
         st.session_state.explanation_model = "gpt-4.1-mini"
+    saved_local_profile = load_local_llm_profile()
     env_local_base_url = os.getenv("LOCAL_LLM_BASE_URL", "")
     env_local_model = os.getenv("LOCAL_LLM_MODEL", "")
     env_local_api_key = os.getenv("LOCAL_LLM_API_KEY", "")
     if "local_llm_base_url" not in st.session_state:
-        st.session_state.local_llm_base_url = env_local_base_url
+        st.session_state.local_llm_base_url = env_local_base_url or saved_local_profile.get("ip", "")
     if "local_llm_model" not in st.session_state:
-        st.session_state.local_llm_model = env_local_model
+        st.session_state.local_llm_model = env_local_model or saved_local_profile.get("model_name", "")
     if "local_llm_api_key" not in st.session_state:
         st.session_state.local_llm_api_key = env_local_api_key
     if "local_llm_base_url_draft" not in st.session_state:

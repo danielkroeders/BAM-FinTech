@@ -51,14 +51,22 @@ The app works without an LLM by using deterministic explanations. The supervised
 
 For hosted explanations, set `OPENAI_API_KEY` in Streamlit secrets or the environment, then choose `OpenAI API` on the LLM Integration page and click `Run LLM Review`.
 
-For a local model, score an application first, open LLM Integration, choose `Local server`, enter the local endpoint/model/token, and click `Run LLM Review`. Defaults:
+For a local model, score an application first, open LLM Integration, choose `Local server`, enter the local endpoint/model/token, and click `Run LLM Review`. You can save the endpoint and model name for future local runs. The profile is stored outside the Git repository in the operating system's user configuration area:
+
+- Windows: `%LOCALAPPDATA%\CredRiskAI\llm_models\local_server.json`
+- macOS: `~/Library/Application Support/CredRiskAI/llm_models/local_server.json`
+- Linux: `${XDG_CONFIG_HOME:-~/.config}/CredRiskAI/llm_models/local_server.json`
+
+Only the endpoint/IP and model name are written. API tokens are not saved by the app; they remain in the current Streamlit session unless provided separately through an environment variable. The storage folder can be overridden with `CREDRISK_LLM_MODELS_DIR`.
+
+Defaults:
 
 - `LOCAL_LLM_BASE_URL`: `http://localhost:1234/v1`
 - `LOCAL_LLM_MODEL`: `local-model`
 - `LOCAL_LLM_API_KEY`: `local`
 
 The local path works with tools that expose OpenAI-style chat completions, such as LM Studio or Ollama's `/v1` endpoint.
-Those values stay in Streamlit session state and are not written to the repository. You may enter either the server root, such as `http://localhost:1234`, or the `/v1` base URL. The app normalizes this and calls `/v1/chat/completions` only after you click `Run LLM Review`. If the local call fails, the explanation area shows the error and uses the deterministic analyst explanation.
+You may enter either the server root, such as `http://localhost:1234`, or the `/v1` base URL. The app normalizes this and calls `/v1/chat/completions` only after you click `Run LLM Review`. If the local call fails, the explanation area shows the error and uses the deterministic analyst explanation.
 
 ## Pages
 

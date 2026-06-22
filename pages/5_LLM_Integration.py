@@ -5,6 +5,7 @@ import streamlit as st
 from src.utils.demo_persistence import persist_demo_state
 from src.features.explanations import deterministic_explanation, explain_prediction
 from src.utils.formatting import format_percent, format_score
+from src.utils.llm_profiles import local_llm_profile_path, save_local_llm_profile
 from src.core.runtime import bootstrap_state
 from src.features.shap_explanations import shap_driver_table
 from src.ui.components import render_sidebar, safe_page_link
@@ -21,6 +22,10 @@ application = st.session_state.last_application
 prediction = st.session_state.last_prediction
 
 PROVIDERS = ["Deterministic", "OpenAI API", "Local server"]
+MODEL_DESCRIPTIONS = {
+    "random_forest": "Tree-based ensemble used to produce the baseline application risk score.",
+    "logistic_regression": "Linear probability model used to produce the baseline application risk score.",
+}
 
 
 def _provider_index():
@@ -113,6 +118,19 @@ else:
     model_label = prediction.get("model_label", st.session_state.model_bundle.label_for(model_key))
     metrics = st.session_state.model_bundle.metrics_for(model_key)
     st.subheader(f"{model_label} Model Baseline")
+    with st.container(border=True):
+        model_card_cols = st.columns([1, 3])
+        model_card_cols[0].caption("DETERMINISTIC MODEL USED")
+        model_card_cols[0].markdown(f"**{model_label}**")
+        model_card_cols[1].caption("BASELINE ROLE")
+        model_card_cols[1].write(
+            MODEL_DESCRIPTIONS.get(
+                model_key,
+                "Selected supervised model used to produce the baseline application risk score.",
+            )
+        )
+        st.caption("This model creates the baseline score and grade before any optional hosted or local LLM review.")
+
     rf_cols = st.columns(4)
     rf_cols[0].metric("Application risk score", format_percent(prediction["fraud_probability"]))
     rf_cols[1].metric("Model grade", prediction["grade"])
@@ -144,6 +162,7 @@ else:
         local_base_url = st.session_state.local_llm_base_url or "http://localhost:1234/v1"
         local_model = st.session_state.local_llm_model
         local_api_key = st.session_state.local_llm_api_key
+        save_local_settings = False
 
         if provider == "OpenAI API":
             openai_model = st.selectbox(
@@ -154,12 +173,30 @@ else:
                 else 0,
             )
         elif provider == "Local server":
-            local_base_url = st.text_input("Local server URL", value=local_base_url)
-            local_model = st.text_input("Local model", value=local_model)
-            local_api_key = st.text_input("Local API key", value=local_api_key, type="password")
+            local_base_url = st.text_input("Local server URL or IP", value=local_base_url)
+            local_model = st.text_input("Local model name", value=local_model)
+            local_api_key = st.text_input("Local API token", value=local_api_key, type="password")
             st.caption("Enter the server root or `/v1` base URL. The app calls `/v1/chat/completions` when you click Run.")
+            st.caption(
+                "Save writes only the URL/IP and model name to the local machine outside this Git repository. "
+                "The API token is never written by the app and remains session-only unless supplied through an environment variable."
+            )
+            st.caption(f"Profile location: `{local_llm_profile_path()}`")
+            save_local_settings = st.form_submit_button("Save local model settings")
 
         run_explanation = st.form_submit_button("Run LLM Review", width="stretch")
+
+    if save_local_settings:
+        try:
+            saved_profile_path = save_local_llm_profile(local_base_url, local_model)
+        except (OSError, ValueError) as error:
+            st.error(f"Could not save local model settings: {error}")
+        else:
+            st.session_state.local_llm_base_url = local_base_url.strip()
+            st.session_state.local_llm_model = local_model.strip()
+            st.session_state.local_llm_api_key = local_api_key.strip()
+            st.session_state.local_llm_settings_saved = True
+            st.success(f"Local model settings saved outside the repository: {saved_profile_path}")
 
     if run_explanation:
         from datetime import datetime
