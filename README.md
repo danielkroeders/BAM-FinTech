@@ -34,7 +34,7 @@ During a local demo, temporary page state is restored after browser refresh thro
 ## Walkthrough
 
 For a full presentation runbook, see `DEMO.md`.
-For the research grounding behind the risk ratios, cash-flow signals, anomaly measures, and detection measures, see `docs/fraud_research.md`.
+For the research grounding behind the risk ratios, cash-flow signals, anomaly measures, and detection measures, see [`data/docs/fraud_research.md`](data/docs/fraud_research.md).
 
 1. Start on `Home.py` and introduce the app as Ms. Cooper's operations console with current tasks, Slack Updates, and today's calendar.
 2. Open `Personal Workspace` and choose an example case such as `A2M Logistics Loan`, `Low-risk established borrower`, `Credit stacking case`, or `Suspicious transfers`.
@@ -92,3 +92,11 @@ You may enter either the server root, such as `http://localhost:1234`, or the `/
 | D | `0.42 to 0.58` | Manual Review |
 | E | `0.58 to 0.74` | Reject |
 | F | `Above 0.74` | Reject |
+
+## License and copyright
+
+Copyright (c) 2026 Daniël Kroeders and Joost Gaasbeek.
+
+This project is released under the [MIT License](LICENSE). Research publications
+and course materials included for academic context remain the property of their
+respective authors and publishers.
