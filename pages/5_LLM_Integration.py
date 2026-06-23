@@ -3,7 +3,11 @@ import re
 import streamlit as st
 
 from src.utils.demo_persistence import persist_demo_state
-from src.features.explanations import deterministic_explanation, explain_prediction
+from src.features.explanations import (
+    deterministic_explanation,
+    evaluation_signature,
+    generate_evaluation_package,
+)
 from src.utils.formatting import format_percent, format_score
 from src.utils.llm_profiles import local_llm_profile_path, save_local_llm_profile
 from src.core.runtime import bootstrap_state
@@ -102,12 +106,7 @@ if not application or not prediction:
     st.info("No application has been scored yet. Use Personal Workspace to create the first decision.")
     safe_page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
 else:
-    signature = (
-        f"{application.get('application_id', '')}:"
-        f"{prediction.get('fraud_probability', 0):.6f}:"
-        f"{prediction.get('grade', '')}:"
-        f"{prediction.get('decision', '')}"
-    )
+    signature = evaluation_signature(application, prediction)
     if st.session_state.llm_chat_signature != signature:
         st.session_state.llm_chat_explanation = None
         st.session_state.llm_chat_source = None
@@ -184,7 +183,7 @@ else:
             st.caption(f"Profile location: `{local_llm_profile_path()}`")
             save_local_settings = st.form_submit_button("Save local model settings")
 
-        run_explanation = st.form_submit_button("Run LLM Review", width="stretch")
+        run_explanation = st.form_submit_button("Generate Internal + SME Reports", width="stretch")
 
     if save_local_settings:
         try:
@@ -203,48 +202,49 @@ else:
 
         st.session_state.llm_chat_provider = provider
         st.session_state.llm_chat_last_run = datetime.now().strftime("%Y-%m-%d %H:%M")
-        if provider == "Deterministic":
-            st.session_state.llm_chat_explanation = default_explanation
-            st.session_state.llm_chat_source = "Deterministic"
-            st.session_state.llm_chat_error = None
-            st.session_state.llm_chat_signature = signature
-        elif provider == "OpenAI API":
+        selected_generation_model = "Deterministic rules"
+        if provider == "OpenAI API":
             st.session_state.explanation_model = openai_model
-            explanation = explain_prediction(
-                application,
-                prediction,
-                use_llm=True,
-                model=openai_model,
-                provider="OpenAI API",
-                detail_level=detail_level,
-                model_metrics=metrics,
-            )
-            st.session_state.llm_chat_explanation = explanation
-            st.session_state.llm_chat_source = st.session_state.last_explanation_source
-            st.session_state.llm_chat_error = st.session_state.last_explanation_error
-            st.session_state.llm_chat_signature = signature
-        else:
+            selected_generation_model = openai_model
+        elif provider == "Local server":
             st.session_state.local_llm_base_url = local_base_url.strip()
             st.session_state.local_llm_model = local_model.strip()
             st.session_state.local_llm_api_key = local_api_key.strip()
             st.session_state.local_llm_settings_saved = bool(
                 st.session_state.local_llm_base_url and st.session_state.local_llm_model
             )
-            explanation = explain_prediction(
-                application,
-                prediction,
-                use_llm=True,
-                model=st.session_state.local_llm_model,
-                provider="Local server",
-                local_base_url=st.session_state.local_llm_base_url,
-                local_api_key=st.session_state.local_llm_api_key,
-                detail_level=detail_level,
-                model_metrics=metrics,
-            )
-            st.session_state.llm_chat_explanation = explanation
-            st.session_state.llm_chat_source = st.session_state.last_explanation_source
-            st.session_state.llm_chat_error = st.session_state.last_explanation_error
-            st.session_state.llm_chat_signature = signature
+            selected_generation_model = st.session_state.local_llm_model
+
+        generated = generate_evaluation_package(
+            application,
+            prediction,
+            provider=provider,
+            model=selected_generation_model,
+            local_base_url=st.session_state.local_llm_base_url,
+            local_api_key=st.session_state.local_llm_api_key,
+            detail_level=detail_level,
+            model_metrics=metrics,
+        )
+        st.session_state.llm_chat_explanation = generated["internal_report"]
+        st.session_state.llm_chat_source = generated["internal_source"]
+        st.session_state.llm_chat_error = " ".join(generated["errors"]) if generated["errors"] else None
+        st.session_state.llm_chat_signature = signature
+        application_id = application.get("application_id", "Session")
+        st.session_state.llm_evaluation_packages[application_id] = {
+            "evaluation_package_id": f"EVAL-{len(st.session_state.llm_review_history) + 1:03d}",
+            "application_id": application_id,
+            "signature": signature,
+            "generated_at": st.session_state.llm_chat_last_run,
+            "provider": provider,
+            "generation_model": selected_generation_model,
+            "detail_level": detail_level,
+            "internal_source": generated["internal_source"],
+            "sme_source": generated["sme_source"],
+            "internal_report": generated["internal_report"],
+            "sme_report": generated["sme_report"],
+            "status": "Draft - lender review required",
+            "errors": generated["errors"],
+        }
         _record_llm_run(
             signature,
             application,
@@ -259,6 +259,8 @@ else:
     explanation = st.session_state.get("llm_chat_explanation") or default_explanation
     source = st.session_state.get("llm_chat_source") or "Deterministic"
     error = st.session_state.get("llm_chat_error")
+    saved_package = st.session_state.llm_evaluation_packages.get(application.get("application_id", "Session"))
+    current_package = saved_package if saved_package and saved_package.get("signature") == signature else None
 
     status_cols = st.columns(4)
     status_cols[0].metric("Selected provider", st.session_state.get("llm_chat_provider", "Deterministic"))
@@ -266,7 +268,7 @@ else:
     status_cols[2].metric("Last run", st.session_state.get("llm_chat_last_run", "Not run yet"))
     status_cols[3].metric("Status", "Fallback" if error else "Ready")
 
-    st.subheader("LLM Review Output")
+    st.subheader("Evaluation Package")
     st.caption(f"Explanation source: {source}")
     if source == "Local server":
         st.caption(f"Local endpoint used: {st.session_state.last_local_llm_base_url}")
@@ -288,7 +290,28 @@ else:
                 "under the configured thresholds. Treat the implied grade as the normalized comparison."
             )
         st.caption("AI grade uses the same A-F thresholds as the selected ML score. This is a qualitative second-review score, not a calibrated probability.")
-    st.info(explanation)
+    if saved_package and not current_package:
+        st.warning("The saved evaluation package is stale because this application has been rescored. Generate a new package before publication.")
+
+    internal_tab, sme_tab = st.tabs(["Internal lender report", "SME-facing report draft"])
+    with internal_tab:
+        st.caption("Private decision-support output. This report is never published to the SME portal.")
+        st.info(explanation)
+    with sme_tab:
+        if current_package:
+            st.caption(
+                "Applicant-safe draft generated with the internal evaluation. A lender can edit and attach it during publication."
+            )
+            st.markdown(current_package["sme_report"])
+            st.download_button(
+                "Download SME Report Draft",
+                data=current_package["sme_report"],
+                file_name=f"{application.get('application_id', 'application')}_sme_evaluation.md",
+                mime="text/markdown",
+                width="stretch",
+            )
+        else:
+            st.info("Generate the evaluation package to create and attach an SME-facing report draft.")
 
     current_history = [
         row

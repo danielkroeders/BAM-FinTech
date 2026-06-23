@@ -91,6 +91,69 @@ def deterministic_explanation(application, prediction):
     )
 
 
+def evaluation_signature(application, prediction):
+    return (
+        f"{application.get('application_id', '')}:"
+        f"{prediction.get('fraud_probability', 0):.6f}:"
+        f"{prediction.get('grade', '')}:"
+        f"{prediction.get('decision', '')}"
+    )
+
+
+def deterministic_sme_report(application, prediction):
+    derived = add_derived_features(pd.DataFrame([application])).iloc[0]
+    strengths = []
+    improvements = []
+
+    if float(application.get("free_cash_flow", 0)) > 0:
+        strengths.append("The application shows positive free cash flow.")
+    else:
+        improvements.append("Explain the path to positive free cash flow and provide evidence for the assumptions.")
+    if float(application.get("years_in_business", 0)) >= 5:
+        strengths.append("The company has an established operating history.")
+    else:
+        improvements.append("Provide additional evidence of customer continuity, management experience, and trading history.")
+    if float(derived.get("stressed_debt_service_coverage_ratio", 0)) >= 1.0:
+        strengths.append("Projected cash flow remains sufficient to cover estimated debt service under the demo stress.")
+    else:
+        improvements.append("Show how debt service remains affordable if interest costs or operating expenses increase.")
+    if float(derived.get("document_completeness_score", 0)) >= 0.95:
+        strengths.append("The expected application document set is complete.")
+    else:
+        improvements.append("Complete the financial statements, bank statements, tax, ownership/KYB, and forecast-support package.")
+    if float(application.get("forecast_support_uploaded", 0)) >= 0.5:
+        strengths.append("Supporting evidence for the forecast is attached.")
+    else:
+        improvements.append("Attach contracts, orders, assumptions, or management evidence supporting the forecast.")
+    if float(application.get("late_payment_ratio", 0)) >= 0.1:
+        improvements.append("Explain recent late-payment patterns and the controls being used to improve payment performance.")
+    if float(application.get("collateral_ratio", 0)) < 0.5:
+        improvements.append("Clarify available security, guarantees, or other ways the requested exposure could be reduced.")
+
+    strength_text = "\n".join(f"- {item}" for item in strengths) or "- No material strength was confirmed from the current data alone."
+    improvement_text = "\n".join(f"- {item}" for item in improvements) or "- Keep the submitted evidence current and respond promptly to lender questions."
+    return (
+        f"# Credit application evaluation for {application.get('company_name', 'your company')}\n\n"
+        "## What this report means\n"
+        "This report explains the main factors considered in the application and practical steps that may strengthen the file. "
+        "It should be read together with the lender's published rating and decision.\n\n"
+        f"## Application reviewed\n"
+        f"- Requested amount: {format_currency(float(application.get('requested_amount', 0)))}\n"
+        f"- Industry: {application.get('industry', 'Not provided')}\n"
+        f"- Region: {application.get('region', 'Not provided')}\n\n"
+        f"## Factors supporting the application\n{strength_text}\n\n"
+        f"## Areas that need attention\n{improvement_text}\n\n"
+        "## Recommended next steps\n"
+        "1. Review every item above and attach evidence for any statement or forecast that the lender could not independently verify.\n"
+        "2. Explain unusual movements, one-off costs, late payments, or changes in counterparties in plain language.\n"
+        "3. Update the cash-flow and debt-repayment plan using assumptions the company can support with records.\n"
+        "4. Contact the lender if the published outcome appears to rely on incomplete or outdated information.\n\n"
+        "## Important note\n"
+        "This is an explanatory decision-support report, not legal or financial advice. Improving the file does not guarantee "
+        "approval or a different rating; the lender remains responsible for the final reviewed outcome."
+    )
+
+
 def _llm_messages(application, prediction, detail_level="Detailed analyst memo", model_metrics=None):
     metrics = model_metrics or {}
     model_label = prediction.get("model_label", "ML model")
@@ -159,6 +222,61 @@ def _llm_messages(application, prediction, detail_level="Detailed analyst memo",
     ]
 
 
+def _sme_report_messages(application, prediction, internal_report):
+    payload = {
+        "application": application,
+        "prediction_context": {
+            "model_recommendation": prediction.get("decision"),
+            "model_grade": prediction.get("grade"),
+        },
+        "internal_evaluation": internal_report,
+        "instruction": (
+            "Write a detailed SME-facing evaluation report in Markdown. The audience is the applicant company, not a credit analyst. "
+            "Use calm, respectful, plain language and explain what factors support the application, what concerns require clarification, "
+            "what evidence may be missing, and concrete actions the company can take to improve or better explain its position. "
+            "Use these headings: What this report means, Application summary, Factors supporting the application, Areas that need attention, "
+            "How to strengthen the application, Questions to discuss with the lender, and Important note. "
+            "Do not reveal the model risk score, AI review score, provisional model grade, model validation metrics, hidden system signals, "
+            "internal compliance routing, or private analyst notes. Do not accuse the company of fraud or wrongdoing. Translate sensitive "
+            "signals into neutral requests for evidence or clarification. Do not promise approval or a changed rating. State that the lender's "
+            "published rating and decision are the authoritative reviewed outcome."
+        ),
+    }
+    return [
+        {
+            "role": "system",
+            "content": "You write fair, actionable, plain-language credit evaluation reports for SME applicants.",
+        },
+        {"role": "user", "content": json.dumps(payload, default=str)},
+    ]
+
+
+def _sanitize_sme_report(report):
+    restricted_phrases = (
+        "ai review score",
+        "ai suggested grade",
+        "model grade",
+        "provisional grade",
+        "model risk score",
+        "application risk score",
+        "fraud probability",
+        "model recommendation",
+        "roc-auc",
+        "balanced accuracy",
+        "average precision",
+        "precision at",
+        "shap",
+        "internal compliance",
+        "private analyst",
+    )
+    safe_lines = [
+        line
+        for line in str(report or "").splitlines()
+        if not any(phrase in line.lower() for phrase in restricted_phrases)
+    ]
+    return "\n".join(safe_lines).strip()
+
+
 def _openai_explanation(application, prediction, model, detail_level="Detailed analyst memo", model_metrics=None):
     key = _api_key()
     if not key:
@@ -173,6 +291,26 @@ def _openai_explanation(application, prediction, model, detail_level="Detailed a
         return response.output_text
     except Exception as error:
         _set_explanation_error(f"OpenAI API explanation failed: {error}")
+        return None
+
+
+def _openai_sme_report(application, prediction, internal_report, model):
+    key = _api_key()
+    if not key:
+        _set_explanation_error("OpenAI API key is not configured.")
+        return None
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=key, timeout=30)
+        response = client.responses.create(
+            model=model,
+            input=_sme_report_messages(application, prediction, internal_report),
+        )
+        st.session_state.last_explanation_error = None
+        return response.output_text
+    except Exception as error:
+        _set_explanation_error(f"OpenAI API SME report failed: {error}")
         return None
 
 
@@ -213,6 +351,35 @@ def _local_explanation(
         return None
 
 
+def _local_sme_report(application, prediction, internal_report, model, base_url=None, api_key=None):
+    if not st.session_state.get("local_llm_settings_saved", False):
+        _set_explanation_error("Local server settings have not been saved yet.")
+        return None
+    if not (base_url or "").strip() or not (model or "").strip():
+        _set_explanation_error("Local server URL and model name are required before calling the local model.")
+        return None
+    try:
+        from openai import OpenAI
+
+        normalized_base_url = _normalize_local_base_url(base_url)
+        client = OpenAI(
+            api_key=api_key or _local_api_key(),
+            base_url=normalized_base_url,
+            timeout=45,
+        )
+        response = client.chat.completions.create(
+            model=model or _local_model(),
+            messages=_sme_report_messages(application, prediction, internal_report),
+            temperature=0.2,
+        )
+        st.session_state.last_explanation_error = None
+        st.session_state.last_local_llm_base_url = normalized_base_url
+        return response.choices[0].message.content
+    except Exception as error:
+        _set_explanation_error(f"Local server SME report failed: {error}")
+        return None
+
+
 def llm_explanation(
     application,
     prediction,
@@ -226,6 +393,83 @@ def llm_explanation(
     if provider == "Local server":
         return _local_explanation(application, prediction, model, local_base_url, local_api_key, detail_level, model_metrics)
     return _openai_explanation(application, prediction, model, detail_level, model_metrics)
+
+
+def generate_evaluation_package(
+    application,
+    prediction,
+    provider="Deterministic",
+    model="gpt-4.1-mini",
+    local_base_url=None,
+    local_api_key=None,
+    detail_level="Detailed analyst memo",
+    model_metrics=None,
+):
+    errors = []
+    if provider == "Deterministic":
+        internal_report = deterministic_explanation(application, prediction)
+        sme_report = deterministic_sme_report(application, prediction)
+        return {
+            "internal_report": internal_report,
+            "sme_report": sme_report,
+            "internal_source": "Deterministic",
+            "sme_source": "Deterministic",
+            "errors": errors,
+        }
+
+    internal_report = llm_explanation(
+        application,
+        prediction,
+        model,
+        provider,
+        local_base_url,
+        local_api_key,
+        detail_level,
+        model_metrics,
+    )
+    internal_error = st.session_state.get("last_explanation_error")
+    if not internal_report:
+        internal_report = deterministic_explanation(application, prediction)
+        internal_source = "Deterministic fallback"
+        if internal_error:
+            errors.append(internal_error)
+    else:
+        internal_source = provider
+
+    if provider == "Local server":
+        sme_report = _local_sme_report(
+            application,
+            prediction,
+            internal_report,
+            model,
+            local_base_url,
+            local_api_key,
+        )
+    else:
+        sme_report = _openai_sme_report(application, prediction, internal_report, model)
+    sme_error = st.session_state.get("last_explanation_error")
+    if not sme_report:
+        sme_report = deterministic_sme_report(application, prediction)
+        sme_source = "Deterministic fallback"
+        if sme_error and sme_error not in errors:
+            errors.append(sme_error)
+    else:
+        sme_report = _sanitize_sme_report(sme_report)
+        sme_source = provider
+        if not sme_report:
+            sme_report = deterministic_sme_report(application, prediction)
+            sme_source = "Deterministic fallback"
+            errors.append("The generated SME report was removed by the applicant-safety filter.")
+
+    st.session_state.last_explanation_source = internal_source
+    st.session_state.last_explanation_error = " ".join(errors) if errors else None
+    return {
+        "internal_report": internal_report,
+        "sme_report": sme_report,
+        "internal_source": internal_source,
+        "sme_source": sme_source,
+        "errors": errors,
+    }
 
 
 def explain_prediction(

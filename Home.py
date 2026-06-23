@@ -5,7 +5,7 @@ import streamlit as st
 from src.utils.formatting import format_integer
 from src.core.runtime import bootstrap_state
 from src.utils.table_views import application_table
-from src.ui.components import get_profile, open_application_in_workspace, render_sidebar, safe_page_link
+from src.ui.components import get_profile, is_sme_profile, open_application_in_workspace, render_sidebar, safe_page_link
 from src.features.workbench_features import build_application_queue
 
 
@@ -13,6 +13,15 @@ st.set_page_config(page_title="CredRisk.AI Home", layout="wide")
 bootstrap_state()
 render_sidebar()
 profile = get_profile()
+
+if is_sme_profile(profile):
+    st.title(f"Welcome, {profile['name']}")
+    st.caption("SME company account | Company data, connections, credit health, and lender submission")
+    st.info(
+        "Your company account uses the SME Portal. Continue there to manage the application and its evidence connections."
+    )
+    safe_page_link("pages/6_SME_Credit_Health.py", "Open Company Portal", ":material/domain:")
+    st.stop()
 
 applications = st.session_state.seed_data["applications"]
 selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)

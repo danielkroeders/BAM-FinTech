@@ -196,29 +196,41 @@ def peer_benchmark_rows(model_bundle, applications, application, prediction, mod
 
 
 def data_source_coverage_rows(application, signals):
+    open_banking_connected = bool(
+        _number(application.get("open_banking_connected", application.get("bank_statements_uploaded")))
+    )
+    accounting_connected = bool(
+        _number(application.get("accounting_connected", application.get("financial_statements_uploaded")))
+    )
+    registry_connected = bool(
+        _number(application.get("registry_connected", application.get("ownership_docs_uploaded")))
+    )
+    documents_connected = bool(
+        _number(application.get("documents_connected", signals.get("document_completeness_score", 0) >= 0.8))
+    )
     return [
         {
             "Source": "PSD2 / Open Banking",
-            "MVP handling": "Simulated from bank-statement presence, account age, payment behavior, and transfer anomaly fields.",
-            "Current status": "Ready" if _number(application.get("bank_statements_uploaded")) else "Needs review",
+            "MVP handling": "Company-controlled demo connection using account history, payment behavior, and transfer anomaly fields.",
+            "Current status": "Connected" if open_banking_connected else "Not connected",
             "Production path": "Connect consented bank feeds for real-time transaction and cash-balance refresh.",
         },
         {
             "Source": "Accounting APIs",
-            "MVP handling": "Simulated from financial statements, working-capital ratios, cash flow, and forecast support.",
-            "Current status": "Ready" if _number(application.get("financial_statements_uploaded")) else "Needs review",
+            "MVP handling": "Company-controlled demo connection using financial statements, working-capital ratios, cash flow, and forecast support.",
+            "Current status": "Connected" if accounting_connected else "Not connected",
             "Production path": "Integrate Exact, Twinfield, Visma, Xero, or bank accounting partners.",
         },
         {
             "Source": "Registry / KYB",
-            "MVP handling": "Simulated through ownership document status, digital footprint age, and mismatch scores.",
-            "Current status": "Ready" if _number(application.get("ownership_docs_uploaded")) else "Needs review",
+            "MVP handling": "Company-controlled demo connection using ownership status, digital footprint age, and mismatch scores.",
+            "Current status": "Connected" if registry_connected else "Not connected",
             "Production path": "Connect KvK/CoC registry, UBO, sanctions, and entity-resolution checks.",
         },
         {
             "Source": "Document ingestion",
             "MVP handling": f"Uses checklist and metadata; document completeness is {format_score(signals.get('document_completeness_score', 0))}.",
-            "Current status": "Ready" if _number(signals.get("document_completeness_score")) >= 0.8 else "Partial",
+            "Current status": "Connected" if documents_connected else "Not connected",
             "Production path": "Parse uploaded statements, tax files, contracts, and forecast support documents.",
         },
         {
@@ -276,8 +288,8 @@ def sme_action_rows(application, signals, prediction):
         rows.append(
             {
                 "Action": "Maintain current evidence quality",
-                "Why it helps": f"The current grade {prediction.get('grade')} already has a relatively strong evidence profile.",
-                "Current signal": format_percent(prediction.get("fraud_probability", 0)),
+                "Why it helps": "The current file has no major evidence gaps, so the focus should remain on keeping information current.",
+                "Current signal": "No major gap",
             }
         )
     return rows

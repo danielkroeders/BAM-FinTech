@@ -364,12 +364,22 @@ These files are outside the Git checkout. The token field is password-masked and
 
 ### `pages/6_SME_Credit_Health.py`
 
-This is a borrower-facing concept preview using the same synthetic scoring logic.
+This is the role-aware SME company portal using the same synthetic scoring logic.
 
 It contains:
 
-- a selectable latest or portfolio case;
-- credit-health grade, score, lender view, and runway;
+- a dedicated SME-company login and restricted company-portal navigation;
+- company profile, loan request, financial snapshot, and business-context entry;
+- company-controlled demo connections for PSD2/Open Banking, accounting, registry/KYB, and documents;
+- real session-scoped file storage under `.tmp/sme_documents` for SME-uploaded application evidence;
+- explicit Open Banking consent simulation;
+- submission from the SME portal into the lender-side active intake workflow;
+- application lifecycle states for submitted, scored, evaluated, and published;
+- no SME access to provisional model grades, probabilities, or recommendations;
+- lender-controlled publication of the reviewed analyst rating, company-facing message, and attached SME evaluation report;
+- a lender preview with selectable latest, SME-submitted, or portfolio cases;
+- application-readiness indicators before publication;
+- published rating, lender decision, optional numerical score, lender message, and downloadable SME evaluation report after publication;
 - company snapshot;
 - practical next actions;
 - what-if changes to growth, FCF margin, cost pressure, evidence, documents, and debt reduction;
@@ -378,7 +388,28 @@ It contains:
 - evidence sources;
 - five-year forecast view.
 
-Frame results as directional ways to improve evidence or resilience, never as promises of approval.
+Frame connections as simulated unless a production provider is actually configured. Frame results as directional ways to improve evidence or resilience, never as promises of approval.
+
+SME document uploads are not simulated. Save the exact bytes locally, retain a
+manifest with category, original name, size, MIME type, timestamp, and SHA-256,
+and expose those same bytes to the lender for download. Keep the vault outside
+Git and remove it only through the explicit Clear Demo State workflow.
+
+The lender review must keep four records separate:
+
+1. immutable model score, model grade, and model recommendation;
+2. analyst rating, lender action, internal note, and adjustment rationale;
+3. persisted AI evaluation package containing a private internal report and applicant-safe SME report draft;
+4. SME-facing published rating, optional numerical score, publication message, reviewed report copy, and timestamp.
+
+The current-score signature must match before an evaluation package can be
+published. Keep the internal report private. Publication requires a non-empty
+SME report, and the exact lender-reviewed text must be copied into the
+application lifecycle so later LLM runs cannot silently change an already
+published report. Treat the SME prompt as guidance rather than a privacy
+boundary: retain the applicant-safety filter that removes model/AI scores,
+provisional grades, validation metrics, and internal routing language before a
+draft reaches the publication form.
 
 ### `pages/7_Profile_Settings.py`
 

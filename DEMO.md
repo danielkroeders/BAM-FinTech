@@ -69,36 +69,48 @@ Point out:
 - Peer benchmark position against similar SME applications
 - Downloadable case summary
 
-### 3. SME Credit Health Preview
+### 3. SME Company Portal
 
-Open `SME Credit Health`.
+Sign out, choose the `SME company` demo account, complete the password and six-digit verification steps, and open the company portal.
 
 Say:
 
-> This is the borrower-facing preview. It turns the same scoring logic into practical next actions an SME could understand before or during an application.
+> This is the starting point of the platform. The SME enters its own company and loan data, controls which evidence sources it connects, and submits the file into the lender workflow. Internal lender ratings stay hidden until the lender publishes a reviewed result.
 
 Point out:
 
-- Current credit-health grade and lender view
-- Most useful next actions
-- What-if simulation for score improvement
-- Peer benchmark against comparable SMEs
+- Company and loan data entry
+- PSD2/Open Banking consent simulation
+- Accounting and registry/KYB connection simulation
+- Real local file uploads for financial statements, bank statements, tax returns, ownership/KYB, and forecast support
+- Saved-file metadata, SHA-256 hashes, and lender download access
+- Application-readiness checks
+- Ways to strengthen the evidence package
 - Evidence-source coverage
+- Submit Application to Lender Review
+
+After submission, sign back in with the `Lender analyst` account and open `Personal Workspace`. The SME portal file is available as the active intake case.
+Open the Evidence tab to download the exact files saved by the SME.
 
 ### 4. Case Review
 
 Click `Open Case Review`.
 
 Choose an analyst action such as `Approve`, `Reject`, `Request Documents`, or `Escalate to Compliance`.
+Set the separate analyst rating. If it differs from the model grade, explain why.
 
 Save the review.
 
 Point out:
 
 - The page now shows the saved `Final Decision`
-- The model recommendation remains visible separately
+- The immutable model grade remains visible separately from the analyst rating
 - The analyst note is stored separately from the model output and AI review
 - The case summary preserves the decision rationale
+
+Open `LLM Integration` and click `Generate Internal + SME Reports`. Show that the internal lender report is private while the second tab contains an applicant-safe improvement report.
+
+Return to `Personal Workspace`, open `Publish rating to SME`, review or edit the attached SME report, write the company-facing message, decide whether to disclose the numerical risk score, and publish. Sign back in as the SME to show the rating and downloadable evaluation report. Neither becomes visible before publication.
 
 ### 5. Operations Desk
 
@@ -152,20 +164,23 @@ Say:
 
 > The model is intentionally transparent for a demo. The thresholds are explicit, analysts can see which variables matter most, and the API preview shows how the score could be embedded into a lender workflow.
 
-### 8. AI Explainability
+### 8. AI Evaluation Package
 
-Open `AI Explainability` after scoring an application.
+Open `LLM Integration` after scoring an application.
 
 Point out:
 
-- Plain-language explanation
+- Private detailed lender evaluation
+- Separate SME-facing report draft
+- Lender review before publication
+- Published SME report download
 - SHAP driver analysis
 - Baseline risk versus application risk
 - Drivers that raise or lower the application risk score
 
 Say:
 
-> This gives analysts an explanation they can understand without reading raw model features.
+> The AI creates two audiences from the same evaluation. Analysts retain the detailed internal reasoning, while the company receives only the lender-reviewed explanation and practical improvement steps after publication.
 
 ## Two-Minute Backup Demo
 

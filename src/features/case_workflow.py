@@ -323,7 +323,7 @@ def case_summary(application, prediction, explanation, review=None):
         f"Narrative consistency risk: {format_score(derived.get('narrative_consistency_risk_score', 0))}",
         "",
         f"Application risk score: {format_percent(prediction['fraud_probability'])}",
-        f"Risk grade: {prediction['grade']}",
+        f"Model grade: {prediction['grade']}",
         f"Recommended action: {prediction['decision']}",
         f"Manual adjustment: {'Yes' if prediction.get('manual_adjustment') else 'No'}",
         "",
@@ -355,7 +355,11 @@ def case_summary(application, prediction, explanation, review=None):
                 "",
                 "Analyst review:",
                 f"Final decision: {review.get('final_decision', review.get('action', ''))}",
+                f"Analyst rating: {review.get('analyst_grade', prediction['grade'])}",
+                f"Model grade: {review.get('model_grade', prediction['grade'])}",
                 f"Model recommendation: {review.get('model_recommendation', '')}",
+                f"Rating adjusted: {'Yes' if review.get('rating_adjusted') else 'No'}",
+                f"Rating rationale: {review.get('rating_rationale', '')}",
                 f"Analyst note: {review.get('analyst_note', '')}",
             ]
         )

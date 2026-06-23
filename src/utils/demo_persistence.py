@@ -38,12 +38,18 @@ PERSISTED_KEYS = [
     "llm_chat_signature",
     "llm_chat_last_run",
     "llm_review_history",
+    "llm_evaluation_packages",
     "explanation_model",
     "bulk_final_decisions",
     "bulk_action_history",
     "support_ticket_history",
     "active_queue_application",
     "active_intake_source",
+    "sme_company_application",
+    "sme_connection_status",
+    "sme_submission_history",
+    "application_lifecycle",
+    "rating_publication_history",
     "loan_example_scenario",
     "profile_settings_saved",
     "demo_prompt_remembered",
@@ -151,6 +157,9 @@ def persist_demo_state():
 
 def clear_demo_state():
     session_id = ensure_demo_session()
+    from src.utils.document_storage import clear_session_documents
+
+    clear_session_documents(session_id)
     path = _session_path(session_id)
     if path.exists():
         path.unlink()

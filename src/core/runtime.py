@@ -92,6 +92,8 @@ def bootstrap_state():
         st.session_state.llm_chat_signature = None
     if "llm_review_history" not in st.session_state:
         st.session_state.llm_review_history = []
+    if "llm_evaluation_packages" not in st.session_state:
+        st.session_state.llm_evaluation_packages = {}
     if "llm_provider" not in st.session_state:
         st.session_state.llm_provider = "OpenAI API"
     if "selected_ml_model" not in st.session_state:
@@ -130,4 +132,14 @@ def bootstrap_state():
         st.session_state.active_queue_application = None
     if "active_intake_source" not in st.session_state:
         st.session_state.active_intake_source = "Manual entry"
+    if "sme_company_application" not in st.session_state:
+        st.session_state.sme_company_application = None
+    if "sme_connection_status" not in st.session_state:
+        st.session_state.sme_connection_status = {}
+    if "sme_submission_history" not in st.session_state:
+        st.session_state.sme_submission_history = []
+    if "application_lifecycle" not in st.session_state:
+        st.session_state.application_lifecycle = {}
+    if "rating_publication_history" not in st.session_state:
+        st.session_state.rating_publication_history = []
     persist_demo_state()

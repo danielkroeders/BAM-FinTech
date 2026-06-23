@@ -17,8 +17,9 @@ from src.features.case_workflow import (
     similar_applications,
 )
 from src.core.data_pipeline import add_derived_features, build_forecast_table
-from src.utils.demo_persistence import persist_demo_state
-from src.features.explanations import explain_prediction
+from src.utils.demo_persistence import ensure_demo_session, persist_demo_state
+from src.utils.document_storage import document_counts, list_documents, read_document
+from src.features.explanations import evaluation_signature, explain_prediction
 from src.utils.formatting import (
     format_currency,
     format_currency_input,
@@ -45,6 +46,7 @@ from src.features.workbench_features import (
 st.set_page_config(page_title="Personal Workspace", layout="wide")
 bootstrap_state()
 render_sidebar()
+demo_session_id = ensure_demo_session()
 
 st.markdown(
     """
@@ -335,7 +337,7 @@ WORKSPACE_HELP = {
     "manual_or_compliance": "Assigned applications routed to manual review or compliance review.",
     "missing_documents": "Assigned applications that still have one or more missing documents.",
     "application_risk_score": "Model-estimated application risk. Higher percentages indicate a higher-risk credit review file.",
-    "risk_grade": "A-F risk grade derived from the application risk score and deterministic review signals.",
+    "risk_grade": "Immutable A-F model grade derived from the application risk score. The analyst rating is recorded separately.",
     "model_recommendation": "Decision-support recommendation produced by the local scoring model.",
     "ml_technique": "Supervised ML technique used for this score. Both options return a 0-1 application risk probability.",
     "stressed_dscr": "Debt service coverage ratio under a +2 percentage point interest-rate stress.",
@@ -595,7 +597,9 @@ def _decision_copy(application, prediction, review, signals):
     if review:
         return (
             f"{review['action']} saved by the analyst at {review['timestamp']}. "
-            f"The final grade is {prediction['grade']} with an application risk score of {_ratio(prediction['fraud_probability'])}."
+            f"The analyst rating is {review.get('analyst_grade', prediction['grade'])}; "
+            f"the unchanged model grade is {prediction['grade']} with an application risk score of "
+            f"{_ratio(prediction['fraud_probability'])}."
         )
     return (
         f"Model recommends {prediction['decision']} at grade {prediction['grade']} "
@@ -652,6 +656,70 @@ def _upsert_portfolio_history(application_id, values):
     st.session_state.portfolio_history.append(values)
 
 
+def _lifecycle_for(application_id):
+    return dict(st.session_state.application_lifecycle.get(application_id, {}))
+
+
+def _evaluation_package_for(application, prediction):
+    package = st.session_state.llm_evaluation_packages.get(application.get("application_id"))
+    if not package or package.get("signature") != evaluation_signature(application, prediction):
+        return None
+    return dict(package)
+
+
+def _update_lifecycle(application_id, **values):
+    lifecycle = _lifecycle_for(application_id)
+    lifecycle.update(values)
+    lifecycle["application_id"] = application_id
+    st.session_state.application_lifecycle[application_id] = lifecycle
+    return lifecycle
+
+
+def _update_sme_submission_status(application_id, status, **values):
+    for submission in reversed(st.session_state.sme_submission_history):
+        if submission.get("application_id") == application_id:
+            submission.update({"status": status, **values})
+            return
+
+
+def _render_saved_application_files(application_id):
+    documents = list_documents(demo_session_id, application_id)
+    if not documents:
+        st.info("No saved SME-uploaded files are attached to this application.")
+        return
+
+    st.dataframe(
+        pd.DataFrame(
+            [
+                {
+                    "Category": document["category_label"],
+                    "File": document["original_name"],
+                    "Size": f"{document['size_bytes'] / 1024:.1f} KB",
+                    "Saved": document["uploaded_at"],
+                    "SHA-256": document["sha256"][:16] + "…",
+                }
+                for document in documents
+            ]
+        ),
+        width="stretch",
+        hide_index=True,
+    )
+    for document in documents:
+        content, metadata = read_document(
+            demo_session_id,
+            application_id,
+            document["document_id"],
+        )
+        st.download_button(
+            f"Download {metadata['category_label']}: {metadata['original_name']}",
+            data=content,
+            file_name=metadata["original_name"],
+            mime=metadata["content_type"],
+            key=f"lender_download_{metadata['document_id']}",
+            width="stretch",
+        )
+
+
 def _store_prediction(application, prediction, explanation):
     st.session_state.last_application = application
     st.session_state.last_prediction = prediction
@@ -672,6 +740,16 @@ def _store_prediction(application, prediction, explanation):
         application["application_id"],
         {**application, **prediction, "review_action": "Pending", "final_decision": "Pending Review"},
     )
+    _update_lifecycle(
+        application["application_id"],
+        status="Scored by lender",
+        scored_at=score_event["timestamp"],
+        model_grade=prediction["grade"],
+        model_probability=prediction["fraud_probability"],
+        model_recommendation=prediction["decision"],
+        model_label=prediction.get("model_label", "Random Forest"),
+    )
+    _update_sme_submission_status(application["application_id"], "Scored by lender", scored_at=score_event["timestamp"])
     persist_demo_state()
 
 
@@ -687,6 +765,8 @@ def _update_latest_history(prediction, review):
                     "manual_adjustment": prediction.get("manual_adjustment", False),
                     "review_action": review["action"],
                     "final_decision": review["final_decision"],
+                    "analyst_grade": review["analyst_grade"],
+                    "rating_adjusted": review["rating_adjusted"],
                 }
             )
             break
@@ -695,36 +775,185 @@ def _update_latest_history(prediction, review):
 def _review_form_body():
     application = st.session_state.last_application
     prediction = st.session_state.last_prediction
+    existing_review = st.session_state.get("last_review") or {}
+    grade_options = list("ABCDEF")
+    current_grade = existing_review.get("analyst_grade", prediction["grade"])
+    current_action = existing_review.get("action", prediction["decision"])
+    default_action_index = REVIEW_ACTIONS.index(current_action) if current_action in REVIEW_ACTIONS else 0
 
     with st.form("case_review_form"):
-        action = st.selectbox("Analyst action", REVIEW_ACTIONS)
+        st.caption(
+            "The model output remains unchanged. The analyst can set a separate final rating after evaluating the evidence."
+        )
+        comparison_cols = st.columns(2)
+        comparison_cols[0].metric("Model grade", prediction["grade"])
+        comparison_cols[1].metric("Model recommendation", prediction["decision"])
+        action = st.selectbox("Analyst action", REVIEW_ACTIONS, index=default_action_index)
+        analyst_grade = st.selectbox(
+            "Analyst rating",
+            grade_options,
+            index=grade_options.index(current_grade) if current_grade in grade_options else grade_options.index(prediction["grade"]),
+            help="This is the lender's reviewed A-F rating. It does not overwrite the model grade.",
+        )
         analyst_note = st.text_area(
-            "Analyst note",
-            value="Reviewed model score, deterministic flags, and explanation.",
+            "Internal analyst note",
+            value=existing_review.get(
+                "analyst_note",
+                "Reviewed model score, deterministic flags, evidence coverage, and explanation.",
+            ),
+        )
+        rating_rationale = st.text_area(
+            "Rating rationale",
+            value=existing_review.get(
+                "rating_rationale",
+                "The final rating reflects the model output together with verified financial, evidence, and contextual factors.",
+            ),
+            help="Required when the analyst rating differs from the model grade. This rationale supports the audit trail.",
         )
         submitted = st.form_submit_button("Save Review", width="stretch")
 
     if submitted:
         final_prediction = prediction
+        rating_adjusted = analyst_grade != prediction["grade"]
+        if rating_adjusted and not rating_rationale.strip():
+            st.error("Explain why the analyst rating differs from the model grade.")
+            return
         review = {
             "review_id": f"REV-{len(st.session_state.review_history) + 1:03d}",
             "application_id": application["application_id"],
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "action": action,
             "analyst_note": analyst_note,
-            "manual_adjustment": False,
+            "rating_rationale": rating_rationale.strip(),
+            "analyst_grade": analyst_grade,
+            "rating_adjusted": rating_adjusted,
+            "manual_adjustment": rating_adjusted,
             "final_probability": final_prediction["fraud_probability"],
-            "final_grade": final_prediction["grade"],
+            "final_grade": analyst_grade,
+            "model_grade": final_prediction["grade"],
             "model_recommendation": final_prediction["decision"],
             "final_decision": action,
         }
         st.session_state.last_review = review
         st.session_state.review_history.append(review)
         _update_latest_history(final_prediction, review)
+        _update_lifecycle(
+            application["application_id"],
+            status="Evaluated by lender",
+            evaluated_at=review["timestamp"],
+            analyst_grade=analyst_grade,
+            analyst_action=action,
+            rating_adjusted=rating_adjusted,
+            rating_rationale=rating_rationale.strip(),
+        )
+        _update_sme_submission_status(
+            application["application_id"],
+            "Evaluated by lender",
+            evaluated_at=review["timestamp"],
+        )
 
         st.session_state.last_email_link = None
         persist_demo_state()
         _rerun_after_review()
+
+
+def _rating_publication_form(application, prediction, review):
+    application_id = application["application_id"]
+    lifecycle = _lifecycle_for(application_id)
+    evaluation_package = _evaluation_package_for(application, prediction)
+    already_published = lifecycle.get("status") == "Rating published"
+    default_message = lifecycle.get(
+        "published_message",
+        (
+            f"Your application has been reviewed. The lender rating is {review['analyst_grade']} "
+            f"and the current lender decision is {review['final_decision']}."
+        ),
+    )
+    default_sme_report = lifecycle.get("published_sme_report") or (
+        evaluation_package.get("sme_report", "") if evaluation_package else ""
+    )
+    report_source = lifecycle.get("published_sme_report_source") or (
+        evaluation_package.get("sme_source") if evaluation_package else None
+    )
+
+    if not default_sme_report:
+        st.warning(
+            "Generate an evaluation package in LLM Integration before publishing. "
+            "Publication requires an SME-facing report to be attached."
+        )
+
+    with st.form(f"rating_publication_form_{application_id}"):
+        st.caption(
+            "Nothing is visible to the SME until this publication step. The internal evaluation remains private; "
+            "the editable SME report below is attached to the published outcome."
+        )
+        publication_cols = st.columns(3)
+        publication_cols[0].metric("Model grade", prediction["grade"])
+        publication_cols[1].metric("Analyst rating", review["analyst_grade"])
+        publication_cols[2].metric("Lender decision", review["final_decision"])
+        published_message = st.text_area("Message to the SME", value=default_message)
+        published_sme_report = st.text_area(
+            "SME-facing evaluation report",
+            value=default_sme_report,
+            height=420,
+            disabled=not bool(default_sme_report),
+            help="Review and edit this applicant-safe report. This exact version will be attached to the publication.",
+        )
+        if report_source:
+            st.caption(f"Report draft source: {report_source}")
+        include_score = st.checkbox(
+            "Include numerical risk score",
+            value=bool(lifecycle.get("published_score_visible", False)),
+            help="Leave off when the lender wants to publish only the A-F rating and decision.",
+        )
+        publish = st.form_submit_button(
+            "Update Published Rating" if already_published else "Publish Rating to SME",
+            width="stretch",
+            type="primary",
+            disabled=not bool(default_sme_report),
+        )
+
+    if publish:
+        if not published_sme_report.strip():
+            st.error("The SME-facing evaluation report cannot be empty.")
+            return
+        published_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+        publication = {
+            "publication_id": f"PUB-{len(st.session_state.rating_publication_history) + 1:03d}",
+            "application_id": application_id,
+            "company_name": application.get("company_name", "Applicant"),
+            "published_at": published_at,
+            "published_grade": review["analyst_grade"],
+            "published_decision": review["final_decision"],
+            "published_message": published_message.strip(),
+            "published_score_visible": include_score,
+            "published_score": prediction["fraud_probability"] if include_score else None,
+            "model_grade": prediction["grade"],
+            "rating_adjusted": review["rating_adjusted"],
+            "published_sme_report": published_sme_report.strip(),
+            "published_sme_report_attached": True,
+            "published_sme_report_source": report_source or "Lender-authored",
+            "evaluation_package_id": (
+                evaluation_package.get("evaluation_package_id") if evaluation_package else lifecycle.get("evaluation_package_id")
+            ),
+        }
+        st.session_state.rating_publication_history.append(publication)
+        _update_lifecycle(
+            application_id,
+            status="Rating published",
+            **{key: value for key, value in publication.items() if key != "application_id"},
+        )
+        _update_sme_submission_status(
+            application_id,
+            "Rating published",
+            published_at=published_at,
+            published_grade=review["analyst_grade"],
+        )
+        persist_demo_state()
+        st.success("The reviewed rating is now visible in the SME company portal.")
+        rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+        if rerun:
+            rerun()
 
 
 if hasattr(st, "dialog"):
@@ -833,6 +1062,7 @@ with st.container():
 
 active_case = st.session_state.get("active_queue_application")
 if active_case:
+    active_lifecycle = _lifecycle_for(active_case.get("application_id"))
     st.markdown(
         f"""
         <div class="active-case-card">
@@ -842,6 +1072,12 @@ if active_case:
         """,
         unsafe_allow_html=True,
     )
+    if st.session_state.get("active_intake_source") == "SME Portal submission":
+        st.info(
+            "SME journey status: "
+            f"{active_lifecycle.get('status', 'Submitted to lender review')}. "
+            "Score the file, save the lender evaluation, then publish the reviewed rating when it is ready for the company."
+        )
 else:
     st.info("No active workspace case yet. Start a task above or use Manual Entry to build a custom applicant.")
 
@@ -859,6 +1095,22 @@ company_name_default = _scenario_value(
     "company_name",
     "Session Applicant" if scenario == "Custom application" else scenario,
 )
+sme_document_evidence_locked = bool(
+    active_case
+    and st.session_state.get("active_intake_source") == "SME Portal submission"
+    and active_case.get("application_id")
+)
+saved_document_counts = (
+    document_counts(demo_session_id, active_case["application_id"])
+    if sme_document_evidence_locked
+    else {}
+)
+
+
+def _document_evidence_value(category, field_name):
+    if sme_document_evidence_locked:
+        return bool(saved_document_counts.get(category, 0))
+    return bool(_scenario_value(scenario, field_name, 1))
 
 with st.form("loan_intake_form"):
     st.subheader("Company Profile")
@@ -1129,35 +1381,45 @@ with st.form("loan_intake_form"):
         )
 
     st.subheader("Applicant Evidence Checklist")
+    if sme_document_evidence_locked:
+        st.caption(
+            "These indicators are locked to files actually saved by the SME. "
+            "Open the Evidence tab after scoring to inspect or download them."
+        )
     doc_cols = st.columns(5)
     with doc_cols[0]:
         financial_statements_uploaded = st.checkbox(
             "Financial statements",
-            value=bool(_scenario_value(scenario, "financial_statements_uploaded", 1)),
+            value=_document_evidence_value("financial_statements", "financial_statements_uploaded"),
+            disabled=sme_document_evidence_locked,
             help=FIELD_HELP["financial_statements_uploaded"],
         )
     with doc_cols[1]:
         bank_statements_uploaded = st.checkbox(
             "Bank statements",
-            value=bool(_scenario_value(scenario, "bank_statements_uploaded", 1)),
+            value=_document_evidence_value("bank_statements", "bank_statements_uploaded"),
+            disabled=sme_document_evidence_locked,
             help=FIELD_HELP["bank_statements_uploaded"],
         )
     with doc_cols[2]:
         tax_return_uploaded = st.checkbox(
             "Tax return",
-            value=bool(_scenario_value(scenario, "tax_return_uploaded", 1)),
+            value=_document_evidence_value("tax_returns", "tax_return_uploaded"),
+            disabled=sme_document_evidence_locked,
             help=FIELD_HELP["tax_return_uploaded"],
         )
     with doc_cols[3]:
         ownership_docs_uploaded = st.checkbox(
             "Ownership/KYB",
-            value=bool(_scenario_value(scenario, "ownership_docs_uploaded", 1)),
+            value=_document_evidence_value("ownership_kyb", "ownership_docs_uploaded"),
+            disabled=sme_document_evidence_locked,
             help=FIELD_HELP["ownership_docs_uploaded"],
         )
     with doc_cols[4]:
         forecast_support_uploaded = st.checkbox(
             "Forecast support",
-            value=bool(_scenario_value(scenario, "forecast_support_uploaded", 1)),
+            value=_document_evidence_value("forecast_support", "forecast_support_uploaded"),
+            disabled=sme_document_evidence_locked,
             help=FIELD_HELP["forecast_support_uploaded"],
         )
 
@@ -1269,6 +1531,8 @@ if st.session_state.last_prediction:
     if current_review and current_review.get("application_id") != application["application_id"]:
         current_review = None
     final_decision = current_review["final_decision"] if current_review else "Pending Review"
+    application_lifecycle = _lifecycle_for(application["application_id"])
+    publication_status = application_lifecycle.get("status", "Not published")
     calculated = add_derived_features(pd.DataFrame([application]))
     signals = calculated.iloc[0]
     risk_tone = _risk_tone(prediction["fraud_probability"])
@@ -1295,7 +1559,7 @@ if st.session_state.last_prediction:
             _ratio(prediction["fraud_probability"]),
             help=WORKSPACE_HELP["application_risk_score"],
         )
-        score_cols[1].metric("Risk grade", prediction["grade"], help=WORKSPACE_HELP["risk_grade"])
+        score_cols[1].metric("Model grade", prediction["grade"], help=WORKSPACE_HELP["risk_grade"])
         score_cols[2].metric(
             "Model recommendation",
             prediction["decision"],
@@ -1310,12 +1574,50 @@ if st.session_state.last_prediction:
         st.dataframe(pd.DataFrame(confidence_rows), width="stretch", hide_index=True)
     with evidence_tab:
         st.dataframe(pd.DataFrame(_data_readiness_rows(application, signals)), width="stretch", hide_index=True)
+        st.markdown("**Saved SME-uploaded files**")
+        _render_saved_application_files(application["application_id"])
     with review_tab:
-        review_cols = st.columns(3)
+        review_cols = st.columns(4)
         review_cols[0].metric("Final decision", final_decision, help=WORKSPACE_HELP["final_decision"])
-        review_cols[1].metric("Review status", review_status, help=WORKSPACE_HELP["review_status"])
-        review_cols[2].metric("ML technique", prediction_model_label, help=WORKSPACE_HELP["ml_technique"])
+        review_cols[1].metric(
+            "Analyst rating",
+            current_review.get("analyst_grade", "Pending") if current_review else "Pending",
+            help="Reviewed lender rating kept separately from the model grade.",
+        )
+        review_cols[2].metric("Publication", publication_status)
+        review_cols[3].metric("ML technique", prediction_model_label, help=WORKSPACE_HELP["ml_technique"])
         st.dataframe(pd.DataFrame({"Review condition": decision_conditions}), width="stretch", hide_index=True)
+        if current_review:
+            adjustment_label = "Adjusted from model" if current_review.get("rating_adjusted") else "Aligned with model"
+            st.info(
+                f"{adjustment_label}: model grade {prediction['grade']} → analyst rating "
+                f"{current_review.get('analyst_grade', prediction['grade'])}. "
+                f"Rationale: {current_review.get('rating_rationale', 'No rationale recorded.')}"
+            )
+            evaluation_package = _evaluation_package_for(application, prediction)
+            if evaluation_package:
+                with st.expander("AI evaluation package", expanded=False):
+                    st.caption(
+                        f"Generated {evaluation_package.get('generated_at', 'N/A')} via "
+                        f"{evaluation_package.get('provider', evaluation_package.get('internal_source', 'N/A'))}. "
+                        "The internal report stays private; the SME draft is attached only when the rating is published."
+                    )
+                    internal_report_tab, sme_report_tab = st.tabs(["Internal lender report", "SME report draft"])
+                    with internal_report_tab:
+                        st.markdown(evaluation_package.get("internal_report", "No internal report available."))
+                    with sme_report_tab:
+                        st.markdown(evaluation_package.get("sme_report", "No SME report available."))
+            else:
+                st.warning("No current AI evaluation package is attached to this score.")
+                safe_page_link(
+                    "pages/5_LLM_Integration.py",
+                    "Generate Evaluation Package",
+                    ":material/psychology:",
+                )
+            with st.expander("Publish rating to SME", expanded=publication_status != "Rating published"):
+                _rating_publication_form(application, prediction, current_review)
+        else:
+            st.warning("Complete the lender evaluation before publishing any rating to the SME.")
     with history_tab:
         score_events = [
             row for row in st.session_state.score_history if row.get("application_id") == application["application_id"]
@@ -1333,7 +1635,7 @@ if st.session_state.last_prediction:
 
     st.subheader("Score Output")
     risk_score_label = _tip_label("Application risk score", WORKSPACE_HELP["application_risk_score"])
-    risk_grade_label = _tip_label("Risk grade", WORKSPACE_HELP["risk_grade"])
+    risk_grade_label = _tip_label("Model grade", WORKSPACE_HELP["risk_grade"])
     recommendation_label = _tip_label("Model recommendation", WORKSPACE_HELP["model_recommendation"])
     ml_technique_label = _tip_label("ML technique", WORKSPACE_HELP["ml_technique"])
     review_status_label = _tip_label("Review status", WORKSPACE_HELP["review_status"])
