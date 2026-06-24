@@ -1150,14 +1150,14 @@ if hasattr(st, "dialog"):
 
 st.title("Personal Workspace")
 st.caption("Live analyst workspace for Ms. Cooper's current SME lending tasks.")
-selected_model_key = st.selectbox(
-    "ML scoring technique",
-    model_keys,
-    index=model_keys.index(selected_model_key),
-    format_func=st.session_state.model_bundle.label_for,
-    help="Choose the supervised model used to turn the SME application into a 0-1 application risk score.",
-)
-st.session_state.selected_ml_model = selected_model_key
+# selected_model_key = st.selectbox(
+#     "ML scoring technique",
+#     model_keys,
+#     index=model_keys.index(selected_model_key),
+#     format_func=st.session_state.model_bundle.label_for,
+#     help="Choose the supervised model used to turn the SME application into a 0-1 application risk score.",
+# )
+# st.session_state.selected_ml_model = selected_model_key
 
 st.subheader("Current Tasks")
 queue = build_application_queue(
