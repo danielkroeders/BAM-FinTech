@@ -4,12 +4,14 @@ from urllib.parse import urlencode
 import streamlit as st
 
 from src.core.runtime import bootstrap_state
-from src.ui.components import render_sidebar, safe_page_link
+from src.ui.components import get_profile, is_sme_profile, render_sidebar, safe_page_link
 
 
 st.set_page_config(page_title="Tutorials", layout="wide")
 bootstrap_state()
 render_sidebar()
+profile = get_profile()
+sme_mode = is_sme_profile(profile)
 
 
 TUTORIALS = [
@@ -64,7 +66,7 @@ TUTORIALS = [
         "time": "10 min",
         "level": "Core workflow",
         "summary": "Load a case, review evidence, score the application, and record the analyst decision.",
-        "features": ["Case queue", "Application intake", "Risk result", "Case review"],
+        "features": ["Case queue", "Application intake", "Risk result", "Metric guide", "Case review"],
         "objectives": [
             "Start from a queue or example case",
             "Understand the scoring inputs and output",
@@ -73,9 +75,9 @@ TUTORIALS = [
         "steps": [
             {
                 "title": "Choose the scoring model and case",
-                "body": "Select the ML scoring technique, then start a case from Current Tasks, the A2M example, or Manual Entry. The active-intake banner confirms which application is loaded and where it came from.",
-                "action": "For a fast walkthrough, use Start A2M Example Case.",
-                "tip": "Changing the model lets you compare approaches, but the selected model is reused across other analytics pages.",
+                "body": "Select the ML scoring technique, then start a case from SME Portal Intake, Current Tasks, the A2M example, or Manual Entry. The active-intake banner confirms which application is loaded and where it came from.",
+                "action": "For the full SME-to-lender walkthrough, open the submitted SME application from SME Portal Intake. For a fast standalone walkthrough, use Start A2M Example Case.",
+                "tip": "Submitted SME applications auto-score when opened in Personal Workspace. Example and manual cases can still be scored with the Score Application button.",
             },
             {
                 "title": "Review and complete the intake",
@@ -85,58 +87,15 @@ TUTORIALS = [
             },
             {
                 "title": "Interpret the scored result",
-                "body": "After scoring, use the A–F grade, application risk score, model recommendation, affordability measures, flags, and explanation together. Similar applications and grouped drivers provide context around the result.",
-                "action": "Compare the model recommendation with DSCR, stressed DSCR, and missing evidence.",
-                "tip": "A model recommendation supports review; it is not the final legal or credit decision.",
+                "body": "After scoring, use the A–F grade, application risk score, model recommendation, affordability measures, flags, and explanation together. The result tables explain how to read each number, and the separate Acronym Guide under Account & Help explains DSCR, stressed DSCR, FCF, CAGR, KYB, PSD2, ROC-AUC, and file hashes.",
+                "action": "Compare the model recommendation with DSCR, stressed DSCR, missing evidence, and the table interpretation columns. Open Acronym Guide when a term is unfamiliar.",
+                "tip": "A model recommendation supports review; it is not the final legal or credit decision. If a number is unclear, use the How to read it column before drawing a conclusion.",
             },
             {
                 "title": "Record the human decision",
                 "body": "Open Case Review, select an analyst action, and add a concise note that explains the evidence considered. Saving the review stores the final action separately from the model recommendation.",
                 "action": "Write a note that names the decisive risk and mitigating factors.",
                 "tip": "For high-risk E/F cases, keep a human compliance-style review in the loop before external communication.",
-            },
-        ],
-    },
-    {
-        "slug": "sme-credit-health",
-        "title": "SME Credit Health",
-        "page": "pages/6_SME_Credit_Health.py",
-        "icon": "♥",
-        "category": "Credit work",
-        "time": "7 min",
-        "level": "Intermediate",
-        "summary": "Enter company data, connect evidence, submit to a lender, and receive a published rating and evaluation report.",
-        "features": ["Company data", "Data connections", "Application readiness", "Published evaluation"],
-        "objectives": [
-            "Complete the SME company profile",
-            "Choose and consent to evidence connections",
-            "Submit the application to lender review",
-            "View the rating after lender publication",
-        ],
-        "steps": [
-            {
-                "title": "Enter company data",
-                "body": "Use the SME company demo account and open Company Data. Enter the business identity, loan request, financial snapshot, forecast assumptions, and management context.",
-                "action": "Save Company Data to recalculate the directional credit-health preview.",
-                "tip": "The SME owns these inputs before sharing the application with a lender.",
-            },
-            {
-                "title": "Manage data connections",
-                "body": "Open Data Connections and choose PSD2/Open Banking, accounting, and registry/KYB sources. Then upload financial statements, bank statements, tax returns, ownership/KYB, and forecast evidence into the saved application vault.",
-                "action": "Save the connections, choose files, and click Save Uploaded Files.",
-                "tip": "External connections are simulated, but uploaded files are genuinely stored locally and made available to the lender.",
-            },
-            {
-                "title": "Review application readiness",
-                "body": "Before lender publication, Credit Health shows evidence completeness, repayment-readiness indicators, practical next actions, and the five-year plan without exposing an internal model rating.",
-                "action": "Resolve missing evidence before submitting the application.",
-                "tip": "Internal lender grades and probabilities remain private until the lender publishes a reviewed result.",
-            },
-            {
-                "title": "Submit to lender review",
-                "body": "Confirm the company information and submit the application. The lender scores and evaluates it, may set a separate analyst rating, generates an applicant-safe report, and chooses when to publish the result.",
-                "action": "After lender publication, sign back in as the SME to view the rating, company-facing message, and downloadable evaluation report.",
-                "tip": "The detailed internal report remains lender-only. The SME sees only the reviewed report attached at publication.",
             },
         ],
     },
@@ -394,6 +353,42 @@ TUTORIALS = [
         ],
     },
     {
+        "slug": "acronym-guide",
+        "title": "Acronym Guide",
+        "page": "pages/11_Acronym_Guide.py",
+        "icon": "A",
+        "category": "Account & help",
+        "time": "3 min",
+        "level": "Reference",
+        "summary": "Search analyst acronyms and metric explanations used across scoring, evidence, monitoring, and governance.",
+        "features": ["Acronyms", "Metric meanings", "Search", "Workspace links"],
+        "objectives": [
+            "Look up DSCR, FCF, CAGR, KYB, PSD2, ROC-AUC, and SHA-256",
+            "Understand how to read common score and evidence metrics",
+            "Jump back to the right workflow page",
+        ],
+        "steps": [
+            {
+                "title": "Search for a term",
+                "body": "Use the search field to find acronyms, metric names, and related explanations. The page filters both acronym and metric tables.",
+                "action": "Try DSCR, FCF, document completeness, or ROC-AUC.",
+                "tip": "If you see DCSR in rough notes, read it as DSCR.",
+            },
+            {
+                "title": "Read the acronym table",
+                "body": "The acronym table expands each abbreviation into a plain-language meaning and shows where it appears in the application.",
+                "action": "Use Where used to return to the relevant workflow context.",
+                "tip": "The glossary explains terms; it does not replace the case-specific evidence review.",
+            },
+            {
+                "title": "Read metric meanings",
+                "body": "The metric table explains how to interpret common numbers like application risk score, document completeness, and grade boundary distance.",
+                "action": "Use the metric explanation before making a conclusion from a single value.",
+                "tip": "Most model and risk outputs are review prompts, not automatic final decisions.",
+            },
+        ],
+    },
+    {
         "slug": "about",
         "title": "About",
         "page": "pages/8_About.py",
@@ -436,6 +431,215 @@ TUTORIALS = [
         ],
     },
 ]
+
+SME_TUTORIALS = [
+    {
+        "slug": "sme-application-start",
+        "title": "Start Your Application",
+        "page": "pages/6_SME_Credit_Health.py",
+        "icon": "♥",
+        "category": "SME application",
+        "time": "5 min",
+        "level": "Beginner",
+        "summary": "Enter company details, loan request, financial snapshot, and business context before submitting to YourBank.",
+        "features": ["Company data", "Loan request", "Financial snapshot", "Business context"],
+        "objectives": [
+            "Complete the company profile",
+            "Explain the loan purpose",
+            "Save the application draft",
+        ],
+        "steps": [
+            {
+                "title": "Open Company Data",
+                "body": "Use the SME company portal to enter the company name, industry, region, legal type, years in business, employees, revenue, debt, and requested loan amount.",
+                "action": "Fill the Company Data tab and choose Save Company Data.",
+                "tip": "Saved company data updates the readiness preview but does not submit the file yet.",
+            },
+            {
+                "title": "Describe the financing need",
+                "body": "Use the loan-purpose and business-context fields to explain why financing is requested, what is happening now, and what assumptions support the plan.",
+                "action": "Write concise, factual context that a lender can compare with the documents.",
+                "tip": "The applicant-facing view does not show YourBank's internal model score.",
+            },
+            {
+                "title": "Check readiness",
+                "body": "The Credit Health tab shows application-readiness indicators and practical next actions before any lender rating is published.",
+                "action": "Use the readiness indicators to decide what to complete before submission.",
+                "tip": "Readiness guidance is not a loan approval or rejection.",
+            },
+            {
+                "title": "Keep ownership of the draft",
+                "body": "The SME controls what is entered and which evidence sources are selected before submitting the application to YourBank review.",
+                "action": "Review the saved values before moving to Submit to Lender.",
+                "tip": "After submission, the lender performs its own checks and decides when to publish an outcome.",
+            },
+        ],
+    },
+    {
+        "slug": "sme-documents-connections",
+        "title": "Documents and Connections",
+        "page": "pages/6_SME_Credit_Health.py",
+        "icon": "▤",
+        "category": "SME application",
+        "time": "6 min",
+        "level": "Core task",
+        "summary": "Select simulated data connections, inspect example files, and save application documents to the local vault.",
+        "features": ["PSD2 consent", "Example files", "Document uploads", "Saved-file vault"],
+        "objectives": [
+            "Understand the simulated connections",
+            "Use example files as format guidance",
+            "Save real local files to the application vault",
+        ],
+        "steps": [
+            {
+                "title": "Choose data sources",
+                "body": "Open Data Connections and select PSD2/Open Banking, accounting, and registry/KYB sources. In this MVP they demonstrate consent and source selection only.",
+                "action": "Save connections after confirming the consent checkbox for PSD2/Open Banking.",
+                "tip": "No real bank, accounting, or registry data is transmitted in the demo.",
+            },
+            {
+                "title": "Use the example document pack",
+                "body": "The example pack shows fictional CSV structures for financial statements, bank statements, tax returns, ownership/KYB, and forecast support.",
+                "action": "Download examples for reference or save them for a demo package.",
+                "tip": "Saving examples writes actual CSV bytes into the same local vault as uploaded files.",
+            },
+            {
+                "title": "Upload application evidence",
+                "body": "Use the file uploaders to add documents to the right category. The app saves exact bytes, original filename, MIME type, size, timestamp, and SHA-256 hash.",
+                "action": "Choose files and click Save Uploaded Files.",
+                "tip": "YourBank verifies submitted evidence on the lender side after submission.",
+            },
+            {
+                "title": "Download what was saved",
+                "body": "Saved files appear in the document table and can be downloaded from the portal. The lender can later download the same saved bytes.",
+                "action": "Use the download buttons to confirm the files that are attached to the application.",
+                "tip": "Use Clear Demo State only when you intentionally want to remove demo-session files.",
+            },
+        ],
+    },
+    {
+        "slug": "sme-submit-result",
+        "title": "Submit and View Results",
+        "page": "pages/6_SME_Credit_Health.py",
+        "icon": "✓",
+        "category": "SME application",
+        "time": "5 min",
+        "level": "Beginner",
+        "summary": "Submit the application, wait for lender review, and view the published rating and evaluation report.",
+        "features": ["Submission", "Lender review", "Published rating", "Post-rating what-if"],
+        "objectives": [
+            "Submit the saved application",
+            "Understand what remains private",
+            "Download the published evaluation report",
+        ],
+        "steps": [
+            {
+                "title": "Submit to lender review",
+                "body": "Open Submit to Lender, review the summary, and submit the file. The submitted application snapshot becomes available to the lender in SME Portal Intake.",
+                "action": "Submit only after company data, connections, and files are ready.",
+                "tip": "Submission does not immediately publish a rating.",
+            },
+            {
+                "title": "Understand lender review",
+                "body": "The lender opens the submission, receives an automatic baseline score in Personal Workspace, checks evidence, may generate an internal evaluation, and chooses when to publish a reviewed outcome.",
+                "action": "Wait for the published result or consultant follow-up.",
+                "tip": "Internal model probabilities, verification notes, and private lender reports stay lender-only.",
+            },
+            {
+                "title": "Read the published outcome",
+                "body": "After publication, the SME portal shows the lender rating, decision, company-facing message, and attached evaluation report.",
+                "action": "Open Credit Health after publication to view the result.",
+                "tip": "The numerical risk score appears only if the lender explicitly publishes it.",
+            },
+            {
+                "title": "Use the report and what-if planner",
+                "body": "The SME-facing report explains strengths, weaknesses, and practical improvement areas in applicant-safe language. After publication, the Credit Health tab also shows a directional what-if planner for future-readiness improvements.",
+                "action": "Download the report, then use the what-if controls to test evidence, cash-flow, growth, and debt-plan improvements.",
+                "tip": "The planner is not a new lender decision and does not change the published rating.",
+            },
+        ],
+    },
+    {
+        "slug": "sme-consultant-support",
+        "title": "Connect with a Consultant",
+        "page": "pages/9_Support.py",
+        "icon": "?",
+        "category": "Help",
+        "time": "4 min",
+        "level": "Beginner",
+        "summary": "Use the SME support page to request help from a YourBank consultant.",
+        "features": ["Consultants", "Request form", "Applicant chat", "FAQ"],
+        "objectives": [
+            "Choose the right consultant route",
+            "Prepare an application-linked request",
+            "Find quick answers for applicant questions",
+        ],
+        "steps": [
+            {
+                "title": "Choose a consultant",
+                "body": "The SME support page shows YourBank consultants focused on application readiness, lending questions, upload issues, and next-step planning.",
+                "action": "Pick the consultant whose focus matches the question.",
+                "tip": "This is applicant support, not the internal lender helpdesk.",
+            },
+            {
+                "title": "Submit a consultant request",
+                "body": "Choose a category, preferred contact method, application ID, and message. The page prepares a request and email draft.",
+                "action": "Include the application ID when the question is about a submitted file.",
+                "tip": "Do not include passwords, API keys, or unnecessary sensitive data in the request.",
+            },
+            {
+                "title": "Use applicant chat",
+                "body": "The scripted chat answers basic SME questions about documents, submission, data connections, and published reports.",
+                "action": "Ask one focused applicant question.",
+                "tip": "The chat does not contact a real support desk in the MVP.",
+            },
+            {
+                "title": "Check common answers",
+                "body": "The FAQ explains ratings, simulated connections, document issues, and consultant contact.",
+                "action": "Read the FAQ before creating a general request.",
+                "tip": "For lender-side review decisions, wait for the published outcome or consultant follow-up.",
+            },
+        ],
+    },
+    {
+        "slug": "sme-acronym-guide",
+        "title": "Acronym Guide",
+        "page": "pages/11_Acronym_Guide.py",
+        "icon": "A",
+        "category": "Help",
+        "time": "3 min",
+        "level": "Beginner",
+        "summary": "Look up applicant-facing terms used in the company portal, documents, connections, and published results.",
+        "features": ["Glossary", "Applicant metrics", "Search", "Helpful links"],
+        "objectives": [
+            "Understand PSD2, KYB, UBO, FCF, CAGR, DSCR, and file hashes",
+            "Read applicant-safe metric explanations",
+            "Know which terms to ask a consultant about",
+        ],
+        "steps": [
+            {
+                "title": "Search a term",
+                "body": "Use the search box to filter applicant-facing acronyms and metric explanations.",
+                "action": "Try PSD2, KYB, FCF, or published rating.",
+                "tip": "The SME glossary avoids internal lender scoring rules.",
+            },
+            {
+                "title": "Read the applicant meaning",
+                "body": "Each row explains what the term means, how to interpret it, and where it appears in the SME portal.",
+                "action": "Use the Where used column to connect the term to the portal step you are working on.",
+                "tip": "If a published report still feels unclear, use Support to connect with a YourBank consultant.",
+            },
+            {
+                "title": "Jump back to help",
+                "body": "The page links back to the Company Portal, Support, and Tutorials so the guide can be used during application preparation or after publication.",
+                "action": "Open the page you need from the bottom of the guide.",
+                "tip": "The glossary is explanatory only; it does not change a submitted application or a published lender outcome.",
+            },
+        ],
+    },
+]
+
+ACTIVE_TUTORIALS = SME_TUTORIALS if sme_mode else TUTORIALS
 
 PAGE_MAPS = {
     "home": [
@@ -480,28 +684,6 @@ PAGE_MAPS = {
             "kind": "review",
             "title": "Case Review",
             "detail": "Analyst action · Analyst note · Save Review",
-        },
-    ],
-    "sme-credit-health": [
-        {
-            "kind": "metrics",
-            "title": "Credit-health summary",
-            "detail": "Current grade · Risk score · Lender view · Runway",
-        },
-        {
-            "kind": "split",
-            "title": "Current position",
-            "detail": "Company Snapshot | Most Useful Next Actions",
-        },
-        {
-            "kind": "controls",
-            "title": "What-If Simulation",
-            "detail": "Growth · FCF margin · Cost pressure · Debt reduction · Evidence · Documents",
-        },
-        {
-            "kind": "tabs",
-            "title": "Supporting context",
-            "detail": "Peer Benchmark · Evidence Sources · Five-Year View",
         },
     ],
     "llm-integration": [
@@ -634,6 +816,50 @@ PAGE_MAPS = {
             "kind": "accordion",
             "title": "FAQ",
             "detail": "Intended use · Data · Affordability · Overrides · High-risk handling · Apps",
+        },
+    ],
+    "acronym-guide": [
+        {
+            "kind": "search",
+            "title": "Search glossary",
+            "detail": "DSCR · FCF · PSD2 · KYB · ROC-AUC · SHA-256",
+        },
+        {
+            "kind": "table",
+            "title": "Acronyms",
+            "detail": "Term · Meaning · How to read it · Where used",
+        },
+        {
+            "kind": "table",
+            "title": "Metric meanings",
+            "detail": "Application risk score · Document completeness · Grade boundary distance",
+        },
+        {
+            "kind": "action",
+            "title": "Workflow links",
+            "detail": "Personal Workspace · Support · About",
+        },
+    ],
+    "sme-acronym-guide": [
+        {
+            "kind": "search",
+            "title": "Search glossary",
+            "detail": "PSD2 · KYB · UBO · FCF · CAGR · DSCR",
+        },
+        {
+            "kind": "table",
+            "title": "Applicant acronyms",
+            "detail": "Term · Meaning · How to read it · Where used",
+        },
+        {
+            "kind": "table",
+            "title": "Applicant metrics",
+            "detail": "Application readiness · Published rating · What-if band",
+        },
+        {
+            "kind": "action",
+            "title": "Help links",
+            "detail": "Company Portal · Consultant Support · Tutorials",
         },
     ],
     "about": [
@@ -1506,14 +1732,27 @@ def _panel_html(tutorial):
 
 
 def _render_hub():
+    area_options = ["All areas"]
+    for tutorial in ACTIVE_TUTORIALS:
+        if tutorial["category"] not in area_options:
+            area_options.append(tutorial["category"])
+    intro_title = (
+        "Prepare and track your application, one step at a time."
+        if sme_mode
+        else "Learn the workspace, one page at a time."
+    )
+    intro_copy = (
+        "Open a panel for SME-facing guidance on company data, documents, submission, published results, and consultant support."
+        if sme_mode
+        else "Open a panel for a practical, text-based walkthrough of the page, its key features, and the decisions it helps you make."
+    )
     st.markdown(
-        """
+        f"""
         <section class="tutorial-intro">
-            <div class="panel-category">CredRisk.AI Learning Hub</div>
-            <div class="tutorial-intro-title">Learn the workspace, one page at a time.</div>
+            <div class="panel-category">{"YourBank SME Guide" if sme_mode else "CredRisk.AI Learning Hub"}</div>
+            <div class="tutorial-intro-title">{escape(intro_title)}</div>
             <div class="tutorial-intro-copy">
-                Open a panel for a practical, text-based walkthrough of the page,
-                its key features, and the decisions it helps you make.
+                {escape(intro_copy)}
             </div>
         </section>
         """,
@@ -1530,13 +1769,13 @@ def _render_hub():
     with filter_right:
         category = st.selectbox(
             "Tutorial area",
-            ["All areas", "Getting started", "Credit work", "Operations & risk", "Account & help"],
+            area_options,
             label_visibility="collapsed",
         )
 
     search_value = search.strip().lower()
     visible = []
-    for tutorial in TUTORIALS:
+    for tutorial in ACTIVE_TUTORIALS:
         haystack = " ".join(
             [
                 tutorial["title"],
@@ -1565,7 +1804,7 @@ def _render_hub():
     )
 
     if not visible:
-        st.info("No tutorials match that search. Try a page name such as “Risk” or a task such as “documents”.")
+        st.info("No tutorials match that search. Try “documents”, “support”, or “application”.")
         return
 
     for start in range(0, len(visible), 3):
@@ -1655,7 +1894,7 @@ def _render_guide(tutorial):
 
 _render_styles()
 selected_slug = _query_value("guide")
-selected_tutorial = next((tutorial for tutorial in TUTORIALS if tutorial["slug"] == selected_slug), None)
+selected_tutorial = next((tutorial for tutorial in ACTIVE_TUTORIALS if tutorial["slug"] == selected_slug), None)
 
 if selected_tutorial:
     _render_guide(selected_tutorial)

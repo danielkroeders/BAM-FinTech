@@ -7,6 +7,7 @@ from src.core.runtime import bootstrap_state
 from src.utils.table_views import application_table
 from src.ui.components import get_profile, is_sme_profile, open_application_in_workspace, render_sidebar, safe_page_link
 from src.features.workbench_features import build_application_queue
+from src.utils.workflow_transfer import SME_SUBMISSION_SOURCE, find_submitted_application, submitted_intake_rows
 
 
 st.set_page_config(page_title="CredRisk.AI Home", layout="wide")
@@ -32,6 +33,12 @@ welcome_name = profile["name"]
 my_tasks = workboard[workboard["assigned_analyst"].eq(analyst_name)].copy()
 if my_tasks.empty:
     my_tasks = workboard.head(12).copy()
+submitted_rows = submitted_intake_rows(
+    st.session_state.sme_submission_history,
+    st.session_state.application_lifecycle,
+    active_application=st.session_state.get("active_queue_application"),
+    sme_application=st.session_state.get("sme_company_application"),
+)
 
 high_priority = int(my_tasks["grade"].isin(["E", "F"]).sum())
 due_this_week = int((my_tasks["sla"] == "This week").sum())
@@ -41,11 +48,12 @@ now_label = datetime.now().strftime("%A %H:%M")
 st.title(f"Welcome, {welcome_name}")
 st.caption(f"{profile['role']} at {profile['bank']} | Operations console | {now_label}")
 
-metric_cols = st.columns(4)
+metric_cols = st.columns(5)
 metric_cols[0].metric("My Open Tasks", format_integer(len(my_tasks)))
 metric_cols[1].metric("High Priority", format_integer(high_priority))
 metric_cols[2].metric("Due This Week", format_integer(due_this_week))
 metric_cols[3].metric("Evidence Follow-Up", format_integer(evidence_follow_up))
+metric_cols[4].metric("SME Intake", format_integer(len(submitted_rows)))
 
 st.subheader("Quick Actions")
 action_cols = st.columns([2, 1, 1], vertical_alignment="bottom")
@@ -55,6 +63,31 @@ selected_task_id = selected_task_label.split(" - ", 1)[0]
 selected_task = my_tasks[my_tasks["application_id"] == selected_task_id].iloc[0].to_dict()
 if action_cols[1].button("Continue Selected Task", width="stretch"):
     open_application_in_workspace(selected_task, "Home")
+
+if submitted_rows:
+    st.subheader("SME Portal Intake")
+    st.caption(
+        "Company-submitted applications carried through demo-session state. Open one to continue the lender review."
+    )
+    st.dataframe(submitted_rows, width="stretch", hide_index=True)
+    intake_options = [
+        f"{row['Application ID']} - {row['Company']} | {row['Status']}"
+        for row in submitted_rows
+    ]
+    intake_cols = st.columns([2, 1])
+    selected_intake_label = intake_cols[0].selectbox("Submitted application", intake_options)
+    selected_intake_id = selected_intake_label.split(" - ", 1)[0]
+    if intake_cols[1].button("Open SME Submission", width="stretch"):
+        application = find_submitted_application(
+            st.session_state.sme_submission_history,
+            selected_intake_id,
+            active_application=st.session_state.get("active_queue_application"),
+            sme_application=st.session_state.get("sme_company_application"),
+        )
+        if application:
+            open_application_in_workspace(application, SME_SUBMISSION_SOURCE)
+        else:
+            st.error("The submitted application snapshot could not be found.")
 
 
 st.subheader("Current Tasks")

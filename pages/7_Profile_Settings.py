@@ -42,14 +42,14 @@ INTEGRATION_CATALOG = [
         "key": "gmail",
         "name": "Gmail",
         "category": "Email & Calendar",
-        "account": "alice.cooper@rabobank.nl",
+        "account": "alice.cooper@yourbank.com",
         "use": "Personal inbox, drafts, and email follow-ups.",
     },
     {
         "key": "outlook",
         "name": "Outlook",
         "category": "Email & Calendar",
-        "account": "alice.cooper@rabobank.nl",
+        "account": "alice.cooper@yourbank.com",
         "use": "Personal calendar, mailbox, and reminders.",
     },
     {
@@ -77,7 +77,7 @@ INTEGRATION_CATALOG = [
         "key": "zoom",
         "name": "Zoom",
         "category": "Meetings",
-        "account": "alice.cooper@rabobank.nl",
+        "account": "alice.cooper@yourbank.com",
         "use": "Personal meeting links and review calls.",
     },
 ]

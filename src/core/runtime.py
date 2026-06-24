@@ -94,6 +94,8 @@ def bootstrap_state():
         st.session_state.llm_review_history = []
     if "llm_evaluation_packages" not in st.session_state:
         st.session_state.llm_evaluation_packages = {}
+    if "document_validation_results" not in st.session_state:
+        st.session_state.document_validation_results = {}
     if "llm_provider" not in st.session_state:
         st.session_state.llm_provider = "OpenAI API"
     if "selected_ml_model" not in st.session_state:

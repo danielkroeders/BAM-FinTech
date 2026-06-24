@@ -9,6 +9,7 @@ from src.core.runtime import bootstrap_state
 from src.utils.table_views import application_table
 from src.ui.components import open_application_in_workspace, render_sidebar
 from src.features.workbench_features import build_application_queue
+from src.utils.workflow_transfer import SME_SUBMISSION_SOURCE, find_submitted_application, submitted_intake_rows
 
 
 st.set_page_config(page_title="Operations Desk", layout="wide")
@@ -35,11 +36,41 @@ def _upsert_portfolio_history(application_id, values):
 st.title("Operations Desk")
 st.caption("Team workboard for live SME lending tasks, evidence follow-up, and review routing.")
 
+submitted_rows = submitted_intake_rows(
+    st.session_state.sme_submission_history,
+    st.session_state.application_lifecycle,
+    active_application=st.session_state.get("active_queue_application"),
+    sme_application=st.session_state.get("sme_company_application"),
+)
+
 metric_cols = st.columns(4)
 metric_cols[0].metric("Open Work Items", len(queue))
 metric_cols[1].metric("Manual / Compliance", int(queue["queue_status"].isin(["Manual review", "Compliance review"]).sum()))
 metric_cols[2].metric("Evidence Follow-Up", int((queue["missing_documents"] > 0).sum()))
 metric_cols[3].metric("Rejected Today", int((queue["final_decision"] == "Reject").sum()))
+
+if submitted_rows:
+    st.subheader("SME Portal Intake")
+    st.caption("Company-submitted applications available for lender review in this demo session.")
+    st.dataframe(submitted_rows, width="stretch", hide_index=True)
+    intake_options = [
+        f"{row['Application ID']} - {row['Company']} | {row['Status']}"
+        for row in submitted_rows
+    ]
+    intake_cols = st.columns([2, 1])
+    selected_intake_label = intake_cols[0].selectbox("Submitted SME application", intake_options)
+    selected_intake_id = selected_intake_label.split(" - ", 1)[0]
+    if intake_cols[1].button("Open Submitted Application", width="stretch"):
+        submitted_application = find_submitted_application(
+            st.session_state.sme_submission_history,
+            selected_intake_id,
+            active_application=st.session_state.get("active_queue_application"),
+            sme_application=st.session_state.get("sme_company_application"),
+        )
+        if submitted_application:
+            open_application_in_workspace(submitted_application, SME_SUBMISSION_SOURCE)
+        else:
+            st.error("The submitted application snapshot could not be found.")
 
 filter_cols = st.columns([1, 1, 1])
 status_filter = filter_cols[0].multiselect("Status", sorted(queue["queue_status"].unique()), default=sorted(queue["queue_status"].unique()))

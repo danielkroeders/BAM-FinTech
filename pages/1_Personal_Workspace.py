@@ -19,7 +19,9 @@ from src.features.case_workflow import (
 from src.core.data_pipeline import add_derived_features, build_forecast_table
 from src.utils.demo_persistence import ensure_demo_session, persist_demo_state
 from src.utils.document_storage import document_counts, list_documents, read_document
+from src.utils.workflow_transfer import SME_SUBMISSION_SOURCE, find_submitted_application, submitted_intake_rows
 from src.features.explanations import evaluation_signature, explain_prediction
+from src.ui.document_validation import latest_document_validation_run, render_document_validation_panel
 from src.utils.formatting import (
     format_currency,
     format_currency_input,
@@ -45,7 +47,7 @@ from src.features.workbench_features import (
 
 st.set_page_config(page_title="Personal Workspace", layout="wide")
 bootstrap_state()
-render_sidebar()
+render_sidebar(suppress_demo_prompt=True)
 demo_session_id = ensure_demo_session()
 
 st.markdown(
@@ -331,18 +333,75 @@ FIELD_HELP = {
 }
 
 WORKSPACE_HELP = {
-    "assigned_cases": "Applications currently assigned to Ms. Cooper in the demo work queue.",
-    "same_day_sla": "Assigned applications marked for same-day review.",
-    "due_this_week": "Assigned applications due this week after same-day items.",
-    "manual_or_compliance": "Assigned applications routed to manual review or compliance review.",
-    "missing_documents": "Assigned applications that still have one or more missing documents.",
-    "application_risk_score": "Model-estimated application risk. Higher percentages indicate a higher-risk credit review file.",
-    "risk_grade": "Immutable A-F model grade derived from the application risk score. The analyst rating is recorded separately.",
-    "model_recommendation": "Decision-support recommendation produced by the local scoring model.",
-    "ml_technique": "Supervised ML technique used for this score. Both options return a 0-1 application risk probability.",
-    "stressed_dscr": "Debt service coverage ratio under a +2 percentage point interest-rate stress.",
-    "final_decision": "Latest analyst decision recorded for this case. Pending Review means no final action has been saved.",
-    "review_status": "Timestamp of the latest saved review, or Awaiting analyst before review submission.",
+    "assigned_cases": "Applications currently assigned to Ms. Cooper in the demo work queue. This is a workload indicator, not a risk signal.",
+    "same_day_sla": "Assigned applications marked for same-day review. A higher count means the analyst should triage time-sensitive files first.",
+    "due_this_week": "Assigned applications due this week after same-day items. This helps separate operational urgency from credit risk.",
+    "manual_or_compliance": "Assigned applications routed to manual review or compliance review because the model, documents, or operating signals require human attention.",
+    "missing_documents": "Assigned applications that still have one or more missing documents. Missing evidence can reduce confidence even when the model grade looks acceptable.",
+    "application_risk_score": "Model-estimated application risk on a 0-100% scale. Higher percentages mean the file looks riskier relative to the synthetic training portfolio; this is decision support, not an automatic rejection.",
+    "risk_grade": "Immutable A-F model grade derived from the application risk score. The analyst can publish a separate reviewed rating, but the model grade remains visible for auditability.",
+    "model_recommendation": "Decision-support recommendation produced by the local scoring model. It summarizes what the model suggests before the analyst checks documents, context, and policy exceptions.",
+    "ml_technique": "Supervised ML technique used for this score. Both options convert the same application fields into a 0-1 application risk probability so analysts can compare model behavior.",
+    "stressed_dscr": "Debt Service Coverage Ratio after adding a +2 percentage point interest-rate stress. Above 1.00 means projected cash flow still covers estimated debt service; below 1.00 means the borrower may not cover payments under stress.",
+    "final_decision": "Latest analyst decision recorded for this case. Pending Review means no final human action has been saved, even if the model already produced a grade.",
+    "review_status": "Timestamp of the latest saved review, or Awaiting analyst before review submission. This separates scoring from the human decision trail.",
+}
+
+METRIC_EXPLANATIONS = {
+    "Interest rate": "Annual pricing used to estimate interest expense and debt-service burden. A higher rate can make an otherwise acceptable borrower look stressed because payments become harder to cover.",
+    "Annual interest": "Estimated yearly interest cost on the requested facility. Read it together with free cash flow: if interest consumes too much cash generation, repayment resilience weakens.",
+    "Annual debt service": "Estimated total yearly principal and interest payments. This is the denominator used in DSCR-style repayment-capacity checks.",
+    "DSCR": "Debt Service Coverage Ratio before the rate stress. Values above 1.00 indicate expected cash flow covers debt service; values closer to or below 1.00 leave little room for shocks.",
+    "Stressed DSCR (+2%)": "Debt Service Coverage Ratio after adding a +2 percentage point rate stress. This is intentionally conservative and shows whether repayment still works if pricing or rates deteriorate.",
+    "Stress DSCR (+2%)": "Debt Service Coverage Ratio after adding a +2 percentage point rate stress. This is intentionally conservative and shows whether repayment still works if pricing or rates deteriorate.",
+    "Free cash flow": "Cash available after operations and investment needs. Positive FCF is a repayment strength; weak or negative FCF pushes the analyst toward conditions, lower exposure, or rejection.",
+    "Monthly burn": "Estimated cash consumed per month. High burn shortens runway and makes the timing of new funding more important.",
+    "Cash flow / revenue": "Free cash flow divided by revenue. This shows whether sales turn into usable cash; weak conversion can expose fragile reported growth.",
+    "Expected runway": "How many months the business can continue at current burn. Short runway increases liquidity risk and may require faster monitoring or additional evidence.",
+    "Current ratio": "Current assets divided by current liabilities. It is a broad liquidity check: higher values usually mean more short-term resources to meet obligations.",
+    "Quick ratio": "Liquid assets divided by current liabilities, excluding inventory-heavy support. It is stricter than current ratio and useful when inventory may not convert to cash quickly.",
+    "Cash conversion cycle": "Working-capital timing in days. Longer cycles mean cash is tied up in receivables or inventory for longer before it returns to the business.",
+    "Revenue CAGR": "Average annual revenue-growth assumption in the five-year plan. Strong growth improves scale only when contracts, pipeline, staffing, and cash conversion support it.",
+    "Employee CAGR": "Average annual employee-growth assumption. If revenue grows much faster than staff or capacity, the plan may need operational support evidence.",
+    "Y5 FCF margin": "Forecast free-cash-flow margin in year five. This tests whether the growth plan improves cash generation, not just revenue.",
+    "Debt reduction": "Planned reduction in existing debt. It is positive when realistic, but aggressive reduction can strain cash if current FCF is weak.",
+    "Applicant narrative": "Completeness of applicant-provided context. Complete narrative makes it easier to reconcile the loan purpose, operating position, and forecast with documents.",
+    "Statement anomaly": "Normalized signal for revenue/cash-flow mismatch, receivables pressure, or unsupported margin improvement. Higher values deserve closer evidence review.",
+    "Document complete": "Share of expected document categories present. A high score means the file is complete; it does not prove every document is genuine.",
+    "Document risk": "Normalized risk from missing or weak evidence. Higher values mean the analyst should validate the package before relying on the model result.",
+    "Process risk": "Normalized signal for late-stage edits, process deviations, or unusual submission metadata. Higher values indicate the intake trail deserves review.",
+    "Identity risk": "Normalized KYB and digital-footprint risk. Higher values mean company identity, account age, address, or duplicate-contact signals need confirmation.",
+    "Working capital risk": "Normalized liquidity and cash-conversion pressure. Higher values suggest cash may be tied up before it can service debt.",
+    "Network risk": "Normalized related-party, concentration, or shared-identifier concern. Higher values indicate the ownership/counterparty network should be reviewed.",
+    "Narrative risk": "Normalized contradiction signal between applicant story, financials, and documents. Higher values mean the analyst should ask clarifying questions.",
+}
+
+SIGNAL_INTERPRETATIONS = {
+    "Debt / revenue": "Lower is generally easier to support. A high ratio means existing obligations are large relative to the company’s operating scale, so new lending may need tighter covenants or a lower amount.",
+    "Request / revenue": "This compares the requested exposure with annual revenue. A high value does not automatically reject a case, but it means the loan is material enough to require stronger evidence and repayment rationale.",
+    "Loan velocity": "Higher values indicate many recent loans or borrowing events. That can be normal for some firms, but it can also signal credit stacking or funding stress.",
+    "Payment stress": "Higher values combine late-payment behavior and debt pressure. Read this as a warning that historical payment discipline may not support the requested structure.",
+    "External financing pressure": "Higher values mean the company is leaning more heavily on outside financing relative to its size and recent debt activity.",
+    "Financial distress": "This rolls up debt load, payment pressure, collateral support, and business history. Higher values tell the analyst to slow down and reconcile repayment capacity before approval.",
+    "Transaction anomaly": "Higher values indicate unusual transfer patterns in the synthetic transaction profile. It is a review prompt, not proof of fraud.",
+    "Cash-flow pressure": "Higher values mean weaker free cash flow, burn-rate pressure, or limited runway. This is one of the most practical repayment-capacity signals.",
+    "Runway risk": "Higher values mean the applicant has fewer months of cash cushion. Short runway increases the chance that timing, not just profitability, drives the decision.",
+    "Cash conversion risk": "Higher values mean revenue is not translating into cash quickly enough. The analyst should check receivables, inventory, and customer payment terms.",
+    "Forecast aggressiveness": "Higher values mean the five-year plan assumes a larger jump from current performance. It needs stronger contract, pipeline, or operating evidence.",
+    "Forecast execution risk": "Higher values mean the forecast may be difficult to execute given current margins, staffing, cash flow, or evidence quality.",
+    "Hiring efficiency risk": "Higher values mean revenue growth may be under-supported by staffing or capacity growth. The plan may need operational proof.",
+    "Debt service plan risk": "Higher values mean the proposed debt reduction or repayment plan may strain cash flow instead of improving resilience.",
+    "Interest rate risk": "Higher values mean pricing itself creates repayment burden. This is especially important when market rates or margin pressure could rise.",
+    "Debt service stress": "Higher values mean DSCR weakens under normal and stressed payment assumptions. Check whether cash flow still covers debt service with a cushion.",
+    "Cash conversion cycle": "Longer cycles mean cash is tied up for more days before returning to the business. That can create liquidity pressure even when revenue is growing.",
+    "Document completeness": "Higher is better here. It means the expected application package is present, but the lender still needs validation for content and category fit.",
+    "Document quality risk": "Higher values mean the file has missing, weak, or potentially inconsistent evidence. Treat it as a reason to validate documents before relying on the score.",
+    "Process integrity risk": "Higher values indicate late edits or unusual intake-process metadata. The issue may be benign, but the audit trail needs attention.",
+    "Identity verification risk": "Higher values mean KYB, account age, digital footprint, or location consistency is weaker. Confirm ownership and business identity.",
+    "Working-capital pressure": "Higher values mean liquidity ratios and cash-conversion timing are less comfortable. It affects whether the borrower can absorb delays or shocks.",
+    "Financial statement anomaly": "Higher values mean reported performance may not line up with cash flow or working-capital behavior. Ask for reconciliation evidence.",
+    "Related-party network risk": "Higher values indicate concentration, shared identifiers, or relationship patterns that may affect independence or repayment reliability.",
+    "Narrative consistency risk": "Higher values mean the applicant story does not fully line up with documents or financial signals. The analyst should resolve the contradiction before publication.",
 }
 
 
@@ -607,8 +666,77 @@ def _decision_copy(application, prediction, review, signals):
     )
 
 
+def _dscr_interpretation(value):
+    try:
+        number = float(value or 0)
+    except (TypeError, ValueError):
+        number = 0
+    if number >= 1.25:
+        return "This is comfortable coverage: cash flow is meaningfully above estimated debt service after the stress."
+    if number >= 1.0:
+        return "This covers estimated debt service, but the cushion is thin. The analyst should check cash-flow durability and covenants."
+    return "This does not fully cover estimated debt service under stress. The structure may need a lower amount, longer tenor, stronger collateral, or rejection."
+
+
+def _risk_score_interpretation(probability):
+    if probability >= 0.58:
+        return "The score is in the high-risk range for this demo portfolio. Treat the model result as a reason for deeper evidence review, not as an automatic decision."
+    if probability >= 0.28:
+        return "The score is in the moderate-risk range. The decision usually depends on evidence quality, repayment cushion, and analyst judgment."
+    return "The score is in the lower-risk range, but the analyst still needs to confirm documents, repayment capacity, and policy fit."
+
+
+def _render_workspace_metric_guide(application, prediction, signals):
+    with st.sidebar:
+        st.divider()
+        with st.expander("How to read this score", expanded=True):
+            st.markdown("**Application risk score**")
+            st.write(
+                f"{_ratio(prediction['fraud_probability'])} means: "
+                f"{_risk_score_interpretation(prediction['fraud_probability'])}"
+            )
+            st.markdown("**Stressed DSCR**")
+            st.write(
+                f"{_score(signals['stressed_debt_service_coverage_ratio'])} means: "
+                f"{_dscr_interpretation(signals['stressed_debt_service_coverage_ratio'])}"
+            )
+            st.markdown("**Document completeness**")
+            st.write(
+                f"{_score(signals['document_completeness_score'])} means the expected evidence package is "
+                "substantially present when it is close to 1.00. It still needs lender validation for content and category fit."
+            )
+            st.markdown("**Free cash flow**")
+            st.write(
+                f"{_money(application.get('free_cash_flow', 0))} is the annual cash available after operating and investment needs. "
+                "Positive values support repayment; weak or negative values increase cash-flow pressure."
+            )
+            st.caption("For DSCR, FCF, CAGR, KYB, PSD2, ROC-AUC, and SHA-256 definitions, open the Help glossary.")
+            safe_page_link("pages/11_Acronym_Guide.py", "Open Acronym Guide", ":material/menu_book:")
+
+
 def _summary_table(rows):
-    return pd.DataFrame(rows, columns=["Metric", "Value"])
+    normalized_rows = []
+    for row in rows:
+        metric = row[0]
+        value = row[1]
+        explanation = row[2] if len(row) > 2 else METRIC_EXPLANATIONS.get(
+            metric,
+            "Read this value together with the surrounding credit, evidence, and narrative signals before making a decision.",
+        )
+        normalized_rows.append({"Metric": metric, "Value": value, "How to read it": explanation})
+    return pd.DataFrame(normalized_rows)
+
+
+def _add_signal_interpretations(rows):
+    interpreted_rows = []
+    for row in rows:
+        enriched = dict(row)
+        enriched["How to read it"] = SIGNAL_INTERPRETATIONS.get(
+            row.get("Signal"),
+            "Most normalized risk signals use 0.00 as lower concern and 1.00 as higher concern. Use the value as a review prompt, not as a standalone decision.",
+        )
+        interpreted_rows.append(enriched)
+    return interpreted_rows
 
 
 def _parse_money(label, raw_value, errors, min_value=None, max_value=None):
@@ -753,6 +881,39 @@ def _store_prediction(application, prediction, explanation):
     persist_demo_state()
 
 
+def _last_prediction_matches(application_id, model_key):
+    application = st.session_state.get("last_application") or {}
+    prediction = st.session_state.get("last_prediction") or {}
+    return (
+        application.get("application_id") == application_id
+        and prediction.get("model_key", selected_model_key) == model_key
+    )
+
+
+def _auto_score_submitted_intake(application, model_key):
+    application_id = application.get("application_id")
+    if not application_id or st.session_state.get("active_intake_source") != SME_SUBMISSION_SOURCE:
+        return False
+    if _last_prediction_matches(application_id, model_key):
+        return False
+
+    lifecycle = _lifecycle_for(application_id)
+    if lifecycle.get("status") not in {"Submitted to lender review", "Scored by lender", None}:
+        return False
+
+    prediction = st.session_state.model_bundle.score_one(application, model_key=model_key)
+    explanation = explain_prediction(application, prediction, use_llm=False)
+    _store_prediction(dict(application), prediction, explanation)
+    score_event = st.session_state.score_history[-1] if st.session_state.score_history else {}
+    _update_lifecycle(
+        application_id,
+        auto_scored_at=score_event.get("timestamp"),
+        auto_score_source="Lender workspace auto-score",
+    )
+    persist_demo_state()
+    return True
+
+
 def _update_latest_history(prediction, review):
     application_id = st.session_state.last_application.get("application_id")
     for row in reversed(st.session_state.portfolio_history):
@@ -776,15 +937,24 @@ def _review_form_body():
     application = st.session_state.last_application
     prediction = st.session_state.last_prediction
     existing_review = st.session_state.get("last_review") or {}
+    lender_validation = latest_document_validation_run(application["application_id"], "lender_verification")
+    validation_summary = lender_validation.get("summary", {}) if lender_validation else {}
+    validation_mismatch = int(validation_summary.get("mismatches", 0) or 0) > 0
     grade_options = list("ABCDEF")
-    current_grade = existing_review.get("analyst_grade", prediction["grade"])
-    current_action = existing_review.get("action", prediction["decision"])
+    current_grade = existing_review.get("analyst_grade", "F" if validation_mismatch else prediction["grade"])
+    current_action = existing_review.get("action", "Reject" if validation_mismatch else prediction["decision"])
     default_action_index = REVIEW_ACTIONS.index(current_action) if current_action in REVIEW_ACTIONS else 0
 
     with st.form("case_review_form"):
         st.caption(
             "The model output remains unchanged. The analyst can set a separate final rating after evaluating the evidence."
         )
+        if validation_mismatch:
+            st.warning(
+                "Lender document verification found a likely category mismatch. Review the validation details before "
+                "saving the final decision.",
+                icon=":material/gpp_maybe:",
+            )
         comparison_cols = st.columns(2)
         comparison_cols[0].metric("Model grade", prediction["grade"])
         comparison_cols[1].metric("Model recommendation", prediction["decision"])
@@ -799,14 +969,22 @@ def _review_form_body():
             "Internal analyst note",
             value=existing_review.get(
                 "analyst_note",
-                "Reviewed model score, deterministic flags, evidence coverage, and explanation.",
+                (
+                    "Document verification found submitted evidence that appears inconsistent with its declared category."
+                    if validation_mismatch
+                    else "Reviewed model score, deterministic flags, evidence coverage, and explanation."
+                ),
             ),
         )
         rating_rationale = st.text_area(
             "Rating rationale",
             value=existing_review.get(
                 "rating_rationale",
-                "The final rating reflects the model output together with verified financial, evidence, and contextual factors.",
+                (
+                    "The application cannot proceed because the submitted evidence could not be verified against the requested document categories."
+                    if validation_mismatch
+                    else "The final rating reflects the model output together with verified financial, evidence, and contextual factors."
+                ),
             ),
             help="Required when the analyst rating differs from the model grade. This rationale supports the audit trail.",
         )
@@ -862,12 +1040,9 @@ def _rating_publication_form(application, prediction, review):
     lifecycle = _lifecycle_for(application_id)
     evaluation_package = _evaluation_package_for(application, prediction)
     already_published = lifecycle.get("status") == "Rating published"
-    default_message = lifecycle.get(
-        "published_message",
-        (
-            f"Your application has been reviewed. The lender rating is {review['analyst_grade']} "
-            f"and the current lender decision is {review['final_decision']}."
-        ),
+    default_message = lifecycle.get("published_message") or (
+        f"Your application has been reviewed. The lender rating is {review['analyst_grade']} "
+        f"and the current lender decision is {review['final_decision']}."
     )
     default_sme_report = lifecycle.get("published_sme_report") or (
         evaluation_package.get("sme_report", "") if evaluation_package else ""
@@ -1007,6 +1182,43 @@ queue_metrics[4].metric(
     help=WORKSPACE_HELP["missing_documents"],
 )
 
+submitted_rows = submitted_intake_rows(
+    st.session_state.sme_submission_history,
+    st.session_state.application_lifecycle,
+    active_application=st.session_state.get("active_queue_application"),
+    sme_application=st.session_state.get("sme_company_application"),
+)
+if submitted_rows:
+    with st.container():
+        st.markdown(
+            """
+            <div class="queue-panel">
+                <div class="queue-panel-title">SME Portal Intake</div>
+                <div class="queue-panel-copy">Applications submitted by the company account. Opening one loads the exact submitted snapshot into the lender working file.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.dataframe(submitted_rows, width="stretch", hide_index=True)
+        intake_options = [
+            f"{row['Application ID']} - {row['Company']} | {row['Status']}"
+            for row in submitted_rows
+        ]
+        intake_cols = st.columns([2, 1])
+        selected_intake_label = intake_cols[0].selectbox("Submitted SME application", intake_options)
+        selected_intake_id = selected_intake_label.split(" - ", 1)[0]
+        if intake_cols[1].button("Open Submitted Application", width="stretch"):
+            submitted_application = find_submitted_application(
+                st.session_state.sme_submission_history,
+                selected_intake_id,
+                active_application=st.session_state.get("active_queue_application"),
+                sme_application=st.session_state.get("sme_company_application"),
+            )
+            if submitted_application:
+                _activate_intake_case(submitted_application, SME_SUBMISSION_SOURCE)
+            else:
+                st.error("The submitted application snapshot could not be found.")
+
 queue_display = queue_mine[
     [
         "application_id",
@@ -1072,12 +1284,17 @@ if active_case:
         """,
         unsafe_allow_html=True,
     )
-    if st.session_state.get("active_intake_source") == "SME Portal submission":
+    if st.session_state.get("active_intake_source") == SME_SUBMISSION_SOURCE:
         st.info(
             "SME journey status: "
             f"{active_lifecycle.get('status', 'Submitted to lender review')}. "
             "Score the file, save the lender evaluation, then publish the reviewed rating when it is ready for the company."
         )
+        if _auto_score_submitted_intake(active_case, selected_model_key):
+            st.success(
+                "Submitted SME application was automatically scored for the lender review. "
+                "Open LLM Integration to generate the internal and SME-facing evaluation package."
+            )
 else:
     st.info("No active workspace case yet. Start a task above or use Manual Entry to build a custom applicant.")
 
@@ -1097,7 +1314,7 @@ company_name_default = _scenario_value(
 )
 sme_document_evidence_locked = bool(
     active_case
-    and st.session_state.get("active_intake_source") == "SME Portal submission"
+    and st.session_state.get("active_intake_source") == SME_SUBMISSION_SOURCE
     and active_case.get("application_id")
 )
 saved_document_counts = (
@@ -1550,6 +1767,7 @@ if st.session_state.last_prediction:
     prediction_model_key = prediction.get("model_key", selected_model_key)
     prediction_model_label = prediction.get("model_label", st.session_state.model_bundle.label_for(prediction_model_key))
     confidence_rows = model_confidence_rows(st.session_state.model_bundle.metrics_for(prediction_model_key), prediction, signals)
+    _render_workspace_metric_guide(application, prediction, signals)
 
     score_tab, evidence_tab, review_tab, history_tab = st.tabs(["Score", "Evidence", "Review", "History"])
     with score_tab:
@@ -1576,6 +1794,26 @@ if st.session_state.last_prediction:
         st.dataframe(pd.DataFrame(_data_readiness_rows(application, signals)), width="stretch", hide_index=True)
         st.markdown("**Saved SME-uploaded files**")
         _render_saved_application_files(application["application_id"])
+        _, new_validation_run = render_document_validation_panel(
+            demo_session_id,
+            application["application_id"],
+            "lender_verification",
+            "Lender document verification",
+            (
+                "Run the formal lender-side check after intake. AI-assisted validation can classify the visible "
+                "content, but final acceptance remains an analyst decision."
+            ),
+            "Run Lender Document Verification",
+        )
+        if new_validation_run:
+            summary = new_validation_run.get("summary", {})
+            _update_lifecycle(
+                application["application_id"],
+                document_validation_status=summary.get("status", "Unknown"),
+                document_validation_run_id=new_validation_run.get("run_id"),
+                document_validation_at=new_validation_run.get("validated_at"),
+            )
+            persist_demo_state()
     with review_tab:
         review_cols = st.columns(4)
         review_cols[0].metric("Final decision", final_decision, help=WORKSPACE_HELP["final_decision"])
@@ -1691,7 +1929,6 @@ if st.session_state.last_prediction:
     st.caption("Explanation source: deterministic analyst explanation. Open LLM Integration to run a local or hosted model.")
     st.info(explanation)
     safe_page_link("pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
-    safe_page_link("pages/6_SME_Credit_Health.py", "Open SME Credit Health Preview", ":material/monitor_heart:")
 
     terms_col, monitoring_col = st.columns(2)
     with terms_col:
@@ -1793,7 +2030,7 @@ if st.session_state.last_prediction:
                     ("Annual interest", _money(signals["annual_interest_expense"])),
                     ("Annual debt service", _money(signals["annual_debt_service"])),
                     ("DSCR", _score(signals["debt_service_coverage_ratio"])),
-                    ("Stress DSCR (+2%)", _score(signals["stressed_debt_service_coverage_ratio"])),
+                    ("Stressed DSCR (+2%)", _score(signals["stressed_debt_service_coverage_ratio"])),
                     ("Free cash flow", _money(application.get("free_cash_flow", 0))),
                     ("Monthly burn", _money(application.get("monthly_burn_rate", 0))),
                     ("Cash flow / revenue", _ratio(application.get("cash_flow_to_revenue_ratio", 0))),
@@ -1921,15 +2158,18 @@ if st.session_state.last_prediction:
         {"Signal": "Narrative consistency risk", "Value": _score(signals["narrative_consistency_risk_score"]), "What it tells the analyst": "Potential contradictions between applicant context, documents, and financials."},
     ]
     with st.expander("Calculated Risk Signals", expanded=False):
-        st.caption("Fraud and anomaly detection are one component of the broader credit-risk assessment.")
-        st.dataframe(pd.DataFrame(signal_rows), width="stretch", hide_index=True)
+        st.caption(
+            "Fraud and anomaly detection are one component of the broader credit-risk assessment. "
+            "Most normalized risk scores run from 0.00 to 1.00, where higher means more concern unless the row says otherwise."
+        )
+        st.dataframe(pd.DataFrame(_add_signal_interpretations(signal_rows)), width="stretch", hide_index=True)
 
     action_cols = st.columns([1, 1, 1, 2])
     if action_cols[0].button("Open Case Review", width="stretch"):
-        if hasattr(st, "dialog"):
-            _review_dialog()
-        else:
-            st.session_state.show_review_dialog = True
+        st.session_state.show_review_dialog = True
+        rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+        if rerun:
+            rerun()
     report = case_summary(application, prediction, explanation, current_review)
     memo = credit_memo(application, prediction, explanation, current_review, loan_terms, monitoring_rows, timeline_rows)
     action_cols[1].download_button(
@@ -1949,14 +2189,18 @@ if st.session_state.last_prediction:
     if st.session_state.last_email_link and current_review:
         action_cols[3].markdown(f"[Open email draft]({st.session_state.last_email_link})")
 
-    if st.session_state.show_review_dialog and not hasattr(st, "dialog"):
+    if st.session_state.show_review_dialog:
         with st.expander("Case Review", expanded=True):
             _review_form_body()
 
     st.subheader("Decision History Timeline")
     st.dataframe(pd.DataFrame(timeline_rows), width="stretch", hide_index=True)
 
-    st.write("Risk factors")
+    st.subheader("Risk Factors")
+    st.caption(
+        "These are plain-language flags produced by the deterministic model. They explain why the file deserves attention, "
+        "but the final lender decision still comes from the saved analyst review."
+    )
     if prediction["flags"]:
         for flag in prediction["flags"]:
             st.warning(flag)

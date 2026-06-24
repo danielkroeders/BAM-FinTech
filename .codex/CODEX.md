@@ -91,7 +91,8 @@ textColor = "#0F172A"
 |   |-- 7_Profile_Settings.py
 |   |-- 8_About.py
 |   |-- 9_Support.py
-|   `-- 10_Tutorials.py
+|   |-- 10_Tutorials.py
+|   `-- 11_Acronym_Guide.py
 |-- src/
 |   |-- core/
 |   |   |-- data_pipeline.py
@@ -106,10 +107,12 @@ textColor = "#0F172A"
 |   |-- ui/
 |   |   `-- components.py
 |   `-- utils/
+|       |-- acronym_guide.py
 |       |-- demo_persistence.py
 |       |-- formatting.py
 |       |-- llm_profiles.py
-|       `-- table_views.py
+|       |-- table_views.py
+|       `-- workflow_transfer.py
 |-- data/
 |   |-- assets/
 |   |-- docs/
@@ -158,13 +161,16 @@ It contains:
 - the demo login and two-step verification experience through the shared sidebar;
 - a welcome header for Alice Cooper;
 - personal queue metrics;
+- SME Portal Intake for company-submitted applications persisted in demo state;
 - a task selector and handoff into Personal Workspace;
 - the current-task table;
 - quick links;
 - Slack or workspace updates based on profile connections;
 - Calendar Today.
 
-The workload metrics are My Open Tasks, High Priority, Due This Week, and Evidence Follow-Up.
+The workload metrics are My Open Tasks, High Priority, Due This Week, Evidence
+Follow-Up, and SME Intake. SME Portal Intake rows must open the submitted
+application snapshot in Personal Workspace using `SME_SUBMISSION_SOURCE`.
 
 ### `pages/1_Personal_Workspace.py`
 
@@ -176,10 +182,13 @@ The user can:
 - start the A2M Logistics example directly;
 - use manual entry;
 - load a scenario from Example Cases;
+- open company-submitted applications from SME Portal Intake;
 - select Random Forest or Logistic Regression;
 - complete applicant, financial, forecast, narrative, evidence, and advanced inputs;
 - score the application;
+- auto-score submitted SME applications when opened in Personal Workspace;
 - inspect score, evidence, review, and history tabs;
+- use table interpretation columns after scoring, with a link to the separate Acronym Guide page;
 - save a human case review;
 - download case summary and credit memo;
 - compare similar applications and peers;
@@ -212,6 +221,7 @@ The scored workflow includes:
 - selected model label and recommendation;
 - final-decision and review state;
 - affordability and stressed DSCR;
+- detailed table interpretation columns explaining how to read metrics, normalized scores, acronyms, and evidence signals;
 - deterministic rationale and rule flags;
 - recommended loan terms;
 - portfolio monitoring preview;
@@ -364,27 +374,28 @@ These files are outside the Git checkout. The token field is password-masked and
 
 ### `pages/6_SME_Credit_Health.py`
 
-This is the role-aware SME company portal using the same synthetic scoring logic.
+This is the SME-only company portal using the same synthetic scoring logic. It
+must not render a lender-side preview or selectable portfolio-case view.
 
 It contains:
 
 - a dedicated SME-company login and restricted company-portal navigation;
 - company profile, loan request, financial snapshot, and business-context entry;
 - company-controlled demo connections for PSD2/Open Banking, accounting, registry/KYB, and documents;
+- generated CSV example documents for each required document category, with a demo action that saves only missing categories;
 - real session-scoped file storage under `.tmp/sme_documents` for SME-uploaded application evidence;
 - explicit Open Banking consent simulation;
 - submission from the SME portal into the lender-side active intake workflow;
 - application lifecycle states for submitted, scored, evaluated, and published;
 - no SME access to provisional model grades, probabilities, or recommendations;
 - lender-controlled publication of the reviewed analyst rating, company-facing message, and attached SME evaluation report;
-- a lender preview with selectable latest, SME-submitted, or portfolio cases;
 - application-readiness indicators before publication;
 - published rating, lender decision, optional numerical score, lender message, and downloadable SME evaluation report after publication;
 - company snapshot;
 - practical next actions;
-- what-if changes to growth, FCF margin, cost pressure, evidence, documents, and debt reduction;
-- current-versus-scenario comparison;
-- peer benchmark;
+- applicant-safe post-publication what-if changes to growth, FCF margin, cost pressure, evidence, documents, and debt reduction;
+- applicant-safe current-versus-scenario comparison without private lender probability output;
+- applicant-facing peer context;
 - evidence sources;
 - five-year forecast view.
 
@@ -394,6 +405,13 @@ SME document uploads are not simulated. Save the exact bytes locally, retain a
 manifest with category, original name, size, MIME type, timestamp, and SHA-256,
 and expose those same bytes to the lender for download. Keep the vault outside
 Git and remove it only through the explicit Clear Demo State workflow.
+Generated document examples must use the same save path when the SME clicks the
+demo save action; do not set evidence flags without persisted bytes.
+Document validation is classification support, not proof of legal authenticity.
+Keep validation lender-side only; the SME portal should not coach applicants on
+which suspicious submissions were detected before submission. Hosted AI
+validation must be explicit-click only and send bounded previews plus metadata
+rather than full binary documents.
 
 The lender review must keep four records separate:
 
@@ -429,7 +447,8 @@ This is a demo profile system, not production identity and access management.
 
 ### `pages/8_About.py`
 
-This is the terminology and policy reference.
+This is the lender-only terminology and policy reference. It must not expose
+internal scoring dimensions, derived ratios, or grade policy to SME users.
 
 It contains:
 
@@ -439,24 +458,49 @@ It contains:
 - A-F grade policy and recommendation mapping.
 
 Keep the language understandable to analysts and bankers.
+If an SME profile opens this page directly, show a blocked/explanatory message
+with links back to SME Credit Health, SME Tutorials, and Support. Do not render
+the internal tables.
 
 ### `pages/9_Support.py`
 
-This is the simulated support surface.
+This is the role-aware simulated support surface.
 
 It contains:
 
-- representative contact cards;
-- support request form;
+- lender support contact cards and SME-facing YourBank consultant cards;
+- support or consultant request form;
 - recent support request history;
-- scripted live chat;
-- FAQ.
+- role-specific scripted live chat;
+- lender and SME FAQ sets.
 
 Support requests are demo session records and email drafts. Do not imply that a real support desk was contacted. Never invite users to include passwords, API keys, or sensitive applicant data.
+For SME users, frame support as connecting with a YourBank consultant rather
+than contacting the platform company or internal analyst helpdesk.
+
+### `pages/11_Acronym_Guide.py`
+
+This is the role-aware Help glossary for acronyms and metric explanations.
+
+It contains:
+
+- lender-facing acronyms and metric guidance for Personal Workspace, evidence
+  review, monitoring, and governance;
+- SME-facing applicant-safe acronyms and metric guidance for the company portal,
+  document uploads, simulated connections, and published outcomes;
+- search across acronyms and metric rows;
+- links back to the relevant workflow pages.
+
+Keep glossary source data in `src/utils/acronym_guide.py`. Do not expose
+internal score thresholds, model governance details, or analyst-only policy
+language to SME users.
 
 ### `pages/10_Tutorials.py`
 
-This is the searchable, text-first learning hub for every application page.
+This is the searchable, text-first learning hub. It is role-aware: lenders see
+the full workspace guide catalog, while SME users see applicant-facing guides
+for application setup, documents and connections, submission/results, and
+consultant support, and the role-aware Acronym Guide.
 
 Each tutorial includes:
 
@@ -599,6 +643,23 @@ It:
 - persists the serializable demo state.
 
 Default selected model is Random Forest. Invalid saved model keys reset to the default.
+
+### `src/utils/workflow_transfer.py`
+
+Owns small, serializable helpers for moving SME-submitted applications into
+lender views.
+
+It:
+
+- defines `SME_SUBMISSION_SOURCE`;
+- extracts submitted application snapshots from `sme_submission_history`;
+- falls back to active or SME company application state for older sessions;
+- builds lender-facing SME Portal Intake rows;
+- returns the exact submitted snapshot for Home, Operations Desk, and Personal
+  Workspace handoff buttons.
+
+Keep these helpers free of Streamlit UI calls so they can be reused in tests and
+multiple pages.
 
 ### `src/features/case_workflow.py`
 
@@ -801,7 +862,8 @@ When changing a workflow:
 
 - update session initialization;
 - update persistence only when appropriate;
-- keep handoffs between Home, Operations Desk, Risk Dashboard, Personal Workspace, SME Credit Health, and LLM Integration intact;
+- keep handoffs between Home, Operations Desk, Risk Dashboard, Personal Workspace, and LLM Integration intact;
+- keep SME Company Portal behavior available only to SME profiles;
 - update the matching tutorial.
 
 When changing LLM behavior:
@@ -895,7 +957,7 @@ Before handing off a material change, confirm:
 - Scoring populates the latest application and prediction.
 - Analyst review remains separate from model and AI output.
 - Risk Dashboard and Operations Desk reflect session decisions.
-- SME Credit Health can use the latest scored case.
+- SME Company Portal blocks lender direct access and does not expose a lender preview.
 - LLM Integration works deterministically without credentials.
 - External LLM calls require explicit user action.
 - Local model profiles contain only endpoint/IP and model name.

@@ -39,6 +39,7 @@ PERSISTED_KEYS = [
     "llm_chat_last_run",
     "llm_review_history",
     "llm_evaluation_packages",
+    "document_validation_results",
     "explanation_model",
     "bulk_final_decisions",
     "bulk_action_history",

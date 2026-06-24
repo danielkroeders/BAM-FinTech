@@ -2,12 +2,31 @@ import pandas as pd
 import streamlit as st
 
 from src.core.runtime import bootstrap_state
-from src.ui.components import render_sidebar
+from src.ui.components import get_profile, is_sme_profile, render_sidebar, safe_page_link
 
 
 st.set_page_config(page_title="About", layout="wide")
 bootstrap_state()
 render_sidebar()
+profile = get_profile()
+
+if is_sme_profile(profile):
+    st.title("About")
+    st.warning(
+        "This reference page is available only in the lender workspace because it describes internal scoring "
+        "dimensions, derived ratios, and review policy."
+    )
+    st.write(
+        "For application guidance, use the SME company portal, applicant tutorials, or connect with a YourBank consultant."
+    )
+    link_cols = st.columns(3)
+    with link_cols[0]:
+        safe_page_link("pages/6_SME_Credit_Health.py", "Open SME Portal", ":material/domain:")
+    with link_cols[1]:
+        safe_page_link("pages/10_Tutorials.py", "Open SME Tutorials", ":material/school:")
+    with link_cols[2]:
+        safe_page_link("pages/9_Support.py", "Connect with a Consultant", ":material/support_agent:")
+    st.stop()
 
 st.title("About")
 st.caption("Definitions for the workspace scoring dimensions used by the SME application-risk model.")

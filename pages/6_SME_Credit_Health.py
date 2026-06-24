@@ -4,18 +4,18 @@ import pandas as pd
 import streamlit as st
 
 from src.core.data_pipeline import add_derived_features, build_forecast_table
-from src.core.modeling import score_application, score_portfolio
+from src.core.modeling import score_application
 from src.core.runtime import bootstrap_state
 from src.features.alignment_features import (
     apply_scenario,
     data_source_coverage_rows,
     peer_benchmark_rows,
-    scenario_comparison_rows,
     sme_action_rows,
 )
 from src.features.case_workflow import DEMO_SCENARIOS
 from src.ui.components import get_profile, is_sme_profile, render_sidebar, safe_page_link
 from src.utils.demo_persistence import ensure_demo_session, persist_demo_state
+from src.utils.document_examples import build_document_examples
 from src.utils.document_storage import (
     DOCUMENT_CATEGORIES,
     document_counts,
@@ -24,6 +24,7 @@ from src.utils.document_storage import (
     save_document,
 )
 from src.utils.formatting import format_currency, format_integer, format_months, format_percent, format_score
+from src.utils.workflow_transfer import SME_SUBMISSION_SOURCE
 
 
 st.set_page_config(page_title="SME Company Portal", layout="wide")
@@ -34,7 +35,6 @@ profile = get_profile()
 company_mode = is_sme_profile(profile)
 applications = st.session_state.seed_data["applications"]
 selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
-portfolio = score_portfolio(st.session_state.model_bundle, applications, model_key=selected_model_key)
 demo_session_id = ensure_demo_session()
 MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
 ALLOWED_DOCUMENT_TYPES = ["pdf", "csv", "xlsx", "xls", "docx", "png", "jpg", "jpeg"]
@@ -127,6 +127,89 @@ def _render_saved_documents(application):
             key=f"sme_download_{metadata['document_id']}",
             width="stretch",
         )
+
+
+def _example_document_table(examples, category_counts):
+    return pd.DataFrame(
+        [
+            {
+                "Category": example["label"],
+                "Example file": example["file_name"],
+                "What it shows": example["description"],
+                "Current status": "Already has saved file" if category_counts.get(category, 0) else "Missing",
+            }
+            for category, example in examples.items()
+        ]
+    )
+
+
+def _render_document_examples(application, category_counts, saved_documents, connection_status, prediction):
+    examples = build_document_examples(application)
+    with st.expander("Example files and evidence checklist", expanded=not bool(saved_documents)):
+        st.caption(
+            "Download fictional CSV examples to see the expected structure. For demo runs, you can also save "
+            "the example pack into missing categories; those files are written through the same local vault as uploads."
+        )
+        st.dataframe(_example_document_table(examples, category_counts), width="stretch", hide_index=True)
+
+        download_columns = st.columns(2)
+        for index, (category, example) in enumerate(examples.items()):
+            with download_columns[index % 2]:
+                st.download_button(
+                    f"Download example: {example['label']}",
+                    data=example["content"],
+                    file_name=example["file_name"],
+                    mime=example["mime_type"],
+                    key=f"sme_example_download_{category}",
+                    width="stretch",
+                )
+
+        missing_categories = [category for category in examples if category_counts.get(category, 0) == 0]
+        button_label = f"Save Example Files for Missing Categories ({len(missing_categories)})"
+        if st.button(
+            button_label,
+            disabled=not missing_categories,
+            help="Adds fictional demo files only where this application has no saved file for that document category.",
+            width="stretch",
+        ):
+            saved_count = 0
+            duplicate_count = 0
+            errors = []
+            for category in missing_categories:
+                example = examples[category]
+                try:
+                    _, created = save_document(
+                        demo_session_id,
+                        application["application_id"],
+                        category,
+                        example["file_name"],
+                        example["content"],
+                        example["mime_type"],
+                    )
+                except (OSError, ValueError) as exc:
+                    errors.append(f"{example['file_name']}: {exc}")
+                    continue
+                if created:
+                    saved_count += 1
+                else:
+                    duplicate_count += 1
+
+            category_counts, saved_documents = _sync_document_evidence(application)
+            connection_status["documents"] = bool(saved_documents)
+            st.session_state.sme_connection_status = connection_status
+            _store_company_application(application)
+            prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
+            if saved_count:
+                st.success(f"{saved_count} example file(s) saved to the local application vault.")
+            if duplicate_count:
+                st.info(f"{duplicate_count} example file(s) already existed and were not copied again.")
+            for error in errors:
+                st.error(error)
+
+        if not missing_categories:
+            st.caption("All document categories already have at least one saved file.")
+
+    return category_counts, saved_documents, prediction
 
 
 def _lifecycle_for(application_id):
@@ -242,13 +325,34 @@ def _render_published_rating(application, lifecycle):
     )
 
 
-def _render_health_view(application, prediction, allow_underwriter_links=False):
-    signals = add_derived_features(pd.DataFrame([application])).iloc[0]
+def _status_label(value, strong=0.8, partial=0.5):
+    try:
+        number = float(value or 0)
+    except (TypeError, ValueError):
+        number = 0
+    if number >= strong:
+        return "Strong"
+    if number >= partial:
+        return "Partial"
+    return "Needs attention"
 
+
+def _render_post_publication_health_view(application, prediction, lifecycle):
+    signals = add_derived_features(pd.DataFrame([application])).iloc[0]
+    published_grade = lifecycle.get("published_grade") or "Published"
+    published_decision = lifecycle.get("published_decision") or "Reviewed"
+    published_score = lifecycle.get("published_score")
+    score_visible = bool(lifecycle.get("published_score_visible")) and published_score is not None
+
+    st.subheader("Plan improvements after the published rating")
+    st.caption(
+        "Use this applicant-facing planning view after publication to understand which evidence or operating "
+        "assumptions could strengthen a future review. It does not change the lender's published decision."
+    )
     summary_cols = st.columns(4)
-    summary_cols[0].metric("Current grade", prediction["grade"])
-    summary_cols[1].metric("Risk score", format_percent(prediction["fraud_probability"]))
-    summary_cols[2].metric("Lender view", prediction["decision"])
+    summary_cols[0].metric("Published rating", published_grade)
+    summary_cols[1].metric("Lender decision", published_decision)
+    summary_cols[2].metric("Numerical score", format_percent(published_score) if score_visible else "Not published")
     summary_cols[3].metric("Runway", format_months(application.get("expected_runway_months", 0)))
 
     overview_left, overview_right = st.columns([1, 1])
@@ -264,8 +368,16 @@ def _render_health_view(application, prediction, allow_underwriter_links=False):
                     {"Field": "Annual revenue", "Value": format_currency(application.get("annual_revenue", 0))},
                     {"Field": "Free cash flow", "Value": format_currency(application.get("free_cash_flow", 0))},
                     {
-                        "Field": "Stressed DSCR",
-                        "Value": format_score(signals.get("stressed_debt_service_coverage_ratio", 0)),
+                        "Field": "Evidence package",
+                        "Value": _status_label(signals.get("document_completeness_score", 0), strong=0.95, partial=0.6),
+                    },
+                    {
+                        "Field": "Repayment resilience",
+                        "Value": _status_label(
+                            signals.get("stressed_debt_service_coverage_ratio", 0),
+                            strong=1.2,
+                            partial=1.0,
+                        ),
                     },
                 ]
             ),
@@ -277,29 +389,32 @@ def _render_health_view(application, prediction, allow_underwriter_links=False):
         st.dataframe(pd.DataFrame(sme_action_rows(application, signals, prediction)), width="stretch", hide_index=True)
 
     st.subheader("What-If Simulation")
-    st.caption("Adjust the plan to see how stronger evidence or operating assumptions could change the model view.")
+    st.caption(
+        "Adjust the plan to see how stronger evidence or operating assumptions could affect a future readiness band. "
+        "This is directional and is not a new lender decision."
+    )
     scenario_left, scenario_middle, scenario_right = st.columns(3)
     with scenario_left:
         revenue_growth_delta = st.slider(
-            "Revenue growth change", -0.15, 0.20, 0.00, 0.01, format="%.2f", key="sme_revenue_growth"
+            "Revenue growth change", -0.15, 0.20, 0.00, 0.01, format="%.2f", key="sme_post_revenue_growth"
         )
         fcf_margin_delta = st.slider(
-            "FCF margin change", -0.10, 0.15, 0.00, 0.01, format="%.2f", key="sme_fcf_margin"
+            "FCF margin change", -0.10, 0.15, 0.00, 0.01, format="%.2f", key="sme_post_fcf_margin"
         )
     with scenario_middle:
         operating_cost_pressure = st.slider(
-            "Operating cost pressure", 0.00, 0.15, 0.00, 0.01, format="%.2f", key="sme_cost_pressure"
+            "Operating cost pressure", 0.00, 0.15, 0.00, 0.01, format="%.2f", key="sme_post_cost_pressure"
         )
         debt_reduction_delta = st.slider(
-            "Debt reduction plan change", -0.20, 0.35, 0.00, 0.05, format="%.2f", key="sme_debt_reduction"
+            "Debt reduction plan change", -0.20, 0.35, 0.00, 0.05, format="%.2f", key="sme_post_debt_reduction"
         )
     with scenario_right:
         contract_evidence = st.selectbox(
             "Contract evidence",
             ["Current file", "Signed and documented", "Unconfirmed"],
-            key="sme_contract_evidence",
+            key="sme_post_contract_evidence",
         )
-        complete_documents = st.checkbox("Complete missing documents", value=False, key="sme_complete_documents")
+        complete_documents = st.checkbox("Complete missing documents", value=False, key="sme_post_complete_documents")
 
     scenario_application = apply_scenario(
         application,
@@ -310,32 +425,71 @@ def _render_health_view(application, prediction, allow_underwriter_links=False):
         complete_documents=complete_documents,
         debt_reduction_delta=debt_reduction_delta,
     )
-    scenario_prediction, scenario_rows = scenario_comparison_rows(
+    scenario_prediction = score_application(
         st.session_state.model_bundle,
-        application,
-        prediction,
         scenario_application,
         model_key=prediction.get("model_key", selected_model_key),
     )
+    scenario_signals = add_derived_features(pd.DataFrame([scenario_application])).iloc[0]
+    scenario_rows = [
+        {
+            "Measure": "Rating / planning band",
+            "Published file": published_grade,
+            "What-if": scenario_prediction.get("grade", ""),
+        },
+        {
+            "Measure": "Free cash flow",
+            "Published file": format_currency(application.get("free_cash_flow", 0)),
+            "What-if": format_currency(scenario_application.get("free_cash_flow", 0)),
+        },
+        {
+            "Measure": "Forecast support",
+            "Published file": "Ready" if application.get("forecast_support_uploaded") else "Missing",
+            "What-if": "Ready" if scenario_application.get("forecast_support_uploaded") else "Missing",
+        },
+        {
+            "Measure": "Evidence package",
+            "Published file": _status_label(signals.get("document_completeness_score", 0), strong=0.95, partial=0.6),
+            "What-if": _status_label(scenario_signals.get("document_completeness_score", 0), strong=0.95, partial=0.6),
+        },
+        {
+            "Measure": "Repayment resilience",
+            "Published file": _status_label(
+                signals.get("stressed_debt_service_coverage_ratio", 0),
+                strong=1.2,
+                partial=1.0,
+            ),
+            "What-if": _status_label(
+                scenario_signals.get("stressed_debt_service_coverage_ratio", 0),
+                strong=1.2,
+                partial=1.0,
+            ),
+        },
+    ]
     st.dataframe(pd.DataFrame(scenario_rows), width="stretch", hide_index=True)
     st.caption(
-        f"What-if result: grade {scenario_prediction['grade']} with a "
-        f"{format_percent(scenario_prediction['fraud_probability'])} risk score."
+        f"Directional what-if band: {scenario_prediction['grade']}. This is a planning aid only; "
+        "the published lender rating remains unchanged."
     )
 
     benchmark_tab, sources_tab, forecast_tab = st.tabs(["Peer Benchmark", "Evidence Sources", "Five-Year View"])
     with benchmark_tab:
-        st.caption("Synthetic peer view for the sector and region where enough comparable cases exist.")
+        st.caption(
+            "Synthetic applicant-facing peer context for the sector and region. Internal risk scores are not shown here."
+        )
+        benchmark_rows = [
+            row
+            for row in peer_benchmark_rows(
+                st.session_state.model_bundle,
+                applications,
+                application,
+                prediction,
+                model_key=prediction.get("model_key", selected_model_key),
+            )
+            if row.get("Benchmark") in {"Requested amount", "Stressed DSCR", "Document completeness"}
+        ]
         st.dataframe(
-            pd.DataFrame(
-                peer_benchmark_rows(
-                    st.session_state.model_bundle,
-                    applications,
-                    application,
-                    prediction,
-                    model_key=prediction.get("model_key", selected_model_key),
-                )
-            ),
+            pd.DataFrame(benchmark_rows),
             width="stretch",
             hide_index=True,
         )
@@ -357,13 +511,6 @@ def _render_health_view(application, prediction, allow_underwriter_links=False):
             display[column] = display[column].apply(format_currency)
         display["Projected employees"] = display["Projected employees"].apply(format_integer)
         st.dataframe(display, width="stretch", hide_index=True)
-
-    if allow_underwriter_links:
-        nav_cols = st.columns([1, 1, 3])
-        with nav_cols[0]:
-            safe_page_link("pages/1_Personal_Workspace.py", "Open Underwriter View", ":material/person_search:")
-        with nav_cols[1]:
-            safe_page_link("pages/3_Risk_Dashboard.py", "Open Portfolio View", ":material/monitoring:")
 
 
 if company_mode:
@@ -604,6 +751,13 @@ if company_mode:
             "These uploads are written to the local demo-session vault. They survive refresh and sign-out, "
             "are excluded from Git, and are removed only when Clear Demo State is used."
         )
+        document_category_counts, saved_documents, prediction = _render_document_examples(
+            application,
+            document_category_counts,
+            saved_documents,
+            connection_status,
+            prediction,
+        )
         upload_columns = st.columns(2)
         upload_widgets = {}
         category_items = list(DOCUMENT_CATEGORIES.items())
@@ -671,8 +825,7 @@ if company_mode:
         lifecycle = _lifecycle_for(application["application_id"])
         if lifecycle.get("status") == "Rating published":
             _render_published_rating(application, lifecycle)
-            with st.expander("Application readiness details", expanded=False):
-                _render_application_readiness(application, prediction)
+            _render_post_publication_health_view(application, prediction, lifecycle)
         else:
             _render_application_readiness(application, prediction)
 
@@ -705,11 +858,13 @@ if company_mode:
                 "company_name": application["company_name"],
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "connection_count": connected_count,
+                "document_count": len(saved_documents),
+                "application_snapshot": dict(application),
                 "status": "Submitted to lender review",
             }
             st.session_state.sme_submission_history.append(submission)
             st.session_state.active_queue_application = dict(application)
-            st.session_state.active_intake_source = "SME Portal submission"
+            st.session_state.active_intake_source = SME_SUBMISSION_SOURCE
             _update_lifecycle(
                 application["application_id"],
                 status="Submitted to lender review",
@@ -740,42 +895,21 @@ if company_mode:
                 hide_index=True,
             )
 else:
-    st.title("SME Credit Health")
-    st.caption("Lender preview of the borrower-facing company portal and credit-health experience.")
-    st.info(
-        "Use the SME company account on the login screen to enter company data, manage connections, "
-        "and submit an application into the lender workflow."
+    st.title("SME Company Portal")
+    st.warning(
+        "This page is available only to the SME company account. The lender workspace no longer includes an SME "
+        "Credit Health preview."
     )
-
-    case_options = []
-    if st.session_state.get("last_application") and st.session_state.get("last_prediction"):
-        latest = st.session_state.last_application
-        case_options.append(
-            f"Latest scored case - {latest.get('application_id', 'Session')} - {latest.get('company_name', 'Applicant')}"
-        )
-    if st.session_state.get("sme_company_application"):
-        submitted_company = st.session_state.sme_company_application
-        case_options.append(
-            f"SME portal file - {submitted_company.get('application_id', 'SME')} - "
-            f"{submitted_company.get('company_name', 'Applicant')}"
-        )
-    case_options.extend(
-        f"{row.application_id} - {row.company_name} | Grade {row.grade}"
-        for row in portfolio.sort_values("fraud_probability", ascending=False).head(30).itertuples()
+    st.write(
+        "Use Personal Workspace for scoring, document verification, case review, and publication. "
+        "Use the SME account to enter company data, upload documents, and view published ratings."
     )
-
-    selected_case = st.selectbox("Credit health file", case_options)
-    if selected_case.startswith("Latest scored case"):
-        application = dict(st.session_state.last_application)
-        prediction = dict(st.session_state.last_prediction)
-    elif selected_case.startswith("SME portal file"):
-        application = dict(st.session_state.sme_company_application)
-        prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
-    else:
-        selected_id = selected_case.split(" - ", 1)[0]
-        application = portfolio[portfolio["application_id"] == selected_id].iloc[0].to_dict()
-        prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
-
-    _render_health_view(application, prediction, allow_underwriter_links=True)
+    link_cols = st.columns(3)
+    with link_cols[0]:
+        safe_page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
+    with link_cols[1]:
+        safe_page_link("pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
+    with link_cols[2]:
+        safe_page_link("pages/10_Tutorials.py", "Open Tutorials", ":material/school:")
 
 persist_demo_state()

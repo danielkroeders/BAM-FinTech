@@ -37,9 +37,9 @@ During a local demo, temporary page state is restored after browser refresh thro
 For a full presentation runbook, see `DEMO.md`.
 For the research grounding behind the risk ratios, cash-flow signals, anomaly measures, and detection measures, see [`data/docs/fraud_research.md`](data/docs/fraud_research.md).
 
-1. Use the `SME company` demo account to enter company and loan data, choose simulated PSD2/accounting/registry connections, upload real local application files, and submit the application.
+1. Use the `SME company` demo account to enter company and loan data, choose simulated PSD2/accounting/registry connections, download or save generated example documents, upload real local application files, and submit the application.
 2. Sign out and use the `Lender analyst` account.
-3. Open `Personal Workspace`, score the submitted file, and inspect the immutable model grade, recommendation, evidence, and explanation.
+3. Open `Home`, `Operations Desk`, or `Personal Workspace` as the lender; the submitted file appears in SME Portal Intake and auto-scores when opened in Personal Workspace.
 4. Open `LLM Integration` and generate the evaluation package: a private internal report plus an applicant-safe SME report draft.
 5. Open Case Review, choose the lender action, set a separate analyst rating, and record the rationale for any difference from the model.
 6. Review or edit the SME report draft, then publish the rating and attached report. The numerical score remains private unless the lender explicitly includes it.
@@ -72,16 +72,17 @@ You may enter either the server root, such as `http://localhost:1234`, or the `/
 ## Pages
 
 - `Home.py`: employee homepage with current tasks, Slack Updates, and Calendar Today.
-- `pages/1_Personal_Workspace.py`: score one SME loan application, review evidence, save a final decision, and store the latest decision in session state.
-- `pages/6_SME_Credit_Health.py`: role-aware SME company portal for data entry, simulated evidence connections, application readiness, lender submission, and lender-controlled publication of reviewed ratings.
+- `pages/1_Personal_Workspace.py`: score one SME loan application, review evidence, use table interpretation columns and the Help-side Acronym Guide to interpret outputs such as DSCR and FCF, save a final decision, and store the latest decision in session state.
+- `pages/6_SME_Credit_Health.py`: SME-only company portal for data entry, simulated evidence connections, application readiness, lender submission, published ratings, and applicant-safe post-rating what-if planning.
 - `pages/2_Operations_Desk.py`: team workboard for incoming applications, evidence gaps, SLA status, and case handoff.
 - `pages/3_Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, live session decisions, and review audit history.
 - `pages/4_Model_Insights.py`: model metrics, confusion matrix, feature importances, grading thresholds, derived signal design, and API contract preview.
 - `pages/5_LLM_Integration.py`: creates a persisted internal lender evaluation and separate applicant-safe SME report draft for the latest scored request.
 - `pages/7_Profile_Settings.py`: analyst profile, personal connected apps such as Slack/Teams, Gmail/Outlook, Drive/OneDrive/SharePoint, Zoom, user type, permissions, and team manager settings.
-- `pages/10_Tutorials.py`: searchable panel-based learning hub with detailed guides and feature maps for every application page.
-- `pages/8_About.py`: definitions for workspace scoring dimensions and risk grade interpretation.
-- `pages/9_Support.py`: representative email contacts, support request form, scripted live chat, and FAQ.
+- `pages/10_Tutorials.py`: role-aware learning hub; lenders see full workspace guides while SME users see applicant-facing application, document, result, and consultant-support guides.
+- `pages/8_About.py`: lender-only definitions for workspace scoring dimensions, derived ratios, and risk grade interpretation.
+- `pages/9_Support.py`: role-aware support surface; lenders see risk-platform support while SME users connect with YourBank consultants.
+- `pages/11_Acronym_Guide.py`: role-aware Help page for acronym and metric explanations; lenders see analyst terms while SME users see applicant-safe definitions.
 
 ## Local application file storage
 
@@ -90,6 +91,20 @@ local `.tmp/sme_documents/<demo-session>/<application>/` vault. The app stores
 the original filename, document category, MIME type, byte size, save timestamp,
 and SHA-256 hash in a manifest. The lender can download the same saved bytes
 from Personal Workspace.
+
+The SME portal also generates fictional CSV examples for financial statements,
+bank statements, tax returns, ownership/KYB, and forecast support. Downloading
+an example is read-only. Saving the example pack writes the generated CSV bytes
+through the same local vault, and only fills categories without an existing
+saved file.
+
+Document validation is lender-side only. The SME portal accepts the files as
+submitted; the lender workspace performs the formal check and can flag likely
+wrong-category or inconsistent evidence. Validation always starts with
+deterministic local checks against filename, MIME type, file structure, and
+bounded text previews. OpenAI or a local OpenAI-compatible model can be selected
+explicitly by the lender for AI-assisted classification; hosted AI sends only
+metadata and a limited extracted preview, not the original binary file.
 
 The vault survives page refreshes, sign-out, and role changes within the same
 demo-session link. It is excluded from Git and is deleted when `Clear Demo

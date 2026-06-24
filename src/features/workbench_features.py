@@ -157,12 +157,42 @@ def recommended_loan_terms(application, prediction, signals):
         stance = "Proceed under standard approval conditions."
 
     return [
-        {"Term": "Recommended amount", "Recommendation": format_currency(proposed_amount), "Rationale": "Adjusted for grade, DSCR, and current cash-flow capacity."},
-        {"Term": "Suggested interest rate", "Recommendation": format_percent(proposed_rate), "Rationale": "Risk-adjusted pricing based on the current model grade."},
-        {"Term": "Tenor", "Recommendation": format_months(proposed_term), "Rationale": "Shorter tenor for higher monitoring or repayment risk."},
-        {"Term": "Collateral target", "Recommendation": format_percent(collateral_target), "Rationale": "Coverage target aligned to grade and loss protection."},
-        {"Term": "Covenants", "Recommendation": "Monthly bank feed, DSCR floor, no new senior debt", "Rationale": "Protects post-origination monitoring and credit position."},
-        {"Term": "Credit stance", "Recommendation": stance, "Rationale": "Summarizes the underwriting path for the analyst."},
+        {
+            "Term": "Recommended amount",
+            "Recommendation": format_currency(proposed_amount),
+            "Rationale": "Adjusted for model grade, DSCR, and current free-cash-flow capacity.",
+            "How to read it": "If this is lower than the requested amount, the model is signalling that the original exposure may be too large for the borrower’s repayment cushion.",
+        },
+        {
+            "Term": "Suggested interest rate",
+            "Recommendation": format_percent(proposed_rate),
+            "Rationale": "Risk-adjusted pricing based on the current model grade.",
+            "How to read it": "A higher suggested rate compensates for risk but also increases debt service, so it should be checked against DSCR instead of treated as a free fix.",
+        },
+        {
+            "Term": "Tenor",
+            "Recommendation": format_months(proposed_term),
+            "Rationale": "Shorter tenor is used when monitoring or repayment risk is higher.",
+            "How to read it": "Shorter terms reduce long-tail exposure, but they can increase payment pressure. The analyst should balance tenor against cash-flow capacity.",
+        },
+        {
+            "Term": "Collateral target",
+            "Recommendation": format_percent(collateral_target),
+            "Rationale": "Coverage target aligned to grade and loss protection.",
+            "How to read it": "Higher collateral targets are not a substitute for repayment capacity; they are a fallback protection if the borrower underperforms.",
+        },
+        {
+            "Term": "Covenants",
+            "Recommendation": "Monthly bank feed, DSCR floor, no new senior debt",
+            "Rationale": "Protects post-origination monitoring and credit position.",
+            "How to read it": "These conditions create early-warning controls after approval, especially when cash flow, debt service, or document evidence is not fully comfortable.",
+        },
+        {
+            "Term": "Credit stance",
+            "Recommendation": stance,
+            "Rationale": "Summarizes the underwriting path for the analyst.",
+            "How to read it": "This is the practical next step: approve normally, approve conditionally, restructure, or stop until evidence and repayment capacity improve.",
+        },
     ]
 
 
@@ -185,23 +215,89 @@ def portfolio_monitoring_preview(application, prediction, signals):
         cadence = "Quarterly"
 
     return [
-        {"Monitor": "Watchlist status", "Output": watchlist, "Trigger": "Based on projected risk, DSCR stress, and document quality."},
-        {"Monitor": "90-day projected risk", "Output": format_percent(projected_probability), "Trigger": f"Current score {format_percent(probability)} plus trend signals."},
-        {"Monitor": "Cash-flow trigger", "Output": format_score(cash_pressure), "Trigger": "Rising burn, negative FCF, or weak runway."},
-        {"Monitor": "Debt-service trigger", "Output": format_score(debt_stress), "Trigger": "DSCR and +2% interest-rate stress coverage."},
-        {"Monitor": "Review cadence", "Output": cadence, "Trigger": "Post-origination monitoring schedule."},
-        {"Monitor": "Data refresh", "Output": "Bank feed, accounting, documents", "Trigger": "Latest source refresh across connected evidence."},
+        {
+            "Monitor": "Watchlist status",
+            "Output": watchlist,
+            "Trigger": "Based on projected risk, DSCR stress, and document quality.",
+            "Meaning": "This is the monitoring intensity the lender would apply after origination if the file were approved under the current evidence set.",
+        },
+        {
+            "Monitor": "90-day projected risk",
+            "Output": format_percent(projected_probability),
+            "Trigger": f"Current score {format_percent(probability)} plus trend signals.",
+            "Meaning": "This does not rescore the loan with new real data; it shows how near-term cash-flow, debt-service, and document trends could move the risk profile.",
+        },
+        {
+            "Monitor": "Cash-flow trigger",
+            "Output": format_score(cash_pressure),
+            "Trigger": "Rising burn, negative FCF, or weak runway.",
+            "Meaning": "Higher values mean the borrower may need cash sooner or may have less flexibility if revenue is delayed.",
+        },
+        {
+            "Monitor": "Debt-service trigger",
+            "Output": format_score(debt_stress),
+            "Trigger": "DSCR and +2% interest-rate stress coverage.",
+            "Meaning": "Higher values mean repayment coverage is thin, especially when the interest-rate stress is applied.",
+        },
+        {
+            "Monitor": "Review cadence",
+            "Output": cadence,
+            "Trigger": "Post-origination monitoring schedule.",
+            "Meaning": "This translates model and evidence risk into an operational review rhythm for the analyst team.",
+        },
+        {
+            "Monitor": "Data refresh",
+            "Output": "Bank feed, accounting, documents",
+            "Trigger": "Latest source refresh across connected evidence.",
+            "Meaning": "The lender would refresh these evidence sources to confirm that cash, accounting, and document signals remain consistent after approval.",
+        },
     ]
 
 
 def grouped_risk_drivers(application, signals):
     return [
-        {"Driver group": "Cash flow", "Score": format_score(signals.get("cash_flow_pressure_score", 0)), "Status": "Stronger" if _number(signals.get("cash_flow_pressure_score")) < 0.35 else "Pressure", "Analyst signal": f"FCF {format_currency(application.get('free_cash_flow', 0))}; runway {format_months(application.get('expected_runway_months', 0))}"},
-        {"Driver group": "Debt service", "Score": format_score(signals.get("debt_service_stress_score", 0)), "Status": "Covered" if _number(signals.get("stressed_debt_service_coverage_ratio")) >= 1 else "Stressed", "Analyst signal": f"DSCR {format_score(signals.get('debt_service_coverage_ratio', 0))}; stressed {format_score(signals.get('stressed_debt_service_coverage_ratio', 0))}"},
-        {"Driver group": "Documents", "Score": format_score(signals.get("document_quality_risk_score", 0)), "Status": "Ready" if _number(signals.get("document_completeness_score")) >= 0.8 else "Incomplete", "Analyst signal": f"Completeness {format_score(signals.get('document_completeness_score', 0))}"},
-        {"Driver group": "Identity/KYB", "Score": format_score(signals.get("identity_verification_risk_score", 0)), "Status": "Clear" if _number(signals.get("identity_verification_risk_score")) < 0.35 else "Review", "Analyst signal": f"Digital footprint and account age {format_score(signals.get('identity_verification_risk_score', 0))}"},
-        {"Driver group": "Forecast", "Score": format_score(signals.get("forecast_execution_risk_score", 0)), "Status": "Supported" if _number(signals.get("forecast_execution_risk_score")) < 0.35 else "Aggressive", "Analyst signal": f"Revenue CAGR {format_percent(application.get('forecast_revenue_cagr', 0))}; forecast support {_number(application.get('forecast_support_uploaded', 0)):.0f}/1"},
-        {"Driver group": "Narrative", "Score": format_score(signals.get("narrative_consistency_risk_score", 0)), "Status": "Aligned" if _number(signals.get("narrative_consistency_risk_score")) < 0.35 else "Check", "Analyst signal": "Compares applicant context with financial and document signals."},
+        {
+            "Driver group": "Cash flow",
+            "Score": format_score(signals.get("cash_flow_pressure_score", 0)),
+            "Status": "Stronger" if _number(signals.get("cash_flow_pressure_score")) < 0.35 else "Pressure",
+            "Analyst signal": f"FCF {format_currency(application.get('free_cash_flow', 0))}; runway {format_months(application.get('expected_runway_months', 0))}",
+            "Meaning": "This tells the analyst whether the company is generating enough cash and runway to absorb repayment timing shocks.",
+        },
+        {
+            "Driver group": "Debt service",
+            "Score": format_score(signals.get("debt_service_stress_score", 0)),
+            "Status": "Covered" if _number(signals.get("stressed_debt_service_coverage_ratio")) >= 1 else "Stressed",
+            "Analyst signal": f"DSCR {format_score(signals.get('debt_service_coverage_ratio', 0))}; stressed {format_score(signals.get('stressed_debt_service_coverage_ratio', 0))}",
+            "Meaning": "This translates DSCR and the +2% rate-stress result into a repayment-capacity signal. Below 1.00 stressed DSCR means cash flow does not fully cover stressed debt service.",
+        },
+        {
+            "Driver group": "Documents",
+            "Score": format_score(signals.get("document_quality_risk_score", 0)),
+            "Status": "Ready" if _number(signals.get("document_completeness_score")) >= 0.8 else "Incomplete",
+            "Analyst signal": f"Completeness {format_score(signals.get('document_completeness_score', 0))}",
+            "Meaning": "This shows whether the expected evidence package is present and whether missing documents reduce confidence in the score.",
+        },
+        {
+            "Driver group": "Identity/KYB",
+            "Score": format_score(signals.get("identity_verification_risk_score", 0)),
+            "Status": "Clear" if _number(signals.get("identity_verification_risk_score")) < 0.35 else "Review",
+            "Analyst signal": f"Digital footprint and account age {format_score(signals.get('identity_verification_risk_score', 0))}",
+            "Meaning": "This helps the analyst decide whether ownership, account age, address, or digital-footprint checks need extra confirmation.",
+        },
+        {
+            "Driver group": "Forecast",
+            "Score": format_score(signals.get("forecast_execution_risk_score", 0)),
+            "Status": "Supported" if _number(signals.get("forecast_execution_risk_score")) < 0.35 else "Aggressive",
+            "Analyst signal": f"Revenue CAGR {format_percent(application.get('forecast_revenue_cagr', 0))}; forecast support {_number(application.get('forecast_support_uploaded', 0)):.0f}/1",
+            "Meaning": "This checks whether the future plan is supported by documents, staffing, margins, and debt-reduction capacity.",
+        },
+        {
+            "Driver group": "Narrative",
+            "Score": format_score(signals.get("narrative_consistency_risk_score", 0)),
+            "Status": "Aligned" if _number(signals.get("narrative_consistency_risk_score")) < 0.35 else "Check",
+            "Analyst signal": "Compares applicant context with financial and document signals.",
+            "Meaning": "This identifies whether the applicant story, management comments, documents, and financial ratios tell the same story.",
+        },
     ]
 
 
@@ -243,10 +339,26 @@ def model_confidence_rows(metrics, prediction, signals):
     )
     confidence = "High" if evidence_strength >= 0.75 else "Medium" if evidence_strength >= 0.5 else "Low"
     return [
-        {"Item": "Model confidence", "Value": confidence, "Meaning": "Combines data completeness, narrative consistency, process integrity, and distance from grade thresholds."},
-        {"Item": "Training ROC-AUC", "Value": format_score(metrics.get("roc_auc", 0), 3), "Meaning": "Validation metric for ranking high-risk cases."},
-        {"Item": "Grade boundary distance", "Value": format_percent(nearest_boundary), "Meaning": "Lower values mean the case is closer to a grade threshold."},
-        {"Item": "Review rule", "Value": "Analyst records final action separately", "Meaning": "Keeps model score, AI review, and human decision distinct."},
+        {
+            "Item": "Model confidence",
+            "Value": confidence,
+            "Meaning": "Combines data completeness, narrative consistency, process integrity, and distance from grade thresholds. Low confidence means the model output needs more human review before publication.",
+        },
+        {
+            "Item": "Training ROC-AUC",
+            "Value": format_score(metrics.get("roc_auc", 0), 3),
+            "Meaning": "Validation metric for ranking high-risk cases in the synthetic training data. It says something about the model overall, not whether this specific borrower is good or bad.",
+        },
+        {
+            "Item": "Grade boundary distance",
+            "Value": format_percent(nearest_boundary),
+            "Meaning": "Lower values mean the score sits close to an A-F threshold. Close-boundary cases are easier to move with fresh evidence, document validation, or analyst judgment.",
+        },
+        {
+            "Item": "Review rule",
+            "Value": "Analyst records final action separately",
+            "Meaning": "The model grade, AI evaluation, and analyst decision are intentionally separate. This protects auditability when the lender overrides or adjusts the published rating.",
+        },
     ]
 
 

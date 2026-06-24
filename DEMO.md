@@ -51,11 +51,14 @@ Click `Score Application`.
 Point out:
 
 - ML scoring technique selector: Random Forest or Logistic Regression, both outputting a 0-1 application risk score
+- SME Portal Intake appears for company-submitted files; opening one in Personal Workspace auto-scores the submitted snapshot for lender review
 - Application risk score
 - Risk grade
 - Model recommendation
 - Final decision status
 - Risk flags
+- Acronym Guide under Account & Help for DSCR, stressed DSCR, FCF, CAGR, KYB, PSD2, ROC-AUC, and file hashes
+- The added interpretation columns in score, evidence, risk-driver, monitoring, and governance tables, which explain how to read each number rather than only displaying the value
 - Cash-flow snapshot: FCF, monthly burn, cash-flow-to-revenue, and expected runway
 - Loan pricing: offered interest rate, annual debt service, DSCR, and +2% stressed DSCR
 - Generated five-year forecast: annual revenue, employees, FCF, and debt
@@ -82,15 +85,18 @@ Point out:
 - Company and loan data entry
 - PSD2/Open Banking consent simulation
 - Accounting and registry/KYB connection simulation
+- Generated CSV examples for each document category, with a demo save action for missing categories
 - Real local file uploads for financial statements, bank statements, tax returns, ownership/KYB, and forecast support
 - Saved-file metadata, SHA-256 hashes, and lender download access
 - Application-readiness checks
 - Ways to strengthen the evidence package
 - Evidence-source coverage
 - Submit Application to Lender Review
+- After lender publication, applicant-safe post-rating what-if planning in the SME portal
+- SME Tutorials and Support show applicant-facing guides and consultant contact, not the internal analyst helpdesk
 
-After submission, sign back in with the `Lender analyst` account and open `Personal Workspace`. The SME portal file is available as the active intake case.
-Open the Evidence tab to download the exact files saved by the SME.
+After submission, sign back in with the `Lender analyst` account and open `Home`, `Operations Desk`, or `Personal Workspace`. The SME portal file appears in `SME Portal Intake`; opening it in Personal Workspace auto-scores the submitted snapshot for lender review.
+Open the Evidence tab to download the exact files saved by the SME and run lender document verification. Use deterministic validation for the fully local path, or choose OpenAI/local model validation to show AI-assisted document classification on bounded previews. If the validation finds a likely mismatch, show how the lender can reject or request clarification using the evidence-mismatch rationale.
 
 ### 4. Case Review
 

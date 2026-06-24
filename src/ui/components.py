@@ -11,12 +11,12 @@ from src.utils.demo_persistence import clear_demo_state, persist_demo_state
 
 PROFILE = {
     "account_type": "lender",
-    "bank": "Rabobank",
+    "bank": "YourBank",
     "id": "01",
     "user_id": "USR-001",
     "name": "Alice Cooper",
     "display_name": "Ms. Cooper",
-    "email": "alice.cooper@rabobank.nl",
+    "email": "alice.cooper@yourbank.com",
     "role": "Credit Analyst",
     "team": "SME Credit Operations",
     "user_type": "Team Member",
@@ -48,7 +48,7 @@ SME_PROFILE = {
     "user_id": "SME-001",
     "name": "A2M Logistics",
     "display_name": "A2M Logistics",
-    "email": "finance@a2mlogistics.eu",
+    "email": "LukeWalker@A2M.com",
     "role": "Finance Director",
     "team": "Company Finance",
     "user_type": "SME Applicant",
@@ -80,7 +80,6 @@ NAV_SECTIONS = [
         [
             ("Home", "Home.py", ":material/home:"),
             ("Personal Workspace", "pages/1_Personal_Workspace.py", ":material/person_search:"),
-            ("SME Credit Health", "pages/6_SME_Credit_Health.py", ":material/monitor_heart:"),
             ("LLM Integration", "pages/5_LLM_Integration.py", ":material/psychology:"),
         ],
     ),
@@ -98,6 +97,7 @@ NAV_SECTIONS = [
             ("Profile & Settings", "pages/7_Profile_Settings.py", ":material/manage_accounts:"),
             ("Tutorials", "pages/10_Tutorials.py", ":material/school:"),
             ("Support", "pages/9_Support.py", ":material/support_agent:"),
+            ("Acronym Guide", "pages/11_Acronym_Guide.py", ":material/menu_book:"),
             ("About", "pages/8_About.py", ":material/info:"),
         ],
     ),
@@ -115,7 +115,7 @@ SME_NAV_SECTIONS = [
         [
             ("Tutorials", "pages/10_Tutorials.py", ":material/school:"),
             ("Support", "pages/9_Support.py", ":material/support_agent:"),
-            ("About", "pages/8_About.py", ":material/info:"),
+            ("Acronym Guide", "pages/11_Acronym_Guide.py", ":material/menu_book:"),
         ],
     ),
 ]
@@ -163,6 +163,17 @@ def get_profile():
     saved_profile = st.session_state.get("user_profile", {})
     defaults = SME_PROFILE if saved_profile.get("account_type") == "sme" else PROFILE
     profile = {**defaults, **saved_profile}
+    previous_lender_bank = "Rabo" + "bank"
+    previous_lender_email = "alice.cooper@" + "rabo" + "bank.nl"
+    previous_sme_email = "finance@" + "a2m" + "logistics.eu"
+    if profile.get("account_type") == "lender":
+        if profile.get("bank") == previous_lender_bank:
+            profile["bank"] = "YourBank"
+        if str(profile.get("email", "")).lower() == previous_lender_email:
+            profile["email"] = "alice.cooper@yourbank.com"
+    elif profile.get("account_type") == "sme":
+        if str(profile.get("email", "")).lower() == previous_sme_email:
+            profile["email"] = "LukeWalker@A2M.com"
     if profile.get("user_type") == "Internal analyst":
         profile["user_type"] = "Team Member"
     profile["dark_mode"] = _is_dark_mode()
@@ -258,8 +269,17 @@ def _rerun():
 
 @st.cache_data(show_spinner=False)
 def _asset_data_uri(relative_path):
-    path = Path(__file__).resolve().parent.parent / relative_path
-    if not path.exists():
+    repo_root = Path(__file__).resolve().parents[2]
+    relative_path = Path(str(relative_path))
+    candidate_paths = [repo_root / relative_path]
+    if relative_path.parts[:1] == ("assets",):
+        candidate_paths.append(repo_root / "data" / relative_path)
+    elif relative_path.parts[:2] == ("data", "assets"):
+        candidate_paths.append(repo_root / Path(*relative_path.parts[1:]))
+    candidate_paths.append(Path(__file__).resolve().parent.parent / relative_path)
+
+    path = next((candidate for candidate in candidate_paths if candidate.exists()), None)
+    if path is None:
         return ""
     return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode("ascii")
 
@@ -434,7 +454,7 @@ def _render_global_theme():
 
 def _render_login_screen():
     login_stage = st.session_state.get("login_stage", "credentials")
-    hero_image = _asset_data_uri("assets/login-risk-hero.png")
+    hero_image = _asset_data_uri("data/assets/login-risk-hero.png")
     hero_image_html = (
         f'<img class="login-hero-image" src="{hero_image}" alt="Risk assessment workspace">'
         if hero_image
@@ -784,7 +804,7 @@ def _render_demo_prompt():
         _demo_prompt_body()
 
 
-def render_sidebar():
+def render_sidebar(suppress_demo_prompt=False):
     _render_global_theme()
     if not st.session_state.get("authenticated"):
         _render_login_screen()
@@ -799,7 +819,7 @@ def render_sidebar():
         switch_page = getattr(st, "switch_page", None)
         if switch_page:
             switch_page(login_destination)
-    if not is_sme_profile(profile):
+    if not is_sme_profile(profile) and not suppress_demo_prompt:
         _render_demo_prompt()
     st.markdown(
         """
@@ -863,6 +883,5 @@ def render_sidebar():
             st.session_state.authenticated = False
             st.session_state.login_transition = False
             st.session_state[DEMO_PROMPT_HANDLED_KEY] = False
-            st.session_state[DEMO_PROMPT_CHECKBOX_KEY] = False
             persist_demo_state()
             _rerun()
