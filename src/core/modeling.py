@@ -21,8 +21,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from src.core.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, TARGET_COLUMN, add_derived_features
-
+from src.core.data_pipeline import (
+    CATEGORICAL_COLUMNS,
+    NUMERIC_COLUMNS,
+    TARGET_COLUMN,
+    add_derived_features,
+)
 
 THRESHOLD_MAP = {"A": 0.15, "B": 0.28, "C": 0.42, "D": 0.58, "E": 0.74, "F": 1.0}
 DEFAULT_MODEL_KEY = "random_forest"
@@ -112,7 +116,9 @@ def _preprocessor():
 
 
 def _precision_at_top_percent(y_true, probabilities, percent=0.10):
-    scored = pd.DataFrame({"actual": y_true, "probability": probabilities}).sort_values("probability", ascending=False)
+    scored = pd.DataFrame({"actual": y_true, "probability": probabilities}).sort_values(
+        "probability", ascending=False
+    )
     top_n = max(1, int(len(scored) * percent))
     return float(scored.head(top_n)["actual"].mean())
 
@@ -147,7 +153,10 @@ def _metrics(y_test, predictions, probabilities):
 
 def _feature_names(pipeline):
     feature_names = pipeline.named_steps["preprocessor"].get_feature_names_out()
-    return [name.replace("numeric__", "").replace("categorical__", "") for name in feature_names]
+    return [
+        name.replace("numeric__", "").replace("categorical__", "")
+        for name in feature_names
+    ]
 
 
 def _feature_importance(pipeline):
@@ -170,7 +179,9 @@ def train_model(applications):
     applications = add_derived_features(applications)
     X = applications[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS]
     y = applications[TARGET_COLUMN]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.25, random_state=42, stratify=y
+    )
 
     classifiers = {
         "random_forest": RandomForestClassifier(
@@ -251,33 +262,49 @@ def rule_flags(application):
     if float(application.get("country_risk_score", 0)) >= 0.55:
         flags.append("Country risk score is elevated.")
     if float(derived["external_financing_pressure"]) >= 0.72:
-        flags.append("External financing pressure is high based on debt, request size, and recent borrowing.")
+        flags.append(
+            "External financing pressure is high based on debt, request size, and recent borrowing."
+        )
     if float(derived["financial_distress_score"]) >= 0.55:
         flags.append("Financial distress score is elevated.")
     if float(derived["transaction_anomaly_score"]) >= 0.22:
         flags.append("Transaction anomaly score is elevated.")
     if float(derived["company_scale_mismatch_score"]) >= 0.65:
-        flags.append("Reported company scale looks stretched relative to the requested exposure.")
+        flags.append(
+            "Reported company scale looks stretched relative to the requested exposure."
+        )
     if float(derived.get("free_cash_flow", 0)) < 0:
         flags.append("Free cash flow is negative at application date.")
     if float(derived["cash_flow_pressure_score"]) >= 0.55:
-        flags.append("Cash-flow pressure is elevated based on burn rate and free cash flow.")
+        flags.append(
+            "Cash-flow pressure is elevated based on burn rate and free cash flow."
+        )
     if float(derived["runway_risk_score"]) >= 0.50:
         flags.append("Expected runway is under six months.")
     if float(derived["cash_conversion_risk_score"]) >= 0.55:
         flags.append("Cash conversion is weak relative to reported revenue.")
-    if float(derived["forecast_revenue_cagr"]) >= 0.25 and not application.get("forecast_support_uploaded"):
-        flags.append("Five-year revenue growth forecast is aggressive and forecast support is missing.")
+    if float(derived["forecast_revenue_cagr"]) >= 0.25 and not application.get(
+        "forecast_support_uploaded"
+    ):
+        flags.append(
+            "Five-year revenue growth forecast is aggressive and forecast support is missing."
+        )
     if float(derived["forecast_plan_aggressiveness_score"]) >= 0.45:
-        flags.append("Five-year plan assumptions appear aggressive relative to current operating signals.")
+        flags.append(
+            "Five-year plan assumptions appear aggressive relative to current operating signals."
+        )
     if float(derived["forecast_execution_risk_score"]) >= 0.50:
         flags.append("Forecast execution risk is elevated.")
     if float(derived["forecast_hiring_efficiency_risk_score"]) >= 0.45:
         flags.append("Revenue growth plan may be under-supported by employee growth.")
     if float(derived["forecast_debt_service_risk_score"]) >= 0.45:
-        flags.append("Debt reduction plan may be strained by current cash-flow pressure.")
+        flags.append(
+            "Debt reduction plan may be strained by current cash-flow pressure."
+        )
     if float(derived["interest_rate"]) >= 0.14:
-        flags.append("Offered interest rate is elevated, increasing debt-service burden.")
+        flags.append(
+            "Offered interest rate is elevated, increasing debt-service burden."
+        )
     if float(derived["debt_service_coverage_ratio"]) < 1.0:
         flags.append("Free cash flow does not cover estimated annual debt service.")
     if float(derived["stressed_debt_service_coverage_ratio"]) < 1.0:
@@ -287,19 +314,25 @@ def rule_flags(application):
     if float(derived["document_completeness_score"]) < 0.80:
         flags.append("Document checklist is incomplete for the requested review.")
     if float(derived["document_quality_risk_score"]) >= 0.45:
-        flags.append("Document quality risk is elevated due to missing items, edits, or late changes.")
+        flags.append(
+            "Document quality risk is elevated due to missing items, edits, or late changes."
+        )
     if float(derived["process_integrity_risk_score"]) >= 0.45:
         flags.append("Application process integrity risk is elevated.")
     if float(derived["identity_verification_risk_score"]) >= 0.45:
         flags.append("Digital identity or KYB verification signals need closer review.")
     if float(derived["working_capital_pressure_score"]) >= 0.50:
-        flags.append("Working-capital pressure is elevated based on liquidity ratios and cash conversion cycle.")
+        flags.append(
+            "Working-capital pressure is elevated based on liquidity ratios and cash conversion cycle."
+        )
     if float(derived["financial_statement_anomaly_score"]) >= 0.50:
         flags.append("Financial statement anomaly score is elevated.")
     if float(derived["related_party_network_risk_score"]) >= 0.45:
         flags.append("Related-party or counterparty network risk is elevated.")
     if float(derived["narrative_consistency_risk_score"]) >= 0.45:
-        flags.append("Applicant narrative may be inconsistent with financial or document signals.")
+        flags.append(
+            "Applicant narrative may be inconsistent with financial or document signals."
+        )
     return flags
 
 
@@ -307,7 +340,9 @@ def score_application(model_bundle, application, model_key=None):
     selected_key = model_bundle._key(model_key)
     pipeline = model_bundle.pipeline_for(selected_key)
     frame = add_derived_features(pd.DataFrame([application]))
-    probability = float(pipeline.predict_proba(frame[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1][0])
+    probability = float(
+        pipeline.predict_proba(frame[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1][0]
+    )
     grade = grade_from_probability(probability)
     return {
         "fraud_probability": probability,
@@ -323,9 +358,13 @@ def score_portfolio(model_bundle, applications, model_key=None):
     selected_key = model_bundle._key(model_key)
     pipeline = model_bundle.pipeline_for(selected_key)
     scored = add_derived_features(applications)
-    probabilities = pipeline.predict_proba(scored[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1]
+    probabilities = pipeline.predict_proba(
+        scored[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS]
+    )[:, 1]
     scored["fraud_probability"] = probabilities
-    scored["grade"] = [grade_from_probability(probability) for probability in probabilities]
+    scored["grade"] = [
+        grade_from_probability(probability) for probability in probabilities
+    ]
     scored["decision"] = [decision_from_grade(grade) for grade in scored["grade"]]
     scored["model_key"] = selected_key
     scored["model_label"] = model_bundle.label_for(selected_key)

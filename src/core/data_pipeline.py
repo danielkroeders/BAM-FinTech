@@ -3,7 +3,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 SEED_DIR = Path(__file__).resolve().parents[2] / "data" / "seed"
 
 BASE_NUMERIC_COLUMNS = [
@@ -189,8 +188,12 @@ def _company_names(industries):
     for index, industry in enumerate(industries):
         prefix = NAME_PREFIXES[index % len(NAME_PREFIXES)]
         root = NAME_ROOTS[(index // len(NAME_PREFIXES)) % len(NAME_ROOTS)]
-        suffix = NAME_SUFFIXES[(index // (len(NAME_PREFIXES) * len(NAME_ROOTS))) % len(NAME_SUFFIXES)]
-        industry_terms = INDUSTRY_NAME_TERMS.get(str(industry), ["Business", "Services", "Capital", "Group"])
+        suffix = NAME_SUFFIXES[
+            (index // (len(NAME_PREFIXES) * len(NAME_ROOTS))) % len(NAME_SUFFIXES)
+        ]
+        industry_terms = INDUSTRY_NAME_TERMS.get(
+            str(industry), ["Business", "Services", "Capital", "Group"]
+        )
         industry_term = industry_terms[index % len(industry_terms)]
         names.append(f"{prefix} {root} {industry_term} {suffix}")
     return names
@@ -226,7 +229,9 @@ def add_derived_features(frame):
     existing_debt = _numeric(enriched, "existing_debt", 0).clip(lower=0)
     recent_loans = _numeric(enriched, "num_recent_loans", 0).clip(lower=0)
     late_payment_ratio = _numeric(enriched, "late_payment_ratio", 0).clip(0, 1)
-    suspicious_transfer_ratio = _numeric(enriched, "suspicious_transfer_ratio", 0).clip(0, 1)
+    suspicious_transfer_ratio = _numeric(enriched, "suspicious_transfer_ratio", 0).clip(
+        0, 1
+    )
     collateral_ratio = _numeric(enriched, "collateral_ratio", 0).clip(lower=0)
     years_in_business = _numeric(enriched, "years_in_business", 0).clip(lower=0)
     employees = _numeric(enriched, "employees", 1).clip(lower=1)
@@ -235,32 +240,68 @@ def add_derived_features(frame):
     monthly_burn_rate = _numeric(enriched, "monthly_burn_rate", 0).clip(lower=0)
     cash_flow_to_revenue = (free_cash_flow / revenue).clip(-1, 1)
     expected_runway = _numeric(enriched, "expected_runway_months", 36).clip(0, 60)
-    forecast_revenue_cagr = _numeric(enriched, "forecast_revenue_cagr", 0.08).clip(-0.25, 0.75)
-    forecast_employee_cagr = _numeric(enriched, "forecast_employee_cagr", 0.04).clip(-0.10, 0.60)
-    forecast_fcf_margin_year5 = _numeric(enriched, "forecast_fcf_margin_year5", 0.08).clip(-0.30, 0.40)
-    planned_debt_reduction = _numeric(enriched, "planned_debt_reduction_pct", 0.20).clip(0, 1)
+    forecast_revenue_cagr = _numeric(enriched, "forecast_revenue_cagr", 0.08).clip(
+        -0.25, 0.75
+    )
+    forecast_employee_cagr = _numeric(enriched, "forecast_employee_cagr", 0.04).clip(
+        -0.10, 0.60
+    )
+    forecast_fcf_margin_year5 = _numeric(
+        enriched, "forecast_fcf_margin_year5", 0.08
+    ).clip(-0.30, 0.40)
+    planned_debt_reduction = _numeric(
+        enriched, "planned_debt_reduction_pct", 0.20
+    ).clip(0, 1)
     current_ratio = _numeric(enriched, "current_ratio", 1.5).clip(0, 6)
     quick_ratio = _numeric(enriched, "quick_ratio", 1.1).clip(0, 5)
     receivables_days = _numeric(enriched, "receivables_days", 45).clip(0, 180)
     payables_days = _numeric(enriched, "payables_days", 45).clip(0, 180)
     inventory_days = _numeric(enriched, "inventory_days", 30).clip(0, 220)
-    financial_statements_uploaded = _numeric(enriched, "financial_statements_uploaded", 1).clip(0, 1)
-    bank_statements_uploaded = _numeric(enriched, "bank_statements_uploaded", 1).clip(0, 1)
+    financial_statements_uploaded = _numeric(
+        enriched, "financial_statements_uploaded", 1
+    ).clip(0, 1)
+    bank_statements_uploaded = _numeric(enriched, "bank_statements_uploaded", 1).clip(
+        0, 1
+    )
     tax_return_uploaded = _numeric(enriched, "tax_return_uploaded", 1).clip(0, 1)
-    ownership_docs_uploaded = _numeric(enriched, "ownership_docs_uploaded", 1).clip(0, 1)
-    forecast_support_uploaded = _numeric(enriched, "forecast_support_uploaded", 1).clip(0, 1)
+    ownership_docs_uploaded = _numeric(enriched, "ownership_docs_uploaded", 1).clip(
+        0, 1
+    )
+    forecast_support_uploaded = _numeric(enriched, "forecast_support_uploaded", 1).clip(
+        0, 1
+    )
     document_edit_count = _numeric(enriched, "document_edit_count", 1).clip(0, 20)
-    late_stage_change_count = _numeric(enriched, "late_stage_change_count", 0).clip(0, 12)
-    process_deviation_score = _numeric(enriched, "process_deviation_score", 0.05).clip(0, 1)
-    email_domain_age_months = _numeric(enriched, "email_domain_age_months", 36).clip(0, 240)
+    late_stage_change_count = _numeric(enriched, "late_stage_change_count", 0).clip(
+        0, 12
+    )
+    process_deviation_score = _numeric(enriched, "process_deviation_score", 0.05).clip(
+        0, 1
+    )
+    email_domain_age_months = _numeric(enriched, "email_domain_age_months", 36).clip(
+        0, 240
+    )
     website_age_months = _numeric(enriched, "website_age_months", 36).clip(0, 240)
-    bank_account_age_months = _numeric(enriched, "bank_account_age_months", 24).clip(0, 180)
-    location_mismatch_score = _numeric(enriched, "location_mismatch_score", 0.05).clip(0, 1)
-    duplicate_contact_score = _numeric(enriched, "duplicate_contact_score", 0.02).clip(0, 1)
-    related_party_exposure_score = _numeric(enriched, "related_party_exposure_score", 0.05).clip(0, 1)
-    counterparty_concentration_score = _numeric(enriched, "counterparty_concentration_score", 0.20).clip(0, 1)
-    shared_identifier_score = _numeric(enriched, "shared_identifier_score", 0.02).clip(0, 1)
-    narrative_contradiction_base = _numeric(enriched, "narrative_contradiction_score", 0).clip(0, 1)
+    bank_account_age_months = _numeric(enriched, "bank_account_age_months", 24).clip(
+        0, 180
+    )
+    location_mismatch_score = _numeric(enriched, "location_mismatch_score", 0.05).clip(
+        0, 1
+    )
+    duplicate_contact_score = _numeric(enriched, "duplicate_contact_score", 0.02).clip(
+        0, 1
+    )
+    related_party_exposure_score = _numeric(
+        enriched, "related_party_exposure_score", 0.05
+    ).clip(0, 1)
+    counterparty_concentration_score = _numeric(
+        enriched, "counterparty_concentration_score", 0.20
+    ).clip(0, 1)
+    shared_identifier_score = _numeric(enriched, "shared_identifier_score", 0.02).clip(
+        0, 1
+    )
+    narrative_contradiction_base = _numeric(
+        enriched, "narrative_contradiction_score", 0
+    ).clip(0, 1)
     narrative_text = _combined_text(
         enriched,
         [
@@ -273,41 +314,94 @@ def add_derived_features(frame):
         ],
     )
     narrative_present = narrative_text.str.strip().ne("").astype(float)
-    plan_evidence_strength = (0.55 * forecast_support_uploaded + 0.45 * narrative_present).clip(0, 1)
+    plan_evidence_strength = (
+        0.55 * forecast_support_uploaded + 0.45 * narrative_present
+    ).clip(0, 1)
 
     debt_to_revenue = (existing_debt / revenue).clip(0, 3)
     request_to_revenue = (requested_amount / revenue).clip(0, 2)
     short_history = ((3 - years_in_business).clip(lower=0) / 3).clip(0, 1)
     collateral_gap = (1 - collateral_ratio).clip(0, 1)
     loan_velocity = (recent_loans / 6).clip(0, 1)
-    payment_stress = (0.55 * late_payment_ratio + 0.45 * (debt_to_revenue / 1.25).clip(0, 1)).clip(0, 1)
-    external_financing_pressure = (0.45 * (request_to_revenue / 0.55).clip(0, 1) + 0.35 * (debt_to_revenue / 0.85).clip(0, 1) + 0.20 * loan_velocity).clip(0, 1)
-    financial_distress = (0.35 * (debt_to_revenue / 0.85).clip(0, 1) + 0.25 * late_payment_ratio + 0.25 * collateral_gap + 0.15 * short_history).clip(0, 1)
-    transaction_anomaly = (0.55 * suspicious_transfer_ratio + 0.20 * late_payment_ratio + 0.15 * country_risk_score + 0.10 * loan_velocity).clip(0, 1)
+    payment_stress = (
+        0.55 * late_payment_ratio + 0.45 * (debt_to_revenue / 1.25).clip(0, 1)
+    ).clip(0, 1)
+    external_financing_pressure = (
+        0.45 * (request_to_revenue / 0.55).clip(0, 1)
+        + 0.35 * (debt_to_revenue / 0.85).clip(0, 1)
+        + 0.20 * loan_velocity
+    ).clip(0, 1)
+    financial_distress = (
+        0.35 * (debt_to_revenue / 0.85).clip(0, 1)
+        + 0.25 * late_payment_ratio
+        + 0.25 * collateral_gap
+        + 0.15 * short_history
+    ).clip(0, 1)
+    transaction_anomaly = (
+        0.55 * suspicious_transfer_ratio
+        + 0.20 * late_payment_ratio
+        + 0.15 * country_risk_score
+        + 0.10 * loan_velocity
+    ).clip(0, 1)
 
     expected_employees = (revenue / 150_000).clip(lower=1)
     staff_capacity_gap = (1 - (employees / expected_employees)).clip(0, 1)
     request_per_employee = requested_amount / employees
     request_staff_pressure = (request_per_employee / 50_000).clip(0, 1)
-    company_scale_mismatch = (0.55 * staff_capacity_gap + 0.45 * request_staff_pressure).clip(0, 1)
+    company_scale_mismatch = (
+        0.55 * staff_capacity_gap + 0.45 * request_staff_pressure
+    ).clip(0, 1)
 
-    company_type_risk = enriched.get("company_type", pd.Series("", index=enriched.index)).map(
-        {"Corporation": 0.05, "LLC": 0.15, "Partnership": 0.28, "Sole Proprietorship": 0.42}
-    ).fillna(0.2)
-    region_risk = enriched.get("region", pd.Series("", index=enriched.index)).isin(["Eastern Europe", "Latin America", "Middle East"]).astype(float)
-    governance_complexity = (0.35 * company_type_risk + 0.30 * region_risk + 0.20 * short_history + 0.15 * country_risk_score).clip(0, 1)
+    company_type_risk = (
+        enriched.get("company_type", pd.Series("", index=enriched.index))
+        .map(
+            {
+                "Corporation": 0.05,
+                "LLC": 0.15,
+                "Partnership": 0.28,
+                "Sole Proprietorship": 0.42,
+            }
+        )
+        .fillna(0.2)
+    )
+    region_risk = (
+        enriched.get("region", pd.Series("", index=enriched.index))
+        .isin(["Eastern Europe", "Latin America", "Middle East"])
+        .astype(float)
+    )
+    governance_complexity = (
+        0.35 * company_type_risk
+        + 0.30 * region_risk
+        + 0.20 * short_history
+        + 0.15 * country_risk_score
+    ).clip(0, 1)
 
     burn_to_revenue = ((monthly_burn_rate * 12) / revenue).clip(0, 2)
     negative_cash_flow_pressure = (-cash_flow_to_revenue).clip(0, 1)
-    cash_flow_pressure = (0.55 * negative_cash_flow_pressure + 0.45 * (burn_to_revenue / 0.35).clip(0, 1)).clip(0, 1)
+    cash_flow_pressure = (
+        0.55 * negative_cash_flow_pressure + 0.45 * (burn_to_revenue / 0.35).clip(0, 1)
+    ).clip(0, 1)
     runway_risk = ((12 - expected_runway).clip(lower=0) / 12).clip(0, 1)
-    low_cash_conversion = ((0.08 - cash_flow_to_revenue).clip(lower=0) / 0.25).clip(0, 1)
-    cash_conversion_risk = (0.65 * low_cash_conversion + 0.35 * payment_stress).clip(0, 1)
+    low_cash_conversion = ((0.08 - cash_flow_to_revenue).clip(lower=0) / 0.25).clip(
+        0, 1
+    )
+    cash_conversion_risk = (0.65 * low_cash_conversion + 0.35 * payment_stress).clip(
+        0, 1
+    )
 
-    aggressive_revenue_growth = ((forecast_revenue_cagr - 0.18).clip(lower=0) / 0.45).clip(0, 1)
-    hiring_growth_gap = ((forecast_revenue_cagr - forecast_employee_cagr - 0.08).clip(lower=0) / 0.45).clip(0, 1)
-    fcf_improvement_need = ((forecast_fcf_margin_year5 - cash_flow_to_revenue).clip(lower=0) / 0.60).clip(0, 1)
-    debt_reduction_strain = (planned_debt_reduction * (0.65 * cash_flow_pressure + 0.35 * debt_to_revenue.clip(0, 1))).clip(0, 1)
+    aggressive_revenue_growth = (
+        (forecast_revenue_cagr - 0.18).clip(lower=0) / 0.45
+    ).clip(0, 1)
+    hiring_growth_gap = (
+        (forecast_revenue_cagr - forecast_employee_cagr - 0.08).clip(lower=0) / 0.45
+    ).clip(0, 1)
+    fcf_improvement_need = (
+        (forecast_fcf_margin_year5 - cash_flow_to_revenue).clip(lower=0) / 0.60
+    ).clip(0, 1)
+    debt_reduction_strain = (
+        planned_debt_reduction
+        * (0.65 * cash_flow_pressure + 0.35 * debt_to_revenue.clip(0, 1))
+    ).clip(0, 1)
     plan_aggressiveness = (
         0.40 * aggressive_revenue_growth
         + 0.25 * hiring_growth_gap
@@ -321,19 +415,37 @@ def add_derived_features(frame):
         + 0.20 * (1 - plan_evidence_strength)
     ).clip(0, 1)
 
-    annual_interest_expense = (requested_amount * interest_rate * (term_months.clip(upper=12) / 12)).clip(lower=0)
-    annual_debt_service = _annual_debt_service(requested_amount, interest_rate, term_months)
+    annual_interest_expense = (
+        requested_amount * interest_rate * (term_months.clip(upper=12) / 12)
+    ).clip(lower=0)
+    annual_debt_service = _annual_debt_service(
+        requested_amount, interest_rate, term_months
+    )
     stressed_interest_rate = (interest_rate + 0.02).clip(0, 0.40)
-    stressed_annual_debt_service = _annual_debt_service(requested_amount, stressed_interest_rate, term_months)
-    debt_service_coverage = (free_cash_flow / annual_debt_service.clip(lower=1)).clip(-5, 10)
-    stressed_debt_service_coverage = (free_cash_flow / stressed_annual_debt_service.clip(lower=1)).clip(-5, 10)
+    stressed_annual_debt_service = _annual_debt_service(
+        requested_amount, stressed_interest_rate, term_months
+    )
+    debt_service_coverage = (free_cash_flow / annual_debt_service.clip(lower=1)).clip(
+        -5, 10
+    )
+    stressed_debt_service_coverage = (
+        free_cash_flow / stressed_annual_debt_service.clip(lower=1)
+    ).clip(-5, 10)
     dscr_risk = ((1.25 - debt_service_coverage).clip(lower=0) / 1.25).clip(0, 1)
-    stressed_dscr_risk = ((1.10 - stressed_debt_service_coverage).clip(lower=0) / 1.10).clip(0, 1)
+    stressed_dscr_risk = (
+        (1.10 - stressed_debt_service_coverage).clip(lower=0) / 1.10
+    ).clip(0, 1)
     interest_rate_risk = ((interest_rate - 0.10).clip(lower=0) / 0.14).clip(0, 1)
-    debt_service_stress = (0.45 * dscr_risk + 0.40 * stressed_dscr_risk + 0.15 * interest_rate_risk).clip(0, 1)
-    debt_reduction_strain = (0.65 * debt_reduction_strain + 0.35 * debt_service_stress).clip(0, 1)
+    debt_service_stress = (
+        0.45 * dscr_risk + 0.40 * stressed_dscr_risk + 0.15 * interest_rate_risk
+    ).clip(0, 1)
+    debt_reduction_strain = (
+        0.65 * debt_reduction_strain + 0.35 * debt_service_stress
+    ).clip(0, 1)
 
-    cash_conversion_cycle = (receivables_days + inventory_days - payables_days).clip(-60, 240)
+    cash_conversion_cycle = (receivables_days + inventory_days - payables_days).clip(
+        -60, 240
+    )
     document_completeness = (
         financial_statements_uploaded
         + bank_statements_uploaded
@@ -358,7 +470,9 @@ def add_derived_features(frame):
 
     young_email_risk = ((12 - email_domain_age_months).clip(lower=0) / 12).clip(0, 1)
     young_website_risk = ((18 - website_age_months).clip(lower=0) / 18).clip(0, 1)
-    young_bank_account_risk = ((12 - bank_account_age_months).clip(lower=0) / 12).clip(0, 1)
+    young_bank_account_risk = ((12 - bank_account_age_months).clip(lower=0) / 12).clip(
+        0, 1
+    )
     identity_verification_risk = (
         0.25 * young_email_risk
         + 0.20 * young_website_risk
@@ -378,7 +492,9 @@ def add_derived_features(frame):
         + 0.20 * receivables_risk
     ).clip(0, 1)
 
-    revenue_cashflow_mismatch = (forecast_revenue_cagr.clip(lower=0) * cash_conversion_risk / 0.45).clip(0, 1)
+    revenue_cashflow_mismatch = (
+        forecast_revenue_cagr.clip(lower=0) * cash_conversion_risk / 0.45
+    ).clip(0, 1)
     financial_statement_anomaly = (
         0.30 * revenue_cashflow_mismatch
         + 0.25 * receivables_risk
@@ -393,10 +509,19 @@ def add_derived_features(frame):
         + 0.10 * suspicious_transfer_ratio
     ).clip(0, 1)
 
-    cash_strength_claim = narrative_text.str.contains("positive cash|strong cash|healthy cash|profitable|stable collections", regex=True)
-    flat_staff_claim = narrative_text.str.contains("flat|unchanged|no hiring|staffing will remain flat", regex=True)
-    debt_reduction_claim = narrative_text.str.contains("reduce debt|debt reduction|deleverag|repay debt", regex=True)
-    documentation_claim = narrative_text.str.contains("complete documentation|documentation complete|fully documented", regex=True)
+    cash_strength_claim = narrative_text.str.contains(
+        "positive cash|strong cash|healthy cash|profitable|stable collections",
+        regex=True,
+    )
+    flat_staff_claim = narrative_text.str.contains(
+        "flat|unchanged|no hiring|staffing will remain flat", regex=True
+    )
+    debt_reduction_claim = narrative_text.str.contains(
+        "reduce debt|debt reduction|deleverag|repay debt", regex=True
+    )
+    documentation_claim = narrative_text.str.contains(
+        "complete documentation|documentation complete|fully documented", regex=True
+    )
     text_contradiction = (
         0.30 * (cash_strength_claim & (cash_flow_to_revenue < 0)).astype(float)
         + 0.25 * (flat_staff_claim & (forecast_revenue_cagr > 0.20)).astype(float)
@@ -406,12 +531,18 @@ def add_derived_features(frame):
     numeric_contradiction = (
         0.35 * (forecast_execution_risk * (1 - plan_evidence_strength))
         + 0.25 * debt_reduction_strain
-        + 0.20 * (cash_conversion_risk * forecast_revenue_cagr.clip(lower=0) / 0.45).clip(0, 1)
+        + 0.20
+        * (cash_conversion_risk * forecast_revenue_cagr.clip(lower=0) / 0.45).clip(0, 1)
         + 0.20 * document_quality_risk
     ).clip(0, 1)
-    narrative_consistency_risk = pd.concat(
-        [narrative_contradiction_base, text_contradiction, numeric_contradiction], axis=1
-    ).max(axis=1).clip(0, 1)
+    narrative_consistency_risk = (
+        pd.concat(
+            [narrative_contradiction_base, text_contradiction, numeric_contradiction],
+            axis=1,
+        )
+        .max(axis=1)
+        .clip(0, 1)
+    )
 
     enriched["forecast_revenue_cagr"] = forecast_revenue_cagr.round(4)
     enriched["interest_rate"] = interest_rate.round(4)
@@ -440,7 +571,9 @@ def add_derived_features(frame):
     enriched["annual_debt_service"] = annual_debt_service.round(2)
     enriched["debt_service_coverage_ratio"] = debt_service_coverage.round(4)
     enriched["stressed_annual_debt_service"] = stressed_annual_debt_service.round(2)
-    enriched["stressed_debt_service_coverage_ratio"] = stressed_debt_service_coverage.round(4)
+    enriched["stressed_debt_service_coverage_ratio"] = (
+        stressed_debt_service_coverage.round(4)
+    )
     enriched["interest_rate_risk_score"] = interest_rate_risk.round(4)
     enriched["debt_service_stress_score"] = debt_service_stress.round(4)
     enriched["current_ratio"] = current_ratio.round(4)
@@ -463,7 +596,9 @@ def add_derived_features(frame):
     enriched["location_mismatch_score"] = location_mismatch_score.round(4)
     enriched["duplicate_contact_score"] = duplicate_contact_score.round(4)
     enriched["related_party_exposure_score"] = related_party_exposure_score.round(4)
-    enriched["counterparty_concentration_score"] = counterparty_concentration_score.round(4)
+    enriched["counterparty_concentration_score"] = (
+        counterparty_concentration_score.round(4)
+    )
     enriched["shared_identifier_score"] = shared_identifier_score.round(4)
     enriched["narrative_contradiction_score"] = narrative_contradiction_base.round(4)
     enriched["document_completeness_score"] = document_completeness.round(4)
@@ -492,8 +627,12 @@ def build_forecast_table(applications):
 
         for year in FORECAST_YEARS:
             projected_revenue = annual_revenue * ((1 + revenue_growth) ** year)
-            projected_employees = max(1, round(employees * ((1 + employee_growth) ** year)))
-            projected_margin = current_margin + ((target_margin - current_margin) * year / 5)
+            projected_employees = max(
+                1, round(employees * ((1 + employee_growth) ** year))
+            )
+            projected_margin = current_margin + (
+                (target_margin - current_margin) * year / 5
+            )
             projected_free_cash_flow = projected_revenue * projected_margin
             projected_debt = max(existing_debt * (1 - debt_reduction * year / 5), 0)
             rows.append(
@@ -514,21 +653,54 @@ def generate_seed_data(rows=1200, seed=42):
     rng = np.random.default_rng(seed)
     SEED_DIR.mkdir(parents=True, exist_ok=True)
 
-    industries = np.array(["Construction", "Wholesale", "Manufacturing", "Logistics", "Healthcare", "Software", "Retail"])
-    regions = np.array(["North America", "Western Europe", "Eastern Europe", "Latin America", "Middle East", "APAC"])
-    company_types = np.array(["LLC", "Corporation", "Partnership", "Sole Proprietorship"])
+    industries = np.array(
+        [
+            "Construction",
+            "Wholesale",
+            "Manufacturing",
+            "Logistics",
+            "Healthcare",
+            "Software",
+            "Retail",
+        ]
+    )
+    regions = np.array(
+        [
+            "North America",
+            "Western Europe",
+            "Eastern Europe",
+            "Latin America",
+            "Middle East",
+            "APAC",
+        ]
+    )
+    company_types = np.array(
+        ["LLC", "Corporation", "Partnership", "Sole Proprietorship"]
+    )
 
-    annual_revenue = rng.lognormal(mean=14.6, sigma=1.0, size=rows).clip(80_000, 80_000_000)
-    requested_amount = (annual_revenue * rng.uniform(0.04, 0.55, size=rows)).clip(15_000, 7_500_000)
+    annual_revenue = rng.lognormal(mean=14.6, sigma=1.0, size=rows).clip(
+        80_000, 80_000_000
+    )
+    requested_amount = (annual_revenue * rng.uniform(0.04, 0.55, size=rows)).clip(
+        15_000, 7_500_000
+    )
     years_in_business = rng.gamma(shape=2.4, scale=3.2, size=rows).clip(0.2, 60)
-    existing_debt = (annual_revenue * rng.uniform(0.02, 0.95, size=rows)).clip(0, 50_000_000)
+    existing_debt = (annual_revenue * rng.uniform(0.02, 0.95, size=rows)).clip(
+        0, 50_000_000
+    )
     num_recent_loans = rng.poisson(1.5, rows).clip(0, 12)
     late_payment_ratio = rng.beta(1.5, 9.0, rows).clip(0, 1)
     suspicious_transfer_ratio = rng.beta(1.1, 14.0, rows).clip(0, 1)
     collateral_ratio = rng.beta(2.5, 2.2, rows).clip(0, 2)
-    employees = np.maximum((annual_revenue / rng.uniform(80_000, 230_000, rows)).astype(int), 1).clip(1, 12000)
+    employees = np.maximum(
+        (annual_revenue / rng.uniform(80_000, 230_000, rows)).astype(int), 1
+    ).clip(1, 12000)
     country_risk_score = rng.beta(1.7, 4.8, rows).clip(0, 1)
-    term_months = rng.choice([12, 18, 24, 36, 48, 60, 72, 84], size=rows, p=[0.05, 0.08, 0.16, 0.32, 0.18, 0.13, 0.05, 0.03])
+    term_months = rng.choice(
+        [12, 18, 24, 36, 48, 60, 72, 84],
+        size=rows,
+        p=[0.05, 0.08, 0.16, 0.32, 0.18, 0.13, 0.05, 0.03],
+    )
 
     industry = rng.choice(industries, size=rows)
     region = rng.choice(regions, size=rows, p=[0.29, 0.24, 0.12, 0.12, 0.08, 0.15])
@@ -570,8 +742,12 @@ def generate_seed_data(rows=1200, seed=42):
     ).clip(-0.45, 0.35)
     free_cash_flow = annual_revenue * cash_flow_margin
     baseline_burn = (annual_revenue / 12) * rng.uniform(0.004, 0.025, rows)
-    monthly_burn_rate = np.where(free_cash_flow < 0, np.abs(free_cash_flow) / 12 + baseline_burn, baseline_burn)
-    liquidity_ratio = (rng.uniform(0.03, 0.32, rows) - 0.08 * debt_pressure - 0.04 * late_payment_ratio).clip(0.01, 0.45)
+    monthly_burn_rate = np.where(
+        free_cash_flow < 0, np.abs(free_cash_flow) / 12 + baseline_burn, baseline_burn
+    )
+    liquidity_ratio = (
+        rng.uniform(0.03, 0.32, rows) - 0.08 * debt_pressure - 0.04 * late_payment_ratio
+    ).clip(0.01, 0.45)
     cash_balance = annual_revenue * liquidity_ratio
     expected_runway_months = np.where(
         monthly_burn_rate > 0,
@@ -609,7 +785,11 @@ def generate_seed_data(rows=1200, seed=42):
         + 0.10 * (free_cash_flow > 0)
         - 0.08 * (expected_runway_months < 9)
     ).clip(0, 0.75)
-    weak_plan_evidence = (forecast_revenue_cagr > 0.24) | (expected_runway_months < 9) | (cash_flow_margin < 0)
+    weak_plan_evidence = (
+        (forecast_revenue_cagr > 0.24)
+        | (expected_runway_months < 9)
+        | (cash_flow_margin < 0)
+    )
     current_ratio = (
         1.65
         + 2.0 * cash_flow_margin
@@ -630,7 +810,9 @@ def generate_seed_data(rows=1200, seed=42):
         [0.05, 0.18, 0.35, 0.42, 0.48, 0.55, 0.22],
         default=0.30,
     )
-    quick_ratio = (current_ratio - inventory_weight + rng.normal(0, 0.16, rows)).clip(0.15, 4.0)
+    quick_ratio = (current_ratio - inventory_weight + rng.normal(0, 0.16, rows)).clip(
+        0.15, 4.0
+    )
     receivables_days = (
         rng.normal(45, 14, rows)
         + 70 * late_payment_ratio
@@ -661,10 +843,18 @@ def generate_seed_data(rows=1200, seed=42):
         - 0.10 * weak_plan_evidence
     ).clip(0.18, 0.98)
     financial_statements_uploaded = rng.binomial(1, document_probability)
-    bank_statements_uploaded = rng.binomial(1, (document_probability - 0.04).clip(0.10, 0.98))
-    tax_return_uploaded = rng.binomial(1, (document_probability - 0.09).clip(0.08, 0.98))
-    ownership_docs_uploaded = rng.binomial(1, (document_probability - 0.02).clip(0.10, 0.98))
-    forecast_support_uploaded = rng.binomial(1, (document_probability - 0.07).clip(0.08, 0.98))
+    bank_statements_uploaded = rng.binomial(
+        1, (document_probability - 0.04).clip(0.10, 0.98)
+    )
+    tax_return_uploaded = rng.binomial(
+        1, (document_probability - 0.09).clip(0.08, 0.98)
+    )
+    ownership_docs_uploaded = rng.binomial(
+        1, (document_probability - 0.02).clip(0.10, 0.98)
+    )
+    forecast_support_uploaded = rng.binomial(
+        1, (document_probability - 0.07).clip(0.08, 0.98)
+    )
     missing_document_count = 5 - (
         financial_statements_uploaded
         + bank_statements_uploaded
@@ -797,15 +987,21 @@ def generate_seed_data(rows=1200, seed=42):
             "location_mismatch_score": location_mismatch_score.round(4),
             "duplicate_contact_score": duplicate_contact_score.round(4),
             "related_party_exposure_score": related_party_exposure_score.round(4),
-            "counterparty_concentration_score": counterparty_concentration_score.round(4),
+            "counterparty_concentration_score": counterparty_concentration_score.round(
+                4
+            ),
             "shared_identifier_score": shared_identifier_score.round(4),
             "narrative_contradiction_score": narrative_contradiction_score.round(4),
         }
     )
     applications = add_derived_features(applications)
 
-    region_risk = np.isin(region, ["Eastern Europe", "Latin America", "Middle East"]).astype(float)
-    industry_risk = np.isin(industry, ["Construction", "Wholesale", "Logistics"]).astype(float)
+    region_risk = np.isin(
+        region, ["Eastern Europe", "Latin America", "Middle East"]
+    ).astype(float)
+    industry_risk = np.isin(
+        industry, ["Construction", "Wholesale", "Logistics"]
+    ).astype(float)
     risk_score = (
         -6.75
         + 1.15 * applications["debt_to_revenue_ratio"]
@@ -844,7 +1040,16 @@ def generate_seed_data(rows=1200, seed=42):
         applications["is_fraud"] = (fraud_probability >= fallback_threshold).astype(int)
 
     company_profiles = applications[
-        ["company_id", "company_name", "industry", "region", "company_type", "annual_revenue", "years_in_business", "employees"]
+        [
+            "company_id",
+            "company_name",
+            "industry",
+            "region",
+            "company_type",
+            "annual_revenue",
+            "years_in_business",
+            "employees",
+        ]
     ].copy()
     cash_flows = applications[
         [
@@ -883,7 +1088,9 @@ def generate_seed_data(rows=1200, seed=42):
         ]
     ].copy()
     decisions = applications[["application_id", "is_fraud"]].copy()
-    decisions["historical_action"] = np.where(decisions["is_fraud"] == 1, "Fraud confirmed", "No fraud found")
+    decisions["historical_action"] = np.where(
+        decisions["is_fraud"] == 1, "Fraud confirmed", "No fraud found"
+    )
 
     applications.to_csv(SEED_DIR / "applications.csv", index=False)
     company_profiles.to_csv(SEED_DIR / "company_profiles.csv", index=False)
@@ -894,7 +1101,9 @@ def generate_seed_data(rows=1200, seed=42):
 
 
 def load_seed_data():
-    applications = pd.read_csv(SEED_DIR / "applications.csv").drop(columns=DEPRECATED_COLUMNS, errors="ignore")
+    applications = pd.read_csv(SEED_DIR / "applications.csv").drop(
+        columns=DEPRECATED_COLUMNS, errors="ignore"
+    )
     cash_flows = pd.read_csv(SEED_DIR / "cash_flows.csv")
     forecasts = pd.read_csv(SEED_DIR / "forecasts.csv")
     cash_flow_columns = [
@@ -903,9 +1112,15 @@ def load_seed_data():
         "cash_flow_to_revenue_ratio",
         "expected_runway_months",
     ]
-    missing_cash_flow_columns = [column for column in cash_flow_columns if column not in applications.columns]
+    missing_cash_flow_columns = [
+        column for column in cash_flow_columns if column not in applications.columns
+    ]
     if missing_cash_flow_columns:
-        applications = applications.merge(cash_flows[["application_id", *missing_cash_flow_columns]], on="application_id", how="left")
+        applications = applications.merge(
+            cash_flows[["application_id", *missing_cash_flow_columns]],
+            on="application_id",
+            how="left",
+        )
     applications = add_derived_features(applications)
     transactions = pd.read_csv(SEED_DIR / "transactions.csv")
     derived_transaction_columns = [
@@ -915,8 +1130,14 @@ def load_seed_data():
         "cash_flow_pressure_score",
         "runway_risk_score",
     ]
-    if any(column not in transactions.columns for column in derived_transaction_columns):
-        transactions = transactions.merge(applications[["application_id", *derived_transaction_columns]], on="application_id", how="left")
+    if any(
+        column not in transactions.columns for column in derived_transaction_columns
+    ):
+        transactions = transactions.merge(
+            applications[["application_id", *derived_transaction_columns]],
+            on="application_id",
+            how="left",
+        )
     return {
         "applications": applications,
         "company_profiles": pd.read_csv(SEED_DIR / "company_profiles.csv"),
@@ -928,16 +1149,32 @@ def load_seed_data():
 
 
 def ensure_seed_data():
-    required = ["applications.csv", "company_profiles.csv", "cash_flows.csv", "forecasts.csv", "transactions.csv", "decisions.csv"]
-    missing_files = not SEED_DIR.exists() or any(not (SEED_DIR / name).exists() for name in required)
+    required = [
+        "applications.csv",
+        "company_profiles.csv",
+        "cash_flows.csv",
+        "forecasts.csv",
+        "transactions.csv",
+        "decisions.csv",
+    ]
+    missing_files = not SEED_DIR.exists() or any(
+        not (SEED_DIR / name).exists() for name in required
+    )
     missing_columns = False
     placeholder_names = False
     if not missing_files:
         sample_applications = pd.read_csv(SEED_DIR / "applications.csv", nrows=25)
         application_columns = set(sample_applications.columns)
-        missing_columns = any(column not in application_columns for column in BASE_NUMERIC_COLUMNS)
+        missing_columns = any(
+            column not in application_columns for column in BASE_NUMERIC_COLUMNS
+        )
         if "company_name" in sample_applications:
-            placeholder_names = sample_applications["company_name"].astype(str).str.match(r"^Company\s+\d+$").any()
+            placeholder_names = (
+                sample_applications["company_name"]
+                .astype(str)
+                .str.match(r"^Company\s+\d+$")
+                .any()
+            )
     if missing_files or missing_columns or placeholder_names:
         generate_seed_data()
     return load_seed_data()

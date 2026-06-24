@@ -7,7 +7,9 @@ from src.utils.document_storage import DOCUMENT_CATEGORIES
 
 
 def _safe_filename(value):
-    cleaned = re.sub(r"[^a-z0-9]+", "-", str(value or "sme-applicant").lower()).strip("-")
+    cleaned = re.sub(r"[^a-z0-9]+", "-", str(value or "sme-applicant").lower()).strip(
+        "-"
+    )
     return cleaned[:48] or "sme-applicant"
 
 
@@ -40,17 +42,25 @@ def build_document_examples(application, generated_on=None):
     """
 
     generated_on = generated_on or datetime.now()
-    company = str(application.get("company_name") or "SME Applicant").strip() or "SME Applicant"
+    company = (
+        str(application.get("company_name") or "SME Applicant").strip()
+        or "SME Applicant"
+    )
     safe_company = _safe_filename(company)
     prior_year = generated_on.year - 1
     revenue = max(_number(application, "annual_revenue", 850_000), 1.0)
     requested_amount = max(_number(application, "requested_amount", 250_000), 1.0)
     existing_debt = max(_number(application, "existing_debt", 0), 0.0)
     free_cash_flow = _number(application, "free_cash_flow", revenue * 0.08)
-    monthly_burn_rate = max(_number(application, "monthly_burn_rate", revenue / 18), 1.0)
+    monthly_burn_rate = max(
+        _number(application, "monthly_burn_rate", revenue / 18), 1.0
+    )
     forecast_growth = _number(application, "forecast_revenue_cagr", 0.12)
     base_monthly_revenue = revenue / 12
-    loan_purpose = str(application.get("loan_purpose_context") or "Working-capital and growth financing").strip()
+    loan_purpose = str(
+        application.get("loan_purpose_context")
+        or "Working-capital and growth financing"
+    ).strip()
 
     financial_rows = [
         {
@@ -201,10 +211,14 @@ def build_document_examples(application, generated_on=None):
         expected_revenue = base_monthly_revenue * growth_factor
         contracted_revenue = expected_revenue * 0.62
         operating_costs = max(monthly_burn_rate, expected_revenue * 0.72)
-        debt_service = requested_amount / max(_number(application, "term_months", 60), 1) * 1.08
+        debt_service = (
+            requested_amount / max(_number(application, "term_months", 60), 1) * 1.08
+        )
         forecast_rows.append(
             {
-                "forecast_month": _month_label(generated_on.year * 12 + generated_on.month + offset),
+                "forecast_month": _month_label(
+                    generated_on.year * 12 + generated_on.month + offset
+                ),
                 "contracted_revenue_eur": round(contracted_revenue),
                 "pipeline_revenue_eur": round(expected_revenue - contracted_revenue),
                 "operating_costs_eur": round(operating_costs),
@@ -220,7 +234,9 @@ def build_document_examples(application, generated_on=None):
             "file_name": f"{safe_company}_example_financial_statements.csv",
             "mime_type": "text/csv",
             "description": "Prior-year income statement, cash, debt, and equity line items.",
-            "content": _csv_bytes(financial_rows, ["statement_year", "line_item", "amount_eur", "notes"]),
+            "content": _csv_bytes(
+                financial_rows, ["statement_year", "line_item", "amount_eur", "notes"]
+            ),
             "generated_date": generated_date,
         },
         "bank_statements": {
@@ -247,7 +263,9 @@ def build_document_examples(application, generated_on=None):
             "file_name": f"{safe_company}_example_tax_return_summary.csv",
             "mime_type": "text/csv",
             "description": "Filed turnover, taxable profit, tax paid, and filing status.",
-            "content": _csv_bytes(tax_rows, ["tax_year", "field", "example_value", "notes"]),
+            "content": _csv_bytes(
+                tax_rows, ["tax_year", "field", "example_value", "notes"]
+            ),
             "generated_date": generated_date,
         },
         "ownership_kyb": {
@@ -255,7 +273,10 @@ def build_document_examples(application, generated_on=None):
             "file_name": f"{safe_company}_example_ownership_kyb.csv",
             "mime_type": "text/csv",
             "description": "Registry, director, UBO, shareholder, and screening evidence.",
-            "content": _csv_bytes(kyb_rows, ["evidence_type", "example_value", "owner_or_source", "status"]),
+            "content": _csv_bytes(
+                kyb_rows,
+                ["evidence_type", "example_value", "owner_or_source", "status"],
+            ),
             "generated_date": generated_date,
         },
         "forecast_support": {

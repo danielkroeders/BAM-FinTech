@@ -2,8 +2,12 @@ import pandas as pd
 import streamlit as st
 
 from src.core.runtime import bootstrap_state
-from src.ui.components import get_profile, is_sme_profile, render_sidebar, safe_page_link
-
+from src.ui.components import (
+    get_profile,
+    is_sme_profile,
+    render_sidebar,
+    safe_page_link,
+)
 
 st.set_page_config(page_title="About", layout="wide")
 bootstrap_state()
@@ -21,15 +25,25 @@ if is_sme_profile(profile):
     )
     link_cols = st.columns(3)
     with link_cols[0]:
-        safe_page_link("pages/6_SME_Credit_Health.py", "Open SME Portal", ":material/domain:")
+        safe_page_link(
+            "pages/6_SME_Credit_Health.py", "Open SME Portal", ":material/domain:"
+        )
     with link_cols[1]:
-        safe_page_link("pages/10_Tutorials.py", "Open SME Tutorials", ":material/school:")
+        safe_page_link(
+            "pages/10_Tutorials.py", "Open SME Tutorials", ":material/school:"
+        )
     with link_cols[2]:
-        safe_page_link("pages/9_Support.py", "Connect with a Consultant", ":material/support_agent:")
+        safe_page_link(
+            "pages/9_Support.py",
+            "Connect with a Consultant",
+            ":material/support_agent:",
+        )
     st.stop()
 
 st.title("About")
-st.caption("Definitions for the workspace scoring dimensions used by the SME application-risk model.")
+st.caption(
+    "Definitions for the workspace scoring dimensions used by the SME application-risk model."
+)
 
 st.info(
     "Scores help prioritize analyst review and do not establish legal, "
@@ -319,10 +333,26 @@ derived_dimensions = [
 
 grade_rows = [
     {"Grade": "A", "Application risk score": "< 0.15", "Recommended action": "Approve"},
-    {"Grade": "B", "Application risk score": "0.15 to < 0.28", "Recommended action": "Approve"},
-    {"Grade": "C", "Application risk score": "0.28 to < 0.42", "Recommended action": "Manual Review"},
-    {"Grade": "D", "Application risk score": "0.42 to < 0.58", "Recommended action": "Manual Review"},
-    {"Grade": "E", "Application risk score": "0.58 to < 0.74", "Recommended action": "Reject"},
+    {
+        "Grade": "B",
+        "Application risk score": "0.15 to < 0.28",
+        "Recommended action": "Approve",
+    },
+    {
+        "Grade": "C",
+        "Application risk score": "0.28 to < 0.42",
+        "Recommended action": "Manual Review",
+    },
+    {
+        "Grade": "D",
+        "Application risk score": "0.42 to < 0.58",
+        "Recommended action": "Manual Review",
+    },
+    {
+        "Grade": "E",
+        "Application risk score": "0.58 to < 0.74",
+        "Recommended action": "Reject",
+    },
     {"Grade": "F", "Application risk score": ">= 0.74", "Recommended action": "Reject"},
 ]
 
@@ -334,11 +364,15 @@ def _filter_rows(frame, query):
     return frame[haystack.str.contains(query.lower(), regex=False)]
 
 
-search_query = st.text_input("Search glossary", placeholder="Try document, DSCR, forecast, KYB, grade...")
+search_query = st.text_input(
+    "Search glossary", placeholder="Try document, DSCR, forecast, KYB, grade..."
+)
 dimension_frame = _filter_rows(pd.DataFrame(dimensions), search_query)
 derived_frame = _filter_rows(pd.DataFrame(derived_dimensions), search_query)
 
-dimension_tab, signal_tab, grade_tab = st.tabs(["Scoring Dimensions", "Derived Signals", "Grade Policy"])
+dimension_tab, signal_tab, grade_tab = st.tabs(
+    ["Scoring Dimensions", "Derived Signals", "Grade Policy"]
+)
 with dimension_tab:
     st.dataframe(dimension_frame, width="stretch", hide_index=True)
 with signal_tab:
@@ -346,4 +380,6 @@ with signal_tab:
 with grade_tab:
     st.dataframe(pd.DataFrame(grade_rows), width="stretch", hide_index=True)
 
-st.warning("E and F recommendations should be treated as high-risk decision support requiring human compliance review.")
+st.warning(
+    "E and F recommendations should be treated as high-risk decision support requiring human compliance review."
+)

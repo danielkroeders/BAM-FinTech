@@ -6,12 +6,17 @@ import streamlit as st
 from src.core.runtime import bootstrap_state
 from src.ui.components import get_profile, render_sidebar, save_profile
 
-
 st.set_page_config(page_title="Profile & Settings", layout="wide")
 bootstrap_state()
 render_sidebar()
 
-PROFILE_TYPES = ["Team Member", "Team Manager", "Risk Lead", "Support Specialist", "Read-only Reviewer"]
+PROFILE_TYPES = [
+    "Team Member",
+    "Team Manager",
+    "Risk Lead",
+    "Support Specialist",
+    "Read-only Reviewer",
+]
 PERMISSIONS = [
     "Credit review and manual decision approval",
     "Credit review",
@@ -91,12 +96,18 @@ def _integration_rows(profile):
     integrations = profile["integrations"]
     rows = []
     for item in INTEGRATION_CATALOG:
-        account = profile["email"] if item["key"] in ["gmail", "outlook", "zoom"] else item["account"]
+        account = (
+            profile["email"]
+            if item["key"] in ["gmail", "outlook", "zoom"]
+            else item["account"]
+        )
         rows.append(
             {
                 "Category": item["category"],
                 "Integration": item["name"],
-                "Status": "Connected" if integrations.get(item["key"]) else "Disconnected",
+                "Status": (
+                    "Connected" if integrations.get(item["key"]) else "Disconnected"
+                ),
                 "Account / workspace": account,
                 "Use": item["use"],
             }
@@ -111,7 +122,9 @@ if st.session_state.get("profile_settings_saved"):
 profile = get_profile()
 
 st.title("Profile & Settings")
-st.caption("Manage analyst identity, connected channels, permissions, and account preferences.")
+st.caption(
+    "Manage analyst identity, connected channels, permissions, and account preferences."
+)
 
 profile_rows = pd.DataFrame(
     [
@@ -129,7 +142,9 @@ profile_rows = pd.DataFrame(
 )
 integration_rows = _integration_rows(profile)
 
-profile_tab, apps_tab, admin_tab = st.tabs(["Profile", "Personal Apps", "Admin Controls"])
+profile_tab, apps_tab, admin_tab = st.tabs(
+    ["Profile", "Personal Apps", "Admin Controls"]
+)
 
 with profile_tab:
     st.subheader("Profile")
@@ -141,8 +156,12 @@ with apps_tab:
 
 with admin_tab:
     st.subheader("Admin Controls")
-    st.caption("Update session preferences and controlled profile fields for the current demo workspace.")
-    admin_controls_enabled = st.checkbox("Enable controlled profile fields", value=False)
+    st.caption(
+        "Update session preferences and controlled profile fields for the current demo workspace."
+    )
+    admin_controls_enabled = st.checkbox(
+        "Enable controlled profile fields", value=False
+    )
     with st.form("profile_settings_form"):
         identity_left, identity_right = st.columns(2)
         with identity_left:
@@ -196,17 +215,25 @@ with admin_tab:
 
         notification_cols = st.columns(2)
         with notification_cols[0]:
-            review_alerts = st.checkbox("Review alerts", value=bool(profile["review_alerts"]))
+            review_alerts = st.checkbox(
+                "Review alerts", value=bool(profile["review_alerts"])
+            )
         with notification_cols[1]:
-            daily_digest = st.checkbox("Daily digest", value=bool(profile["daily_digest"]))
+            daily_digest = st.checkbox(
+                "Daily digest", value=bool(profile["daily_digest"])
+            )
         dark_mode = st.checkbox("Dark mode", value=bool(profile["dark_mode"]))
 
         saved = st.form_submit_button("Save Admin Controls", width="stretch")
 
     if saved:
         channel_key = preferred_channel.lower()
-        if channel_key in ["slack", "teams"] and not integration_values.get(channel_key, False):
-            st.error(f"Connect {preferred_channel} before setting it as the preferred channel.")
+        if channel_key in ["slack", "teams"] and not integration_values.get(
+            channel_key, False
+        ):
+            st.error(
+                f"Connect {preferred_channel} before setting it as the preferred channel."
+            )
         else:
             save_profile(
                 {
@@ -230,7 +257,9 @@ with admin_tab:
                 }
             )
             st.session_state.profile_settings_saved = True
-            rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+            rerun = getattr(st, "rerun", None) or getattr(
+                st, "experimental_rerun", None
+            )
             if rerun:
                 rerun()
 

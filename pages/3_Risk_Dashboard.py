@@ -8,7 +8,6 @@ from src.core.runtime import bootstrap_state
 from src.utils.table_views import application_table
 from src.ui.components import open_application_in_workspace, render_sidebar
 
-
 st.set_page_config(page_title="Risk Dashboard", layout="wide")
 bootstrap_state()
 render_sidebar()
@@ -58,7 +57,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
+selected_model_key = st.session_state.get(
+    "selected_ml_model", st.session_state.model_bundle.default_model_key
+)
 portfolio = score_portfolio(
     st.session_state.model_bundle,
     st.session_state.seed_data["applications"],
@@ -78,7 +79,11 @@ def _display_table(frame, columns):
 
 
 def _chart_style(chart):
-    dark = bool(st.session_state.get("dark_mode_preference", st.session_state.get("dark_mode", False)))
+    dark = bool(
+        st.session_state.get(
+            "dark_mode_preference", st.session_state.get("dark_mode", False)
+        )
+    )
     text = "#cbd5e1" if dark else "#475569"
     grid = "rgba(148, 163, 184, 0.24)" if dark else "rgba(148, 163, 184, 0.28)"
     return (
@@ -165,7 +170,9 @@ def _activity_table(history):
         "review_action",
         "final_decision",
     ]
-    available_columns = [column for column in visible_columns if column in history.columns]
+    available_columns = [
+        column for column in visible_columns if column in history.columns
+    ]
     return _display_table(history, available_columns)
 
 
@@ -178,9 +185,13 @@ st.markdown(
 )
 
 with _bordered_container():
-    st.markdown('<div class="risk-panel-title">Portfolio Filters</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="risk-panel-title">Portfolio Filters</div>', unsafe_allow_html=True
+    )
     filter_top = st.columns(4)
-    selected_grades = filter_top[0].multiselect("Grades", list("ABCDEF"), default=list("ABCDEF"))
+    selected_grades = filter_top[0].multiselect(
+        "Grades", list("ABCDEF"), default=list("ABCDEF")
+    )
     selected_decisions = filter_top[1].multiselect(
         "Decisions",
         sorted(portfolio["decision"].unique()),
@@ -197,7 +208,9 @@ with _bordered_container():
         default=sorted(portfolio["region"].unique()),
     )
     filter_bottom = st.columns([2.4, 1])
-    probability_range = filter_bottom[0].slider("Application risk score", 0.0, 1.0, (0.0, 1.0), step=0.01)
+    probability_range = filter_bottom[0].slider(
+        "Application risk score", 0.0, 1.0, (0.0, 1.0), step=0.01
+    )
     filter_bottom[1].markdown(
         f'<div class="risk-filter-note">Showing scores from {format_percent(probability_range[0])} '
         f"to {format_percent(probability_range[1])}.</div>",
@@ -215,7 +228,9 @@ filtered = portfolio[
 total_exposure = filtered["requested_amount"].sum()
 high_risk = filtered[filtered["grade"].isin(["E", "F"])]
 manual_review = filtered[filtered["grade"].isin(["C", "D"])]
-review_load = (len(high_risk) + len(manual_review)) / len(filtered) if len(filtered) else 0
+review_load = (
+    (len(high_risk) + len(manual_review)) / len(filtered) if len(filtered) else 0
+)
 average_risk = filtered["fraud_probability"].mean() if len(filtered) else 0
 
 metric_cols = st.columns(4)
@@ -227,13 +242,24 @@ metric_cols[3].metric("Review Load", format_percent(review_load))
 chart_cols = st.columns(2)
 with chart_cols[0]:
     with _bordered_container():
-        st.markdown('<div class="risk-panel-title">Grade Distribution</div>', unsafe_allow_html=True)
-        st.markdown('<div class="risk-panel-copy">A-F portfolio risk composition across the active filter set.</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="risk-panel-title">Grade Distribution</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<div class="risk-panel-copy">A-F portfolio risk composition across the active filter set.</div>',
+            unsafe_allow_html=True,
+        )
         st.altair_chart(_grade_chart(filtered), width="stretch")
 with chart_cols[1]:
     with _bordered_container():
-        st.markdown('<div class="risk-panel-title">Decision Mix</div>', unsafe_allow_html=True)
-        st.markdown('<div class="risk-panel-copy">Approve, manual review, and reject recommendations in balance.</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="risk-panel-title">Decision Mix</div>', unsafe_allow_html=True
+        )
+        st.markdown(
+            '<div class="risk-panel-copy">Approve, manual review, and reject recommendations in balance.</div>',
+            unsafe_allow_html=True,
+        )
         st.altair_chart(_decision_chart(filtered), width="stretch")
 
 if filtered.empty:
@@ -242,15 +268,23 @@ else:
     action_cols = st.columns([2, 1], vertical_alignment="bottom")
     open_options = [
         f"{row.application_id} - {row.company_name} | Grade {row.grade} | {format_percent(row.fraud_probability)}"
-        for row in filtered.sort_values("fraud_probability", ascending=False).head(50).itertuples()
+        for row in filtered.sort_values("fraud_probability", ascending=False)
+        .head(50)
+        .itertuples()
     ]
-    selected_open_label = action_cols[0].selectbox("Open filtered application", open_options)
+    selected_open_label = action_cols[0].selectbox(
+        "Open filtered application", open_options
+    )
     selected_open_id = selected_open_label.split(" - ", 1)[0]
-    selected_open = filtered[filtered["application_id"] == selected_open_id].iloc[0].to_dict()
+    selected_open = (
+        filtered[filtered["application_id"] == selected_open_id].iloc[0].to_dict()
+    )
     if action_cols[1].button("Open In Workspace", width="stretch"):
         open_application_in_workspace(selected_open, "Risk Dashboard")
 
-review_tab, highest_tab, activity_tab = st.tabs(["Review Queues", "Highest Risk", "Session Activity"])
+review_tab, highest_tab, activity_tab = st.tabs(
+    ["Review Queues", "Highest Risk", "Session Activity"]
+)
 
 table_columns = [
     "application_id",
@@ -269,7 +303,12 @@ with review_tab:
         st.subheader("Manual Review")
         st.caption("C-D cases for analyst review and evidence follow-up.")
         st.dataframe(
-            _display_table(manual_review.sort_values("fraud_probability", ascending=False).head(15), table_columns),
+            _display_table(
+                manual_review.sort_values("fraud_probability", ascending=False).head(
+                    15
+                ),
+                table_columns,
+            ),
             width="stretch",
             hide_index=True,
         )
@@ -277,7 +316,10 @@ with review_tab:
         st.subheader("Compliance Review")
         st.caption("E-F outcomes require human compliance review before final action.")
         st.dataframe(
-            _display_table(high_risk.sort_values("fraud_probability", ascending=False).head(15), table_columns),
+            _display_table(
+                high_risk.sort_values("fraud_probability", ascending=False).head(15),
+                table_columns,
+            ),
             width="stretch",
             hide_index=True,
         )
@@ -286,7 +328,10 @@ with highest_tab:
     st.subheader("Highest-Risk Applications")
     st.caption("Top visible applications by application risk score.")
     st.dataframe(
-        _display_table(filtered.sort_values("fraud_probability", ascending=False).head(25), table_columns),
+        _display_table(
+            filtered.sort_values("fraud_probability", ascending=False).head(25),
+            table_columns,
+        ),
         width="stretch",
         hide_index=True,
     )
@@ -306,8 +351,12 @@ with activity_tab:
             reviews = pd.DataFrame(st.session_state.review_history)
             display_reviews = reviews.copy()
             if "final_probability" in display_reviews:
-                display_reviews["final_probability"] = display_reviews["final_probability"].apply(format_percent)
-                display_reviews = display_reviews.rename(columns={"final_probability": "Final application risk score"})
+                display_reviews["final_probability"] = display_reviews[
+                    "final_probability"
+                ].apply(format_percent)
+                display_reviews = display_reviews.rename(
+                    columns={"final_probability": "Final application risk score"}
+                )
             st.dataframe(display_reviews, width="stretch", hide_index=True)
         else:
             st.info("No analyst reviews have been saved in this session yet.")

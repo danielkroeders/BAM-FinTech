@@ -6,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-
 DOCUMENT_ROOT = Path(__file__).resolve().parents[2] / ".tmp" / "sme_documents"
 DOCUMENT_CATEGORIES = {
     "financial_statements": "Financial statements",
@@ -24,7 +23,11 @@ def _safe_segment(value, fallback="item"):
 
 def _application_dir(session_id, application_id, root=None):
     base = Path(root) if root else DOCUMENT_ROOT
-    return base / _safe_segment(session_id, "session") / _safe_segment(application_id, "application")
+    return (
+        base
+        / _safe_segment(session_id, "session")
+        / _safe_segment(application_id, "application")
+    )
 
 
 def _manifest_path(session_id, application_id, root=None):
@@ -50,7 +53,15 @@ def _write_manifest(session_id, application_id, documents, root=None):
     temp_path.replace(path)
 
 
-def save_document(session_id, application_id, category, filename, content, content_type=None, root=None):
+def save_document(
+    session_id,
+    application_id,
+    category,
+    filename,
+    content,
+    content_type=None,
+    root=None,
+):
     if category not in DOCUMENT_CATEGORIES:
         raise ValueError(f"Unsupported document category: {category}")
     if not isinstance(content, bytes) or not content:
@@ -82,7 +93,9 @@ def save_document(session_id, application_id, category, filename, content, conte
         "category_label": DOCUMENT_CATEGORIES[category],
         "original_name": original_name,
         "stored_name": stored_name,
-        "content_type": content_type or mimetypes.guess_type(original_name)[0] or "application/octet-stream",
+        "content_type": content_type
+        or mimetypes.guess_type(original_name)[0]
+        or "application/octet-stream",
         "size_bytes": len(content),
         "sha256": digest,
         "uploaded_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -95,13 +108,17 @@ def save_document(session_id, application_id, category, filename, content, conte
 def list_documents(session_id, application_id, category=None, root=None):
     documents = _load_manifest(session_id, application_id, root=root)
     if category:
-        documents = [document for document in documents if document.get("category") == category]
+        documents = [
+            document for document in documents if document.get("category") == category
+        ]
     return sorted(documents, key=lambda item: item.get("uploaded_at", ""), reverse=True)
 
 
 def read_document(session_id, application_id, document_id, root=None):
     documents = _load_manifest(session_id, application_id, root=root)
-    document = next((item for item in documents if item.get("document_id") == document_id), None)
+    document = next(
+        (item for item in documents if item.get("document_id") == document_id), None
+    )
     if not document:
         raise FileNotFoundError(f"Unknown document: {document_id}")
     path = (
@@ -128,7 +145,9 @@ def clear_session_documents(session_id, root=None):
     target = base / _safe_segment(session_id, "session")
     if not target.exists():
         return
-    for path in sorted(target.rglob("*"), key=lambda item: len(item.parts), reverse=True):
+    for path in sorted(
+        target.rglob("*"), key=lambda item: len(item.parts), reverse=True
+    ):
         if path.is_file():
             path.unlink()
         elif path.is_dir():

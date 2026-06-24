@@ -3,7 +3,6 @@ import os
 import sys
 from pathlib import Path
 
-
 PROFILE_FILENAME = "local_server.json"
 
 
@@ -14,14 +13,26 @@ def llm_models_dir():
 
     if os.name == "nt":
         local_app_data = os.getenv("LOCALAPPDATA")
-        base_dir = Path(local_app_data) if local_app_data else Path.home() / "AppData" / "Local"
+        base_dir = (
+            Path(local_app_data)
+            if local_app_data
+            else Path.home() / "AppData" / "Local"
+        )
         return base_dir / "CredRiskAI" / "llm_models"
 
     if sys.platform == "darwin":
-        return Path.home() / "Library" / "Application Support" / "CredRiskAI" / "llm_models"
+        return (
+            Path.home()
+            / "Library"
+            / "Application Support"
+            / "CredRiskAI"
+            / "llm_models"
+        )
 
     config_home = os.getenv("XDG_CONFIG_HOME")
-    base_dir = Path(config_home).expanduser() if config_home else Path.home() / ".config"
+    base_dir = (
+        Path(config_home).expanduser() if config_home else Path.home() / ".config"
+    )
     return base_dir / "CredRiskAI" / "llm_models"
 
 

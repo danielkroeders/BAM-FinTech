@@ -8,8 +8,11 @@ from io import BytesIO
 import pandas as pd
 import streamlit as st
 
-from src.utils.document_storage import DOCUMENT_CATEGORIES, list_documents, read_document
-
+from src.utils.document_storage import (
+    DOCUMENT_CATEGORIES,
+    list_documents,
+    read_document,
+)
 
 DOCUMENT_VALIDATION_PROVIDERS = ["Deterministic", "OpenAI API", "Local server"]
 MAX_PREVIEW_CHARS = 4500
@@ -156,7 +159,9 @@ def _archive_text_preview(content, suffix):
     snippets = []
     for member in members:
         try:
-            snippets.append(_strip_xml(archive.read(member).decode("utf-8", errors="ignore")))
+            snippets.append(
+                _strip_xml(archive.read(member).decode("utf-8", errors="ignore"))
+            )
         except KeyError:
             continue
     return "\n".join(snippet for snippet in snippets if snippet)
@@ -172,16 +177,31 @@ def text_preview(content, metadata, max_chars=MAX_PREVIEW_CHARS):
         if extracted:
             return extracted[:max_chars], "extracted office text"
 
-    if content_type.startswith("text/") or suffix in {".csv", ".txt", ".md", ".json", ".xml"}:
+    if content_type.startswith("text/") or suffix in {
+        ".csv",
+        ".txt",
+        ".md",
+        ".json",
+        ".xml",
+    }:
         decoded = _decode_text(content)
         if decoded:
             return decoded[:max_chars], "decoded text"
 
     if suffix == ".pdf" or content[:4] == b"%PDF":
-        return "PDF binary detected. Text extraction is not enabled in this MVP check.", "binary pdf"
+        return (
+            "PDF binary detected. Text extraction is not enabled in this MVP check.",
+            "binary pdf",
+        )
     if suffix in {".png", ".jpg", ".jpeg"} or content_type.startswith("image/"):
-        return "Image binary detected. OCR is not enabled in this MVP check.", "binary image"
-    return "Binary or unsupported file type. Classification uses filename, MIME type, size, and extension only.", "metadata only"
+        return (
+            "Image binary detected. OCR is not enabled in this MVP check.",
+            "binary image",
+        )
+    return (
+        "Binary or unsupported file type. Classification uses filename, MIME type, size, and extension only.",
+        "metadata only",
+    )
 
 
 def _category_scores(text, filename):
@@ -195,30 +215,59 @@ def _category_scores(text, filename):
     return scores, hits
 
 
-def _status_from_scores(expected_category, detected_category, expected_score, top_score, preview_source, suffix):
-    if preview_source in {"binary pdf", "binary image", "metadata only"} and expected_score < 3:
+def _status_from_scores(
+    expected_category,
+    detected_category,
+    expected_score,
+    top_score,
+    preview_source,
+    suffix,
+):
+    if (
+        preview_source in {"binary pdf", "binary image", "metadata only"}
+        and expected_score < 3
+    ):
         return "Needs review", 0.38
     if detected_category == expected_category and expected_score >= 4:
         return "Verified", min(0.95, 0.58 + expected_score * 0.055)
-    if detected_category == expected_category and expected_score >= 2 and suffix in {".csv", ".txt", ".md", ".json", ".docx", ".xlsx"}:
+    if (
+        detected_category == expected_category
+        and expected_score >= 2
+        and suffix in {".csv", ".txt", ".md", ".json", ".docx", ".xlsx"}
+    ):
         return "Needs review", min(0.74, 0.42 + expected_score * 0.08)
-    if detected_category != expected_category and top_score >= 3 and expected_score <= 1:
+    if (
+        detected_category != expected_category
+        and top_score >= 3
+        and expected_score <= 1
+    ):
         return "Mismatch", min(0.9, 0.52 + top_score * 0.07)
     return "Needs review", min(0.65, 0.35 + max(expected_score, top_score) * 0.05)
 
 
 def deterministic_document_validation(content, metadata, expected_category=None):
     expected_category = expected_category or metadata.get("category")
-    expected_label = DOCUMENT_CATEGORIES.get(expected_category, str(expected_category or "Unknown"))
+    expected_label = DOCUMENT_CATEGORIES.get(
+        expected_category, str(expected_category or "Unknown")
+    )
     preview, preview_source = text_preview(content, metadata)
     filename = str(metadata.get("original_name", ""))
     suffix = f".{filename.rsplit('.', 1)[-1].lower()}" if "." in filename else ""
     scores, hits = _category_scores(preview, filename)
     detected_category = max(scores, key=scores.get) if scores else expected_category
-    detected_label = DOCUMENT_CATEGORIES.get(detected_category, str(detected_category or "Unknown"))
+    detected_label = DOCUMENT_CATEGORIES.get(
+        detected_category, str(detected_category or "Unknown")
+    )
     expected_score = scores.get(expected_category, 0)
     top_score = scores.get(detected_category, 0)
-    status, confidence = _status_from_scores(expected_category, detected_category, expected_score, top_score, preview_source, suffix)
+    status, confidence = _status_from_scores(
+        expected_category,
+        detected_category,
+        expected_score,
+        top_score,
+        preview_source,
+        suffix,
+    )
 
     if expected_category not in DOCUMENT_CATEGORIES:
         status = "Needs review"
@@ -228,13 +277,9 @@ def deterministic_document_validation(content, metadata, expected_category=None)
     if status == "Verified":
         rationale = f"The file content and filename contain markers expected for {expected_label.lower()}."
     elif status == "Mismatch":
-        rationale = (
-            f"The file looks more like {detected_label.lower()} than {expected_label.lower()} based on visible markers."
-        )
+        rationale = f"The file looks more like {detected_label.lower()} than {expected_label.lower()} based on visible markers."
     else:
-        rationale = (
-            f"The file needs human confirmation because the visible content is limited or does not strongly prove it is {expected_label.lower()}."
-        )
+        rationale = f"The file needs human confirmation because the visible content is limited or does not strongly prove it is {expected_label.lower()}."
 
     return {
         "document_id": metadata.get("document_id"),
@@ -259,7 +304,9 @@ def deterministic_document_validation(content, metadata, expected_category=None)
 
 def _validation_messages(content, metadata, deterministic_result):
     preview, preview_source = text_preview(content, metadata)
-    categories = ", ".join(f"{key}: {value}" for key, value in DOCUMENT_CATEGORIES.items())
+    categories = ", ".join(
+        f"{key}: {value}" for key, value in DOCUMENT_CATEGORIES.items()
+    )
     user_payload = {
         "document_metadata": {
             "file": metadata.get("original_name"),
@@ -317,7 +364,9 @@ def _coerce_ai_result(payload, fallback, provider):
     if status not in {"Verified", "Needs review", "Mismatch"}:
         status = "Needs review"
 
-    detected_category = str(payload.get("detected_category", fallback["detected_category"])).strip()
+    detected_category = str(
+        payload.get("detected_category", fallback["detected_category"])
+    ).strip()
     if detected_category not in DOCUMENT_CATEGORIES:
         detected_category = fallback["detected_category"]
 
@@ -339,11 +388,15 @@ def _coerce_ai_result(payload, fallback, provider):
             "status": status,
             "confidence": round(confidence, 2),
             "detected_category": detected_category,
-            "detected_label": DOCUMENT_CATEGORIES.get(detected_category, detected_category),
+            "detected_label": DOCUMENT_CATEGORIES.get(
+                detected_category, detected_category
+            ),
             "provider": provider,
-            "rationale": str(payload.get("rationale", fallback["rationale"])).strip() or fallback["rationale"],
+            "rationale": str(payload.get("rationale", fallback["rationale"])).strip()
+            or fallback["rationale"],
             "evidence": [str(item)[:160] for item in evidence[:6]],
-            "follow_up": str(payload.get("follow_up", fallback["follow_up"])).strip() or fallback["follow_up"],
+            "follow_up": str(payload.get("follow_up", fallback["follow_up"])).strip()
+            or fallback["follow_up"],
         }
     )
     return result
@@ -363,21 +416,27 @@ def _openai_validation(content, metadata, deterministic_result, model):
             model=model or "gpt-4.1-mini",
             input=_validation_messages(content, metadata, deterministic_result),
         )
-        return _coerce_ai_result(_extract_json(response.output_text), deterministic_result, "OpenAI API")
+        return _coerce_ai_result(
+            _extract_json(response.output_text), deterministic_result, "OpenAI API"
+        )
     except Exception as error:
         result = dict(deterministic_result)
         result["ai_error"] = f"OpenAI document validation failed: {error}"
         return result
 
 
-def _local_validation(content, metadata, deterministic_result, model, base_url=None, api_key=None):
+def _local_validation(
+    content, metadata, deterministic_result, model, base_url=None, api_key=None
+):
     if not st.session_state.get("local_llm_settings_saved", False):
         result = dict(deterministic_result)
         result["ai_error"] = "Local server settings have not been saved yet."
         return result
     if not (base_url or "").strip() or not (model or "").strip():
         result = dict(deterministic_result)
-        result["ai_error"] = "Local server URL and model name are required before calling the local model."
+        result["ai_error"] = (
+            "Local server URL and model name are required before calling the local model."
+        )
         return result
     try:
         from openai import OpenAI
@@ -395,19 +454,37 @@ def _local_validation(content, metadata, deterministic_result, model, base_url=N
         )
         st.session_state.last_local_llm_base_url = normalized_base_url
         response_text = response.choices[0].message.content
-        return _coerce_ai_result(_extract_json(response_text), deterministic_result, "Local server")
+        return _coerce_ai_result(
+            _extract_json(response_text), deterministic_result, "Local server"
+        )
     except Exception as error:
         result = dict(deterministic_result)
         result["ai_error"] = f"Local document validation failed: {error}"
         return result
 
 
-def validate_document(content, metadata, provider="Deterministic", model=None, local_base_url=None, local_api_key=None):
-    deterministic_result = deterministic_document_validation(content, metadata, metadata.get("category"))
+def validate_document(
+    content,
+    metadata,
+    provider="Deterministic",
+    model=None,
+    local_base_url=None,
+    local_api_key=None,
+):
+    deterministic_result = deterministic_document_validation(
+        content, metadata, metadata.get("category")
+    )
     if provider == "OpenAI API":
         return _openai_validation(content, metadata, deterministic_result, model)
     if provider == "Local server":
-        return _local_validation(content, metadata, deterministic_result, model, local_base_url, local_api_key)
+        return _local_validation(
+            content,
+            metadata,
+            deterministic_result,
+            model,
+            local_base_url,
+            local_api_key,
+        )
     return deterministic_result
 
 
@@ -415,7 +492,9 @@ def validation_summary(results):
     total = len(results)
     verified = sum(1 for result in results if result.get("status") == "Verified")
     mismatches = sum(1 for result in results if result.get("status") == "Mismatch")
-    needs_review = sum(1 for result in results if result.get("status") == "Needs review")
+    needs_review = sum(
+        1 for result in results if result.get("status") == "Needs review"
+    )
     if not total:
         status = "No documents"
     elif mismatches:
@@ -444,7 +523,9 @@ def run_document_validation(
 ):
     results = []
     for document in list_documents(session_id, application_id, root=root):
-        content, metadata = read_document(session_id, application_id, document["document_id"], root=root)
+        content, metadata = read_document(
+            session_id, application_id, document["document_id"], root=root
+        )
         results.append(
             validate_document(
                 content,

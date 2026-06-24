@@ -6,7 +6,6 @@ from uuid import uuid4
 
 import streamlit as st
 
-
 SESSION_QUERY_KEY = "demo_session"
 SESSION_STATE_KEY = "demo_session_id"
 SESSION_LOADED_KEY = "demo_session_loaded"
@@ -86,7 +85,11 @@ def _set_query_session_id(session_id):
 
 
 def _session_path(session_id):
-    safe_id = "".join(character for character in str(session_id) if character.isalnum() or character in {"-", "_"})
+    safe_id = "".join(
+        character
+        for character in str(session_id)
+        if character.isalnum() or character in {"-", "_"}
+    )
     return SESSION_DIR / f"{safe_id}.json"
 
 
@@ -114,7 +117,9 @@ def restore_demo_state():
         for key in PERSISTED_KEYS:
             if key in saved_state:
                 st.session_state[key] = saved_state[key]
-        st.session_state.demo_state_restored_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+        st.session_state.demo_state_restored_at = datetime.now().strftime(
+            "%Y-%m-%d %H:%M"
+        )
     st.session_state[SESSION_LOADED_KEY] = True
 
 

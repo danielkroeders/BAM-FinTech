@@ -8,7 +8,6 @@ import streamlit as st
 
 from src.utils.demo_persistence import clear_demo_state, persist_demo_state
 
-
 PROFILE = {
     "account_type": "lender",
     "bank": "YourBank",
@@ -79,7 +78,11 @@ NAV_SECTIONS = [
         "Credit Work",
         [
             ("Home", "Home.py", ":material/home:"),
-            ("Personal Workspace", "pages/1_Personal_Workspace.py", ":material/person_search:"),
+            (
+                "Personal Workspace",
+                "pages/1_Personal_Workspace.py",
+                ":material/person_search:",
+            ),
             ("LLM Integration", "pages/5_LLM_Integration.py", ":material/psychology:"),
         ],
     ),
@@ -94,7 +97,11 @@ NAV_SECTIONS = [
     (
         "Account & Help",
         [
-            ("Profile & Settings", "pages/7_Profile_Settings.py", ":material/manage_accounts:"),
+            (
+                "Profile & Settings",
+                "pages/7_Profile_Settings.py",
+                ":material/manage_accounts:",
+            ),
             ("Tutorials", "pages/10_Tutorials.py", ":material/school:"),
             ("Support", "pages/9_Support.py", ":material/support_agent:"),
             ("Acronym Guide", "pages/11_Acronym_Guide.py", ":material/menu_book:"),
@@ -107,7 +114,11 @@ SME_NAV_SECTIONS = [
     (
         "Company Portal",
         [
-            ("Company Setup & Credit Health", "pages/6_SME_Credit_Health.py", ":material/domain:"),
+            (
+                "Company Setup & Credit Health",
+                "pages/6_SME_Credit_Health.py",
+                ":material/domain:",
+            ),
         ],
     ),
     (
@@ -148,7 +159,9 @@ def _set_dark_mode_preference(value=False, profile=None):
 def _is_dark_mode():
     if DARK_MODE_STATE_KEY not in st.session_state:
         saved_profile = st.session_state.get("user_profile", {})
-        fallback = st.session_state.get("dark_mode", saved_profile.get("dark_mode", PROFILE["dark_mode"]))
+        fallback = st.session_state.get(
+            "dark_mode", saved_profile.get("dark_mode", PROFILE["dark_mode"])
+        )
         _set_dark_mode_preference(fallback)
     else:
         st.session_state.dark_mode = bool(st.session_state[DARK_MODE_STATE_KEY])
@@ -156,7 +169,9 @@ def _is_dark_mode():
 
 
 def _sync_dark_mode_from_widget():
-    _set_dark_mode_preference(st.session_state.get(DARK_MODE_WIDGET_KEY, _is_dark_mode()))
+    _set_dark_mode_preference(
+        st.session_state.get(DARK_MODE_WIDGET_KEY, _is_dark_mode())
+    )
 
 
 def get_profile():
@@ -182,8 +197,12 @@ def get_profile():
         key: bool(saved_integrations.get(key, default))
         for key, default in PROFILE["integrations"].items()
     }
-    profile["integrations"]["slack"] = bool(profile.get("slack_connected", profile["integrations"]["slack"]))
-    profile["integrations"]["teams"] = bool(profile.get("teams_connected", profile["integrations"]["teams"]))
+    profile["integrations"]["slack"] = bool(
+        profile.get("slack_connected", profile["integrations"]["slack"])
+    )
+    profile["integrations"]["teams"] = bool(
+        profile.get("teams_connected", profile["integrations"]["teams"])
+    )
     profile["slack_connected"] = profile["integrations"]["slack"]
     profile["teams_connected"] = profile["integrations"]["teams"]
     profile["user_id"] = profile.get("user_id") or profile.get("id", PROFILE["id"])
@@ -197,7 +216,11 @@ def save_profile(profile):
     updated_profile = {**defaults, **profile}
     if updated_profile.get("user_type") == "Internal analyst":
         updated_profile["user_type"] = "Team Member"
-    dark_mode = updated_profile["dark_mode"] if "dark_mode" in updated_profile else _is_dark_mode()
+    dark_mode = (
+        updated_profile["dark_mode"]
+        if "dark_mode" in updated_profile
+        else _is_dark_mode()
+    )
     updated_profile["dark_mode"] = _set_dark_mode_preference(dark_mode)
     saved_integrations = updated_profile.get("integrations", {})
     updated_profile["integrations"] = {
@@ -206,7 +229,9 @@ def save_profile(profile):
     }
     updated_profile["slack_connected"] = updated_profile["integrations"]["slack"]
     updated_profile["teams_connected"] = updated_profile["integrations"]["teams"]
-    updated_profile["user_id"] = updated_profile.get("user_id") or updated_profile.get("id", PROFILE["id"])
+    updated_profile["user_id"] = updated_profile.get("user_id") or updated_profile.get(
+        "id", PROFILE["id"]
+    )
     updated_profile["id"] = updated_profile.get("id") or updated_profile["user_id"]
     st.session_state.user_profile = updated_profile
     persist_demo_state()
@@ -215,7 +240,10 @@ def save_profile(profile):
 
 def is_sme_profile(profile=None):
     active_profile = profile or get_profile()
-    return active_profile.get("account_type") == "sme" or active_profile.get("user_type") == "SME Applicant"
+    return (
+        active_profile.get("account_type") == "sme"
+        or active_profile.get("user_type") == "SME Applicant"
+    )
 
 
 def _page_link(page, label, icon=None):
@@ -258,7 +286,11 @@ def open_application_in_workspace(application, source="Workspace"):
     if switch_page:
         switch_page("pages/1_Personal_Workspace.py")
     st.success("Case loaded into Personal Workspace.")
-    _page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
+    _page_link(
+        "pages/1_Personal_Workspace.py",
+        "Open Personal Workspace",
+        ":material/person_search:",
+    )
 
 
 def _rerun():
@@ -278,10 +310,14 @@ def _asset_data_uri(relative_path):
         candidate_paths.append(repo_root / Path(*relative_path.parts[1:]))
     candidate_paths.append(Path(__file__).resolve().parent.parent / relative_path)
 
-    path = next((candidate for candidate in candidate_paths if candidate.exists()), None)
+    path = next(
+        (candidate for candidate in candidate_paths if candidate.exists()), None
+    )
     if path is None:
         return ""
-    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode("ascii")
+    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode(
+        "ascii"
+    )
 
 
 def _render_global_theme():
@@ -297,18 +333,29 @@ def _render_global_theme():
         "input_bg": "#0f172a" if dark else "#ffffff",
         "input_text": "#f8fafc" if dark else "#0f172a",
         "header_bg": "rgba(11, 18, 32, 0.82)" if dark else "rgba(248, 250, 252, 0.78)",
-        "page_bg": "linear-gradient(180deg, #0b1220 0%, #111827 52%, #0f172a 100%)"
-        if dark
-        else "linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(236, 254, 255, 0.62) 42%, #f8fafc 100%)",
-        "sidebar_bg": "linear-gradient(180deg, #020617 0%, #0f172a 55%, #083f46 100%)"
-        if dark
-        else "linear-gradient(180deg, #111827 0%, #0f172a 58%, #083f46 100%)",
-        "shadow": "0 16px 34px rgba(0, 0, 0, 0.24)" if dark else "0 12px 28px rgba(15, 23, 42, 0.06)",
-        "soft_shadow": "0 10px 24px rgba(0, 0, 0, 0.20)" if dark else "0 10px 24px rgba(15, 23, 42, 0.04)",
+        "page_bg": (
+            "linear-gradient(180deg, #0b1220 0%, #111827 52%, #0f172a 100%)"
+            if dark
+            else "linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(236, 254, 255, 0.62) 42%, #f8fafc 100%)"
+        ),
+        "sidebar_bg": (
+            "linear-gradient(180deg, #020617 0%, #0f172a 55%, #083f46 100%)"
+            if dark
+            else "linear-gradient(180deg, #111827 0%, #0f172a 58%, #083f46 100%)"
+        ),
+        "shadow": (
+            "0 16px 34px rgba(0, 0, 0, 0.24)"
+            if dark
+            else "0 12px 28px rgba(15, 23, 42, 0.06)"
+        ),
+        "soft_shadow": (
+            "0 10px 24px rgba(0, 0, 0, 0.20)"
+            if dark
+            else "0 10px 24px rgba(15, 23, 42, 0.04)"
+        ),
     }
     st.markdown(
-        Template(
-            """
+        Template("""
         <style>
         :root {
             --cr-bg: $bg;
@@ -446,8 +493,7 @@ def _render_global_theme():
             border-radius: 8px;
         }
         </style>
-        """
-        ).substitute(**tokens),
+        """).substitute(**tokens),
         unsafe_allow_html=True,
     )
 
@@ -651,12 +697,19 @@ def _render_login_screen():
                 account_type = st.selectbox(
                     "Demo account",
                     ["lender", "sme"],
-                    format_func=lambda value: "Lender analyst" if value == "lender" else "SME company",
+                    format_func=lambda value: (
+                        "Lender analyst" if value == "lender" else "SME company"
+                    ),
                 )
                 login_profile = SME_PROFILE if account_type == "sme" else PROFILE
-                username = st.text_input("Email", value=login_profile["email"], disabled=True)
+                username = st.text_input(
+                    "Email", value=login_profile["email"], disabled=True
+                )
                 password = st.text_input("Password", type="password")
-                remember_me = st.checkbox("Remember me", value=bool(st.session_state.get("remember_me", False)))
+                remember_me = st.checkbox(
+                    "Remember me",
+                    value=bool(st.session_state.get("remember_me", False)),
+                )
                 submitted = st.form_submit_button("Continue", width="stretch")
             if submitted:
                 if username.strip() and password:
@@ -677,7 +730,11 @@ def _complete_login():
         "Verifying security code",
         "Loading profile",
         "Loading company portal" if account_type == "sme" else "Syncing personal apps",
-        "Opening SME workspace" if account_type == "sme" else "Opening underwriter workbench",
+        (
+            "Opening SME workspace"
+            if account_type == "sme"
+            else "Opening underwriter workbench"
+        ),
     ]
     for index, step in enumerate(steps, start=1):
         transition.success(step)
@@ -686,7 +743,9 @@ def _complete_login():
     st.session_state.user_profile = dict(login_profile)
     st.session_state.authenticated = True
     st.session_state.login_transition = True
-    st.session_state.login_destination = "pages/6_SME_Credit_Health.py" if account_type == "sme" else None
+    st.session_state.login_destination = (
+        "pages/6_SME_Credit_Health.py" if account_type == "sme" else None
+    )
     st.session_state.login_stage = "credentials"
     st.session_state[DEMO_PROMPT_HANDLED_KEY] = False
     st.session_state[DEMO_PROMPT_CHECKBOX_KEY] = False
@@ -705,8 +764,7 @@ def _render_login_transition():
         else "Workspace unlocked. Start at Home, continue to Personal Workspace, then open LLM Integration."
     )
     st.markdown(
-        Template(
-            """
+        Template("""
         <style>
         .app-transition-banner {
             border: 1px solid rgba(34, 197, 94, 0.28);
@@ -736,8 +794,7 @@ def _render_login_transition():
             <div class="app-transition-title">Welcome back.</div>
             <div class="app-transition-copy">$destination_copy</div>
         </div>
-        """
-        ).substitute(destination_copy=escape(destination_copy)),
+        """).substitute(destination_copy=escape(destination_copy)),
         unsafe_allow_html=True,
     )
 
@@ -773,7 +830,9 @@ def _demo_prompt_body():
         help="When selected, this welcome prompt will not appear on later logins for this saved demo session.",
     )
     tutorial_col, skip_col = st.columns(2)
-    if tutorial_col.button("Browse Tutorials", width="stretch", key="demo_prompt_tutorials"):
+    if tutorial_col.button(
+        "Browse Tutorials", width="stretch", key="demo_prompt_tutorials"
+    ):
         _save_demo_prompt_choice("tutorials")
         st.switch_page("pages/10_Tutorials.py")
     if skip_col.button("Skip this step", width="stretch", key="demo_prompt_skip"):

@@ -49,7 +49,11 @@ def deterministic_explanation(application, prediction):
     derived = add_derived_features(pd.DataFrame([application])).iloc[0]
     flags = prediction.get("flags", [])
     amount = float(application.get("requested_amount", 0))
-    drivers = "\n".join(f"- {flag}" for flag in flags) if flags else "- No elevated deterministic risk flags were triggered."
+    drivers = (
+        "\n".join(f"- {flag}" for flag in flags)
+        if flags
+        else "- No elevated deterministic risk flags were triggered."
+    )
     mitigants = []
     if float(application.get("collateral_ratio", 0)) >= 0.8:
         mitigants.append("Collateral coverage is relatively strong.")
@@ -66,14 +70,23 @@ def deterministic_explanation(application, prediction):
     if float(derived.get("debt_service_coverage_ratio", 0)) >= 1.25:
         mitigants.append("Free cash flow covers estimated annual debt service.")
     if float(derived.get("stressed_debt_service_coverage_ratio", 0)) >= 1.0:
-        mitigants.append("Debt-service coverage remains above 1.0 under a +2% rate stress.")
+        mitigants.append(
+            "Debt-service coverage remains above 1.0 under a +2% rate stress."
+        )
     if float(derived.get("document_completeness_score", 0)) >= 0.95:
         mitigants.append("Expected application documents are complete.")
-    if float(application.get("current_ratio", 0)) >= 1.5 and float(application.get("quick_ratio", 0)) >= 1.0:
+    if (
+        float(application.get("current_ratio", 0)) >= 1.5
+        and float(application.get("quick_ratio", 0)) >= 1.0
+    ):
         mitigants.append("Working-capital ratios are relatively healthy.")
     if float(derived.get("identity_verification_risk_score", 1)) < 0.20:
         mitigants.append("Digital identity and KYB verification signals are low risk.")
-    mitigant_text = "\n".join(f"- {item}" for item in mitigants) if mitigants else "- No major mitigating factor was identified in the deterministic checks."
+    mitigant_text = (
+        "\n".join(f"- {item}" for item in mitigants)
+        if mitigants
+        else "- No major mitigating factor was identified in the deterministic checks."
+    )
     next_step = {
         "Approve": "Proceed with standard analyst sign-off and retain the case summary.",
         "Manual Review": "Route to an analyst for document verification and risk-factor review.",
@@ -108,30 +121,52 @@ def deterministic_sme_report(application, prediction):
     if float(application.get("free_cash_flow", 0)) > 0:
         strengths.append("The application shows positive free cash flow.")
     else:
-        improvements.append("Explain the path to positive free cash flow and provide evidence for the assumptions.")
+        improvements.append(
+            "Explain the path to positive free cash flow and provide evidence for the assumptions."
+        )
     if float(application.get("years_in_business", 0)) >= 5:
         strengths.append("The company has an established operating history.")
     else:
-        improvements.append("Provide additional evidence of customer continuity, management experience, and trading history.")
+        improvements.append(
+            "Provide additional evidence of customer continuity, management experience, and trading history."
+        )
     if float(derived.get("stressed_debt_service_coverage_ratio", 0)) >= 1.0:
-        strengths.append("Projected cash flow remains sufficient to cover estimated debt service under the demo stress.")
+        strengths.append(
+            "Projected cash flow remains sufficient to cover estimated debt service under the demo stress."
+        )
     else:
-        improvements.append("Show how debt service remains affordable if interest costs or operating expenses increase.")
+        improvements.append(
+            "Show how debt service remains affordable if interest costs or operating expenses increase."
+        )
     if float(derived.get("document_completeness_score", 0)) >= 0.95:
         strengths.append("The expected application document set is complete.")
     else:
-        improvements.append("Complete the financial statements, bank statements, tax, ownership/KYB, and forecast-support package.")
+        improvements.append(
+            "Complete the financial statements, bank statements, tax, ownership/KYB, and forecast-support package."
+        )
     if float(application.get("forecast_support_uploaded", 0)) >= 0.5:
         strengths.append("Supporting evidence for the forecast is attached.")
     else:
-        improvements.append("Attach contracts, orders, assumptions, or management evidence supporting the forecast.")
+        improvements.append(
+            "Attach contracts, orders, assumptions, or management evidence supporting the forecast."
+        )
     if float(application.get("late_payment_ratio", 0)) >= 0.1:
-        improvements.append("Explain recent late-payment patterns and the controls being used to improve payment performance.")
+        improvements.append(
+            "Explain recent late-payment patterns and the controls being used to improve payment performance."
+        )
     if float(application.get("collateral_ratio", 0)) < 0.5:
-        improvements.append("Clarify available security, guarantees, or other ways the requested exposure could be reduced.")
+        improvements.append(
+            "Clarify available security, guarantees, or other ways the requested exposure could be reduced."
+        )
 
-    strength_text = "\n".join(f"- {item}" for item in strengths) or "- No material strength was confirmed from the current data alone."
-    improvement_text = "\n".join(f"- {item}" for item in improvements) or "- Keep the submitted evidence current and respond promptly to lender questions."
+    strength_text = (
+        "\n".join(f"- {item}" for item in strengths)
+        or "- No material strength was confirmed from the current data alone."
+    )
+    improvement_text = (
+        "\n".join(f"- {item}" for item in improvements)
+        or "- Keep the submitted evidence current and respond promptly to lender questions."
+    )
     return (
         f"# Credit application evaluation for {application.get('company_name', 'your company')}\n\n"
         "## What this report means\n"
@@ -154,7 +189,9 @@ def deterministic_sme_report(application, prediction):
     )
 
 
-def _llm_messages(application, prediction, detail_level="Detailed analyst memo", model_metrics=None):
+def _llm_messages(
+    application, prediction, detail_level="Detailed analyst memo", model_metrics=None
+):
     metrics = model_metrics or {}
     model_label = prediction.get("model_label", "ML model")
     model_context = {
@@ -277,7 +314,13 @@ def _sanitize_sme_report(report):
     return "\n".join(safe_lines).strip()
 
 
-def _openai_explanation(application, prediction, model, detail_level="Detailed analyst memo", model_metrics=None):
+def _openai_explanation(
+    application,
+    prediction,
+    model,
+    detail_level="Detailed analyst memo",
+    model_metrics=None,
+):
     key = _api_key()
     if not key:
         _set_explanation_error("OpenAI API key is not configured.")
@@ -286,7 +329,10 @@ def _openai_explanation(application, prediction, model, detail_level="Detailed a
         from openai import OpenAI
 
         client = OpenAI(api_key=key, timeout=30)
-        response = client.responses.create(model=model, input=_llm_messages(application, prediction, detail_level, model_metrics))
+        response = client.responses.create(
+            model=model,
+            input=_llm_messages(application, prediction, detail_level, model_metrics),
+        )
         st.session_state.last_explanation_error = None
         return response.output_text
     except Exception as error:
@@ -327,7 +373,9 @@ def _local_explanation(
         _set_explanation_error("Local server settings have not been saved yet.")
         return None
     if not (base_url or "").strip() or not (model or "").strip():
-        _set_explanation_error("Local server URL and model name are required before calling the local model.")
+        _set_explanation_error(
+            "Local server URL and model name are required before calling the local model."
+        )
         return None
     try:
         from openai import OpenAI
@@ -340,7 +388,9 @@ def _local_explanation(
         )
         response = client.chat.completions.create(
             model=model or _local_model(),
-            messages=_llm_messages(application, prediction, detail_level, model_metrics),
+            messages=_llm_messages(
+                application, prediction, detail_level, model_metrics
+            ),
             temperature=0.2,
         )
         st.session_state.last_explanation_error = None
@@ -351,12 +401,16 @@ def _local_explanation(
         return None
 
 
-def _local_sme_report(application, prediction, internal_report, model, base_url=None, api_key=None):
+def _local_sme_report(
+    application, prediction, internal_report, model, base_url=None, api_key=None
+):
     if not st.session_state.get("local_llm_settings_saved", False):
         _set_explanation_error("Local server settings have not been saved yet.")
         return None
     if not (base_url or "").strip() or not (model or "").strip():
-        _set_explanation_error("Local server URL and model name are required before calling the local model.")
+        _set_explanation_error(
+            "Local server URL and model name are required before calling the local model."
+        )
         return None
     try:
         from openai import OpenAI
@@ -391,8 +445,18 @@ def llm_explanation(
     model_metrics=None,
 ):
     if provider == "Local server":
-        return _local_explanation(application, prediction, model, local_base_url, local_api_key, detail_level, model_metrics)
-    return _openai_explanation(application, prediction, model, detail_level, model_metrics)
+        return _local_explanation(
+            application,
+            prediction,
+            model,
+            local_base_url,
+            local_api_key,
+            detail_level,
+            model_metrics,
+        )
+    return _openai_explanation(
+        application, prediction, model, detail_level, model_metrics
+    )
 
 
 def generate_evaluation_package(
@@ -459,7 +523,9 @@ def generate_evaluation_package(
         if not sme_report:
             sme_report = deterministic_sme_report(application, prediction)
             sme_source = "Deterministic fallback"
-            errors.append("The generated SME report was removed by the applicant-safety filter.")
+            errors.append(
+                "The generated SME report was removed by the applicant-safety filter."
+            )
 
     st.session_state.last_explanation_source = internal_source
     st.session_state.last_explanation_error = " ".join(errors) if errors else None

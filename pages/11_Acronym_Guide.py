@@ -2,9 +2,13 @@ import pandas as pd
 import streamlit as st
 
 from src.core.runtime import bootstrap_state
-from src.ui.components import get_profile, is_sme_profile, render_sidebar, safe_page_link
+from src.ui.components import (
+    get_profile,
+    is_sme_profile,
+    render_sidebar,
+    safe_page_link,
+)
 from src.utils.acronym_guide import acronym_rows, metric_rows
-
 
 st.set_page_config(page_title="Acronym Guide", layout="wide")
 bootstrap_state()
@@ -69,9 +73,15 @@ if sme_mode:
     )
     link_cols = st.columns(3)
     with link_cols[0]:
-        safe_page_link("pages/6_SME_Credit_Health.py", "Open Company Portal", ":material/domain:")
+        safe_page_link(
+            "pages/6_SME_Credit_Health.py", "Open Company Portal", ":material/domain:"
+        )
     with link_cols[1]:
-        safe_page_link("pages/9_Support.py", "Connect with a Consultant", ":material/support_agent:")
+        safe_page_link(
+            "pages/9_Support.py",
+            "Connect with a Consultant",
+            ":material/support_agent:",
+        )
     with link_cols[2]:
         safe_page_link("pages/10_Tutorials.py", "Open Tutorials", ":material/school:")
 else:
@@ -80,7 +90,11 @@ else:
     )
     link_cols = st.columns(3)
     with link_cols[0]:
-        safe_page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
+        safe_page_link(
+            "pages/1_Personal_Workspace.py",
+            "Open Personal Workspace",
+            ":material/person_search:",
+        )
     with link_cols[1]:
         safe_page_link("pages/9_Support.py", "Open Support", ":material/support_agent:")
     with link_cols[2]:

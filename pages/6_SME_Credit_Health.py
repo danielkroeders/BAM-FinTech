@@ -13,7 +13,12 @@ from src.features.alignment_features import (
     sme_action_rows,
 )
 from src.features.case_workflow import DEMO_SCENARIOS
-from src.ui.components import get_profile, is_sme_profile, render_sidebar, safe_page_link
+from src.ui.components import (
+    get_profile,
+    is_sme_profile,
+    render_sidebar,
+    safe_page_link,
+)
 from src.utils.demo_persistence import ensure_demo_session, persist_demo_state
 from src.utils.document_examples import build_document_examples
 from src.utils.document_storage import (
@@ -23,9 +28,14 @@ from src.utils.document_storage import (
     read_document,
     save_document,
 )
-from src.utils.formatting import format_currency, format_integer, format_months, format_percent, format_score
+from src.utils.formatting import (
+    format_currency,
+    format_integer,
+    format_months,
+    format_percent,
+    format_score,
+)
 from src.utils.workflow_transfer import SME_SUBMISSION_SOURCE
-
 
 st.set_page_config(page_title="SME Company Portal", layout="wide")
 bootstrap_state()
@@ -34,7 +44,9 @@ render_sidebar()
 profile = get_profile()
 company_mode = is_sme_profile(profile)
 applications = st.session_state.seed_data["applications"]
-selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
+selected_model_key = st.session_state.get(
+    "selected_ml_model", st.session_state.model_bundle.default_model_key
+)
 demo_session_id = ensure_demo_session()
 MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
 ALLOWED_DOCUMENT_TYPES = ["pdf", "csv", "xlsx", "xls", "docx", "png", "jpg", "jpeg"]
@@ -136,21 +148,33 @@ def _example_document_table(examples, category_counts):
                 "Category": example["label"],
                 "Example file": example["file_name"],
                 "What it shows": example["description"],
-                "Current status": "Already has saved file" if category_counts.get(category, 0) else "Missing",
+                "Current status": (
+                    "Already has saved file"
+                    if category_counts.get(category, 0)
+                    else "Missing"
+                ),
             }
             for category, example in examples.items()
         ]
     )
 
 
-def _render_document_examples(application, category_counts, saved_documents, connection_status, prediction):
+def _render_document_examples(
+    application, category_counts, saved_documents, connection_status, prediction
+):
     examples = build_document_examples(application)
-    with st.expander("Example files and evidence checklist", expanded=not bool(saved_documents)):
+    with st.expander(
+        "Example files and evidence checklist", expanded=not bool(saved_documents)
+    ):
         st.caption(
             "Download fictional CSV examples to see the expected structure. For demo runs, you can also save "
             "the example pack into missing categories; those files are written through the same local vault as uploads."
         )
-        st.dataframe(_example_document_table(examples, category_counts), width="stretch", hide_index=True)
+        st.dataframe(
+            _example_document_table(examples, category_counts),
+            width="stretch",
+            hide_index=True,
+        )
 
         download_columns = st.columns(2)
         for index, (category, example) in enumerate(examples.items()):
@@ -164,8 +188,12 @@ def _render_document_examples(application, category_counts, saved_documents, con
                     width="stretch",
                 )
 
-        missing_categories = [category for category in examples if category_counts.get(category, 0) == 0]
-        button_label = f"Save Example Files for Missing Categories ({len(missing_categories)})"
+        missing_categories = [
+            category for category in examples if category_counts.get(category, 0) == 0
+        ]
+        button_label = (
+            f"Save Example Files for Missing Categories ({len(missing_categories)})"
+        )
         if st.button(
             button_label,
             disabled=not missing_categories,
@@ -198,11 +226,17 @@ def _render_document_examples(application, category_counts, saved_documents, con
             connection_status["documents"] = bool(saved_documents)
             st.session_state.sme_connection_status = connection_status
             _store_company_application(application)
-            prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
+            prediction = score_application(
+                st.session_state.model_bundle, application, model_key=selected_model_key
+            )
             if saved_count:
-                st.success(f"{saved_count} example file(s) saved to the local application vault.")
+                st.success(
+                    f"{saved_count} example file(s) saved to the local application vault."
+                )
             if duplicate_count:
-                st.info(f"{duplicate_count} example file(s) already existed and were not copied again.")
+                st.info(
+                    f"{duplicate_count} example file(s) already existed and were not copied again."
+                )
             for error in errors:
                 st.error(error)
 
@@ -235,7 +269,9 @@ def _render_application_readiness(application, prediction):
         "Evidence completeness",
         format_percent(signals.get("document_completeness_score", 0)),
     )
-    readiness_cols[1].metric("Expected runway", format_months(application.get("expected_runway_months", 0)))
+    readiness_cols[1].metric(
+        "Expected runway", format_months(application.get("expected_runway_months", 0))
+    )
     readiness_cols[2].metric(
         "Stressed DSCR",
         format_score(signals.get("stressed_debt_service_coverage_ratio", 0)),
@@ -251,11 +287,28 @@ def _render_application_readiness(application, prediction):
         st.dataframe(
             pd.DataFrame(
                 [
-                    {"Field": "Company", "Value": application.get("company_name", "Applicant")},
-                    {"Field": "Requested amount", "Value": format_currency(application.get("requested_amount", 0))},
-                    {"Field": "Annual revenue", "Value": format_currency(application.get("annual_revenue", 0))},
-                    {"Field": "Free cash flow", "Value": format_currency(application.get("free_cash_flow", 0))},
-                    {"Field": "Existing debt", "Value": format_currency(application.get("existing_debt", 0))},
+                    {
+                        "Field": "Company",
+                        "Value": application.get("company_name", "Applicant"),
+                    },
+                    {
+                        "Field": "Requested amount",
+                        "Value": format_currency(
+                            application.get("requested_amount", 0)
+                        ),
+                    },
+                    {
+                        "Field": "Annual revenue",
+                        "Value": format_currency(application.get("annual_revenue", 0)),
+                    },
+                    {
+                        "Field": "Free cash flow",
+                        "Value": format_currency(application.get("free_cash_flow", 0)),
+                    },
+                    {
+                        "Field": "Existing debt",
+                        "Value": format_currency(application.get("existing_debt", 0)),
+                    },
                 ]
             ),
             width="stretch",
@@ -263,11 +316,19 @@ def _render_application_readiness(application, prediction):
         )
     with readiness_right:
         st.subheader("Ways to Strengthen the File")
-        st.dataframe(pd.DataFrame(sme_action_rows(application, signals, prediction)), width="stretch", hide_index=True)
+        st.dataframe(
+            pd.DataFrame(sme_action_rows(application, signals, prediction)),
+            width="stretch",
+            hide_index=True,
+        )
 
     source_tab, forecast_tab = st.tabs(["Evidence Readiness", "Five-Year Plan"])
     with source_tab:
-        st.dataframe(pd.DataFrame(data_source_coverage_rows(application, signals)), width="stretch", hide_index=True)
+        st.dataframe(
+            pd.DataFrame(data_source_coverage_rows(application, signals)),
+            width="stretch",
+            hide_index=True,
+        )
     with forecast_tab:
         forecast = build_forecast_table(pd.DataFrame([application]))
         display = forecast.rename(
@@ -278,23 +339,39 @@ def _render_application_readiness(application, prediction):
                 "projected_free_cash_flow": "Projected FCF",
                 "projected_debt": "Projected debt",
             }
-        )[["Year", "Projected revenue", "Projected employees", "Projected FCF", "Projected debt"]].copy()
+        )[
+            [
+                "Year",
+                "Projected revenue",
+                "Projected employees",
+                "Projected FCF",
+                "Projected debt",
+            ]
+        ].copy()
         for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
             display[column] = display[column].apply(format_currency)
-        display["Projected employees"] = display["Projected employees"].apply(format_integer)
+        display["Projected employees"] = display["Projected employees"].apply(
+            format_integer
+        )
         st.dataframe(display, width="stretch", hide_index=True)
 
 
 def _render_published_rating(application, lifecycle):
     st.success("The lender has published a reviewed rating for this application.")
     published_cols = st.columns(4)
-    published_cols[0].metric("Published rating", lifecycle.get("published_grade", "N/A"))
-    published_cols[1].metric("Lender decision", lifecycle.get("published_decision", "N/A"))
+    published_cols[0].metric(
+        "Published rating", lifecycle.get("published_grade", "N/A")
+    )
+    published_cols[1].metric(
+        "Lender decision", lifecycle.get("published_decision", "N/A")
+    )
     published_cols[2].metric(
         "Risk score",
-        format_percent(lifecycle.get("published_score", 0))
-        if lifecycle.get("published_score_visible")
-        else "Not disclosed",
+        (
+            format_percent(lifecycle.get("published_score", 0))
+            if lifecycle.get("published_score_visible")
+            else "Not disclosed"
+        ),
     )
     published_cols[3].metric("Published", lifecycle.get("published_at", "N/A"))
     st.subheader("Message from the lender")
@@ -319,7 +396,9 @@ def _render_published_rating(application, lifecycle):
             "The internal lender evaluation and private analyst notes are not included."
         )
     if lifecycle.get("rating_adjusted"):
-        st.caption("The published rating reflects the lender's evidence review and differs from the original model grade.")
+        st.caption(
+            "The published rating reflects the lender's evidence review and differs from the original model grade."
+        )
     st.caption(
         "The published rating is the lender's reviewed outcome. Internal model outputs and analyst audit notes remain private."
     )
@@ -342,7 +421,9 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
     published_grade = lifecycle.get("published_grade") or "Published"
     published_decision = lifecycle.get("published_decision") or "Reviewed"
     published_score = lifecycle.get("published_score")
-    score_visible = bool(lifecycle.get("published_score_visible")) and published_score is not None
+    score_visible = (
+        bool(lifecycle.get("published_score_visible")) and published_score is not None
+    )
 
     st.subheader("Plan improvements after the published rating")
     st.caption(
@@ -352,8 +433,13 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
     summary_cols = st.columns(4)
     summary_cols[0].metric("Published rating", published_grade)
     summary_cols[1].metric("Lender decision", published_decision)
-    summary_cols[2].metric("Numerical score", format_percent(published_score) if score_visible else "Not published")
-    summary_cols[3].metric("Runway", format_months(application.get("expected_runway_months", 0)))
+    summary_cols[2].metric(
+        "Numerical score",
+        format_percent(published_score) if score_visible else "Not published",
+    )
+    summary_cols[3].metric(
+        "Runway", format_months(application.get("expected_runway_months", 0))
+    )
 
     overview_left, overview_right = st.columns([1, 1])
     with overview_left:
@@ -361,15 +447,33 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
         st.dataframe(
             pd.DataFrame(
                 [
-                    {"Field": "Company", "Value": application.get("company_name", "Applicant")},
+                    {
+                        "Field": "Company",
+                        "Value": application.get("company_name", "Applicant"),
+                    },
                     {"Field": "Industry", "Value": application.get("industry", "")},
                     {"Field": "Region", "Value": application.get("region", "")},
-                    {"Field": "Requested amount", "Value": format_currency(application.get("requested_amount", 0))},
-                    {"Field": "Annual revenue", "Value": format_currency(application.get("annual_revenue", 0))},
-                    {"Field": "Free cash flow", "Value": format_currency(application.get("free_cash_flow", 0))},
+                    {
+                        "Field": "Requested amount",
+                        "Value": format_currency(
+                            application.get("requested_amount", 0)
+                        ),
+                    },
+                    {
+                        "Field": "Annual revenue",
+                        "Value": format_currency(application.get("annual_revenue", 0)),
+                    },
+                    {
+                        "Field": "Free cash flow",
+                        "Value": format_currency(application.get("free_cash_flow", 0)),
+                    },
                     {
                         "Field": "Evidence package",
-                        "Value": _status_label(signals.get("document_completeness_score", 0), strong=0.95, partial=0.6),
+                        "Value": _status_label(
+                            signals.get("document_completeness_score", 0),
+                            strong=0.95,
+                            partial=0.6,
+                        ),
                     },
                     {
                         "Field": "Repayment resilience",
@@ -386,7 +490,11 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
         )
     with overview_right:
         st.subheader("Most Useful Next Actions")
-        st.dataframe(pd.DataFrame(sme_action_rows(application, signals, prediction)), width="stretch", hide_index=True)
+        st.dataframe(
+            pd.DataFrame(sme_action_rows(application, signals, prediction)),
+            width="stretch",
+            hide_index=True,
+        )
 
     st.subheader("What-If Simulation")
     st.caption(
@@ -396,17 +504,41 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
     scenario_left, scenario_middle, scenario_right = st.columns(3)
     with scenario_left:
         revenue_growth_delta = st.slider(
-            "Revenue growth change", -0.15, 0.20, 0.00, 0.01, format="%.2f", key="sme_post_revenue_growth"
+            "Revenue growth change",
+            -0.15,
+            0.20,
+            0.00,
+            0.01,
+            format="%.2f",
+            key="sme_post_revenue_growth",
         )
         fcf_margin_delta = st.slider(
-            "FCF margin change", -0.10, 0.15, 0.00, 0.01, format="%.2f", key="sme_post_fcf_margin"
+            "FCF margin change",
+            -0.10,
+            0.15,
+            0.00,
+            0.01,
+            format="%.2f",
+            key="sme_post_fcf_margin",
         )
     with scenario_middle:
         operating_cost_pressure = st.slider(
-            "Operating cost pressure", 0.00, 0.15, 0.00, 0.01, format="%.2f", key="sme_post_cost_pressure"
+            "Operating cost pressure",
+            0.00,
+            0.15,
+            0.00,
+            0.01,
+            format="%.2f",
+            key="sme_post_cost_pressure",
         )
         debt_reduction_delta = st.slider(
-            "Debt reduction plan change", -0.20, 0.35, 0.00, 0.05, format="%.2f", key="sme_post_debt_reduction"
+            "Debt reduction plan change",
+            -0.20,
+            0.35,
+            0.00,
+            0.05,
+            format="%.2f",
+            key="sme_post_debt_reduction",
         )
     with scenario_right:
         contract_evidence = st.selectbox(
@@ -414,7 +546,9 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
             ["Current file", "Signed and documented", "Unconfirmed"],
             key="sme_post_contract_evidence",
         )
-        complete_documents = st.checkbox("Complete missing documents", value=False, key="sme_post_complete_documents")
+        complete_documents = st.checkbox(
+            "Complete missing documents", value=False, key="sme_post_complete_documents"
+        )
 
     scenario_application = apply_scenario(
         application,
@@ -430,7 +564,9 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
         scenario_application,
         model_key=prediction.get("model_key", selected_model_key),
     )
-    scenario_signals = add_derived_features(pd.DataFrame([scenario_application])).iloc[0]
+    scenario_signals = add_derived_features(pd.DataFrame([scenario_application])).iloc[
+        0
+    ]
     scenario_rows = [
         {
             "Measure": "Rating / planning band",
@@ -444,13 +580,25 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
         },
         {
             "Measure": "Forecast support",
-            "Published file": "Ready" if application.get("forecast_support_uploaded") else "Missing",
-            "What-if": "Ready" if scenario_application.get("forecast_support_uploaded") else "Missing",
+            "Published file": (
+                "Ready" if application.get("forecast_support_uploaded") else "Missing"
+            ),
+            "What-if": (
+                "Ready"
+                if scenario_application.get("forecast_support_uploaded")
+                else "Missing"
+            ),
         },
         {
             "Measure": "Evidence package",
-            "Published file": _status_label(signals.get("document_completeness_score", 0), strong=0.95, partial=0.6),
-            "What-if": _status_label(scenario_signals.get("document_completeness_score", 0), strong=0.95, partial=0.6),
+            "Published file": _status_label(
+                signals.get("document_completeness_score", 0), strong=0.95, partial=0.6
+            ),
+            "What-if": _status_label(
+                scenario_signals.get("document_completeness_score", 0),
+                strong=0.95,
+                partial=0.6,
+            ),
         },
         {
             "Measure": "Repayment resilience",
@@ -472,7 +620,9 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
         "the published lender rating remains unchanged."
     )
 
-    benchmark_tab, sources_tab, forecast_tab = st.tabs(["Peer Benchmark", "Evidence Sources", "Five-Year View"])
+    benchmark_tab, sources_tab, forecast_tab = st.tabs(
+        ["Peer Benchmark", "Evidence Sources", "Five-Year View"]
+    )
     with benchmark_tab:
         st.caption(
             "Synthetic applicant-facing peer context for the sector and region. Internal risk scores are not shown here."
@@ -486,7 +636,8 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
                 prediction,
                 model_key=prediction.get("model_key", selected_model_key),
             )
-            if row.get("Benchmark") in {"Requested amount", "Stressed DSCR", "Document completeness"}
+            if row.get("Benchmark")
+            in {"Requested amount", "Stressed DSCR", "Document completeness"}
         ]
         st.dataframe(
             pd.DataFrame(benchmark_rows),
@@ -494,8 +645,14 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
             hide_index=True,
         )
     with sources_tab:
-        st.caption("Demo connection coverage. Production would use consented bank, accounting, registry, and document APIs.")
-        st.dataframe(pd.DataFrame(data_source_coverage_rows(application, signals)), width="stretch", hide_index=True)
+        st.caption(
+            "Demo connection coverage. Production would use consented bank, accounting, registry, and document APIs."
+        )
+        st.dataframe(
+            pd.DataFrame(data_source_coverage_rows(application, signals)),
+            width="stretch",
+            hide_index=True,
+        )
     with forecast_tab:
         forecast = build_forecast_table(pd.DataFrame([application]))
         display = forecast.rename(
@@ -506,16 +663,28 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
                 "projected_free_cash_flow": "Projected FCF",
                 "projected_debt": "Projected debt",
             }
-        )[["Year", "Projected revenue", "Projected employees", "Projected FCF", "Projected debt"]].copy()
+        )[
+            [
+                "Year",
+                "Projected revenue",
+                "Projected employees",
+                "Projected FCF",
+                "Projected debt",
+            ]
+        ].copy()
         for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
             display[column] = display[column].apply(format_currency)
-        display["Projected employees"] = display["Projected employees"].apply(format_integer)
+        display["Projected employees"] = display["Projected employees"].apply(
+            format_integer
+        )
         st.dataframe(display, width="stretch", hide_index=True)
 
 
 if company_mode:
     st.title(f"{profile['name']} Company Portal")
-    st.caption("Enter company data, manage evidence connections, review credit health, and submit the file to a lender.")
+    st.caption(
+        "Enter company data, manage evidence connections, review credit health, and submit the file to a lender."
+    )
     st.info(
         "This is a role-based MVP workflow. Connections and consent are simulated for the demo; "
         "no real bank, accounting, registry, or customer data is transmitted."
@@ -526,31 +695,60 @@ if company_mode:
     _store_company_application(application)
     lifecycle = _lifecycle_for(application["application_id"])
     connection_status = {
-        "open_banking": bool(application.get("open_banking_connected", application.get("bank_statements_uploaded", 0))),
-        "accounting": bool(application.get("accounting_connected", application.get("financial_statements_uploaded", 0))),
-        "registry": bool(application.get("registry_connected", application.get("ownership_docs_uploaded", 0))),
+        "open_banking": bool(
+            application.get(
+                "open_banking_connected", application.get("bank_statements_uploaded", 0)
+            )
+        ),
+        "accounting": bool(
+            application.get(
+                "accounting_connected",
+                application.get("financial_statements_uploaded", 0),
+            )
+        ),
+        "registry": bool(
+            application.get(
+                "registry_connected", application.get("ownership_docs_uploaded", 0)
+            )
+        ),
         "documents": bool(saved_documents),
         **st.session_state.get("sme_connection_status", {}),
     }
     connection_status["documents"] = bool(saved_documents)
-    prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
+    prediction = score_application(
+        st.session_state.model_bundle, application, model_key=selected_model_key
+    )
 
-    profile_complete = bool(application.get("company_name") and application.get("annual_revenue"))
-    connected_count = sum(bool(connection_status.get(key)) for key in ["open_banking", "accounting", "registry", "documents"])
+    profile_complete = bool(
+        application.get("company_name") and application.get("annual_revenue")
+    )
+    connected_count = sum(
+        bool(connection_status.get(key))
+        for key in ["open_banking", "accounting", "registry", "documents"]
+    )
     submitted_count = len(st.session_state.sme_submission_history)
     progress_cols = st.columns(4)
-    progress_cols[0].metric("Company profile", "Complete" if profile_complete else "Incomplete")
+    progress_cols[0].metric(
+        "Company profile", "Complete" if profile_complete else "Incomplete"
+    )
     progress_cols[1].metric("Data connections", f"{connected_count}/4")
     progress_cols[2].metric("Application status", lifecycle.get("status", "Draft"))
     progress_cols[3].metric("Lender submissions", format_integer(submitted_count))
 
     setup_tab, connections_tab, health_tab, submit_tab = st.tabs(
-        ["1. Company Data", "2. Data Connections", "3. Credit Health", "4. Submit to Lender"]
+        [
+            "1. Company Data",
+            "2. Data Connections",
+            "3. Credit Health",
+            "4. Submit to Lender",
+        ]
     )
 
     with setup_tab:
         st.subheader("Company and loan application data")
-        st.caption("The SME enters and owns this information before sharing the application with a lender.")
+        st.caption(
+            "The SME enters and owns this information before sharing the application with a lender."
+        )
         industries = sorted(applications["industry"].dropna().unique())
         regions = sorted(applications["region"].dropna().unique())
         company_types = sorted(applications["company_type"].dropna().unique())
@@ -558,30 +756,48 @@ if company_mode:
         with st.form("sme_company_data_form"):
             company_left, company_right = st.columns(2)
             with company_left:
-                company_name = st.text_input("Company name", value=str(application.get("company_name", "")))
+                company_name = st.text_input(
+                    "Company name", value=str(application.get("company_name", ""))
+                )
                 industry = st.selectbox(
                     "Industry",
                     industries,
-                    index=industries.index(application.get("industry")) if application.get("industry") in industries else 0,
+                    index=(
+                        industries.index(application.get("industry"))
+                        if application.get("industry") in industries
+                        else 0
+                    ),
                 )
                 company_type = st.selectbox(
                     "Company type",
                     company_types,
-                    index=company_types.index(application.get("company_type"))
-                    if application.get("company_type") in company_types
-                    else 0,
+                    index=(
+                        company_types.index(application.get("company_type"))
+                        if application.get("company_type") in company_types
+                        else 0
+                    ),
                 )
                 years_in_business = st.number_input(
-                    "Years in business", min_value=0.0, max_value=100.0, value=float(application.get("years_in_business", 0))
+                    "Years in business",
+                    min_value=0.0,
+                    max_value=100.0,
+                    value=float(application.get("years_in_business", 0)),
                 )
                 employees = st.number_input(
-                    "Employees", min_value=1, max_value=100000, value=int(application.get("employees", 1))
+                    "Employees",
+                    min_value=1,
+                    max_value=100000,
+                    value=int(application.get("employees", 1)),
                 )
             with company_right:
                 region = st.selectbox(
                     "Region",
                     regions,
-                    index=regions.index(application.get("region")) if application.get("region") in regions else 0,
+                    index=(
+                        regions.index(application.get("region"))
+                        if application.get("region") in regions
+                        else 0
+                    ),
                 )
                 annual_revenue = st.number_input(
                     "Annual revenue (EUR)",
@@ -607,7 +823,9 @@ if company_mode:
                 term_months = st.selectbox(
                     "Requested term",
                     [12, 18, 24, 36, 48, 60, 72, 84],
-                    index=[12, 18, 24, 36, 48, 60, 72, 84].index(int(application.get("term_months", 60))),
+                    index=[12, 18, 24, 36, 48, 60, 72, 84].index(
+                        int(application.get("term_months", 60))
+                    ),
                     format_func=lambda value: f"{value} months",
                 )
 
@@ -630,10 +848,18 @@ if company_mode:
                 )
             with finance_middle:
                 current_ratio = st.number_input(
-                    "Current ratio", min_value=0.0, max_value=10.0, value=float(application.get("current_ratio", 1)), step=0.05
+                    "Current ratio",
+                    min_value=0.0,
+                    max_value=10.0,
+                    value=float(application.get("current_ratio", 1)),
+                    step=0.05,
                 )
                 quick_ratio = st.number_input(
-                    "Quick ratio", min_value=0.0, max_value=10.0, value=float(application.get("quick_ratio", 1)), step=0.05
+                    "Quick ratio",
+                    min_value=0.0,
+                    max_value=10.0,
+                    value=float(application.get("quick_ratio", 1)),
+                    step=0.05,
                 )
             with finance_right:
                 expected_runway_months = st.number_input(
@@ -652,15 +878,20 @@ if company_mode:
                 )
 
             loan_purpose_context = st.text_area(
-                "What will the financing be used for?", value=str(application.get("loan_purpose_context", ""))
+                "What will the financing be used for?",
+                value=str(application.get("loan_purpose_context", "")),
             )
             current_business_context = st.text_area(
-                "Current business context", value=str(application.get("current_business_context", ""))
+                "Current business context",
+                value=str(application.get("current_business_context", "")),
             )
             future_business_context = st.text_area(
-                "Future plan and assumptions", value=str(application.get("future_business_context", ""))
+                "Future plan and assumptions",
+                value=str(application.get("future_business_context", "")),
             )
-            saved_company_data = st.form_submit_button("Save Company Data", width="stretch")
+            saved_company_data = st.form_submit_button(
+                "Save Company Data", width="stretch"
+            )
 
         if saved_company_data:
             application.update(
@@ -677,7 +908,8 @@ if company_mode:
                     "term_months": term_months,
                     "free_cash_flow": free_cash_flow,
                     "monthly_burn_rate": monthly_burn_rate,
-                    "cash_flow_to_revenue_ratio": free_cash_flow / max(annual_revenue, 1),
+                    "cash_flow_to_revenue_ratio": free_cash_flow
+                    / max(annual_revenue, 1),
                     "current_ratio": current_ratio,
                     "quick_ratio": quick_ratio,
                     "expected_runway_months": expected_runway_months,
@@ -685,12 +917,18 @@ if company_mode:
                     "loan_purpose_context": loan_purpose_context,
                     "current_business_context": current_business_context,
                     "future_business_context": future_business_context,
-                    "company_data_updated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "company_data_updated_at": datetime.now().strftime(
+                        "%Y-%m-%d %H:%M"
+                    ),
                 }
             )
             _store_company_application(application)
-            prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
-            st.success("Company data saved. The credit-health preview has been recalculated.")
+            prediction = score_application(
+                st.session_state.model_bundle, application, model_key=selected_model_key
+            )
+            st.success(
+                "Company data saved. The credit-health preview has been recalculated."
+            )
 
     with connections_tab:
         st.subheader("Company-controlled data connections")
@@ -705,7 +943,11 @@ if company_mode:
             )
             open_banking_consent = st.checkbox(
                 "I consent to sharing the selected bank-account data for this application",
-                value=bool(connection_status.get("open_banking_consent", connection_status.get("open_banking"))),
+                value=bool(
+                    connection_status.get(
+                        "open_banking_consent", connection_status.get("open_banking")
+                    )
+                ),
             )
             accounting = st.checkbox(
                 "Accounting platform",
@@ -717,7 +959,9 @@ if company_mode:
                 value=bool(connection_status.get("registry")),
                 help="Simulates company registry, ownership, and identity verification.",
             )
-            saved_connections = st.form_submit_button("Save Connections and Refresh Evidence", width="stretch")
+            saved_connections = st.form_submit_button(
+                "Save Connections and Refresh Evidence", width="stretch"
+            )
 
         if saved_connections:
             if open_banking and not open_banking_consent:
@@ -743,7 +987,11 @@ if company_mode:
                 )
                 _sync_document_evidence(application)
                 _store_company_application(application)
-                prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
+                prediction = score_application(
+                    st.session_state.model_bundle,
+                    application,
+                    model_key=selected_model_key,
+                )
                 st.success("Connections saved and evidence coverage refreshed.")
 
         st.subheader("Saved application files")
@@ -751,12 +999,14 @@ if company_mode:
             "These uploads are written to the local demo-session vault. They survive refresh and sign-out, "
             "are excluded from Git, and are removed only when Clear Demo State is used."
         )
-        document_category_counts, saved_documents, prediction = _render_document_examples(
-            application,
-            document_category_counts,
-            saved_documents,
-            connection_status,
-            prediction,
+        document_category_counts, saved_documents, prediction = (
+            _render_document_examples(
+                application,
+                document_category_counts,
+                saved_documents,
+                connection_status,
+                prediction,
+            )
         )
         upload_columns = st.columns(2)
         upload_widgets = {}
@@ -797,15 +1047,23 @@ if company_mode:
                     else:
                         duplicate_count += 1
 
-            document_category_counts, saved_documents = _sync_document_evidence(application)
+            document_category_counts, saved_documents = _sync_document_evidence(
+                application
+            )
             connection_status["documents"] = bool(saved_documents)
             st.session_state.sme_connection_status = connection_status
             _store_company_application(application)
-            prediction = score_application(st.session_state.model_bundle, application, model_key=selected_model_key)
+            prediction = score_application(
+                st.session_state.model_bundle, application, model_key=selected_model_key
+            )
             if saved_count:
-                st.success(f"{saved_count} file(s) saved to the local application vault.")
+                st.success(
+                    f"{saved_count} file(s) saved to the local application vault."
+                )
             if duplicate_count:
-                st.info(f"{duplicate_count} duplicate file(s) were already saved and were not copied again.")
+                st.info(
+                    f"{duplicate_count} duplicate file(s) were already saved and were not copied again."
+                )
             for error in errors:
                 st.error(error)
 
@@ -835,11 +1093,32 @@ if company_mode:
             "Submission shares the current company snapshot and connection statuses with the lender-side Personal Workspace."
         )
         submission_rows = [
-            {"Check": "Company identity", "Status": "Ready" if application.get("company_name") else "Missing"},
-            {"Check": "Loan request", "Status": "Ready" if application.get("requested_amount", 0) > 0 else "Missing"},
-            {"Check": "Open Banking consent", "Status": "Ready" if connection_status.get("open_banking_consent") else "Optional"},
-            {"Check": "Evidence connections", "Status": f"{connected_count}/4 connected"},
-            {"Check": "Lender rating", "Status": lifecycle.get("status", "Not submitted")},
+            {
+                "Check": "Company identity",
+                "Status": "Ready" if application.get("company_name") else "Missing",
+            },
+            {
+                "Check": "Loan request",
+                "Status": (
+                    "Ready" if application.get("requested_amount", 0) > 0 else "Missing"
+                ),
+            },
+            {
+                "Check": "Open Banking consent",
+                "Status": (
+                    "Ready"
+                    if connection_status.get("open_banking_consent")
+                    else "Optional"
+                ),
+            },
+            {
+                "Check": "Evidence connections",
+                "Status": f"{connected_count}/4 connected",
+            },
+            {
+                "Check": "Lender rating",
+                "Status": lifecycle.get("status", "Not submitted"),
+            },
         ]
         st.dataframe(pd.DataFrame(submission_rows), width="stretch", hide_index=True)
         submission_confirmed = st.checkbox(
@@ -906,9 +1185,17 @@ else:
     )
     link_cols = st.columns(3)
     with link_cols[0]:
-        safe_page_link("pages/1_Personal_Workspace.py", "Open Personal Workspace", ":material/person_search:")
+        safe_page_link(
+            "pages/1_Personal_Workspace.py",
+            "Open Personal Workspace",
+            ":material/person_search:",
+        )
     with link_cols[1]:
-        safe_page_link("pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:")
+        safe_page_link(
+            "pages/5_LLM_Integration.py",
+            "Open LLM Integration",
+            ":material/psychology:",
+        )
     with link_cols[2]:
         safe_page_link("pages/10_Tutorials.py", "Open Tutorials", ":material/school:")
 

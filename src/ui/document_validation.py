@@ -60,7 +60,9 @@ def _provider_inputs(scope, application_id):
         )
         local_base_url = st.text_input(
             "Local server URL or IP",
-            value=st.session_state.get("local_llm_base_url", "http://localhost:1234/v1"),
+            value=st.session_state.get(
+                "local_llm_base_url", "http://localhost:1234/v1"
+            ),
             key=f"doc_validation_local_url_{scope}_{application_id}",
         )
         model = st.text_input(
@@ -94,14 +96,20 @@ def _render_validation_run(run):
 
     results = run.get("results", [])
     if results:
-        st.dataframe(validation_results_table(results), width="stretch", hide_index=True)
+        st.dataframe(
+            validation_results_table(results), width="stretch", hide_index=True
+        )
         with st.expander("Validation details", expanded=False):
             for result in results:
-                st.markdown(f"**{result.get('expected_label', 'Document')}: {result.get('file', 'unknown file')}**")
+                st.markdown(
+                    f"**{result.get('expected_label', 'Document')}: {result.get('file', 'unknown file')}**"
+                )
                 st.write(result.get("rationale", "No rationale returned."))
                 if result.get("evidence"):
                     st.caption("Evidence markers: " + ", ".join(result["evidence"]))
-                st.caption(f"Follow-up: {result.get('follow_up', 'Ask for clearer evidence.')}")
+                st.caption(
+                    f"Follow-up: {result.get('follow_up', 'Ask for clearer evidence.')}"
+                )
                 if result.get("ai_error"):
                     st.warning(result["ai_error"], icon=":material/warning:")
 
@@ -121,7 +129,9 @@ def render_document_validation_panel(
         st.info("Save or upload application files before running document validation.")
         return latest_document_validation_run(application_id, scope), None
 
-    provider, model, local_base_url, local_api_key = _provider_inputs(scope, application_id)
+    provider, model, local_base_url, local_api_key = _provider_inputs(
+        scope, application_id
+    )
     if provider != "Deterministic":
         st.caption(
             "This is document-type classification and consistency screening. It does not prove that a document is genuine, "
@@ -161,9 +171,13 @@ def render_document_validation_panel(
                     icon=":material/quick_phrases:",
                 )
         elif summary.get("needs_review", 0):
-            st.warning("Document validation completed with items that still need human review.")
+            st.warning(
+                "Document validation completed with items that still need human review."
+            )
         else:
-            st.success("Document validation completed. All checked files match their expected categories.")
+            st.success(
+                "Document validation completed. All checked files match their expected categories."
+            )
 
     latest_run = new_run or latest_document_validation_run(application_id, scope)
     _render_validation_run(latest_run)

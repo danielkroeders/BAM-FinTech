@@ -3,7 +3,12 @@ import json
 import pandas as pd
 
 from src.core.data_pipeline import add_derived_features
-from src.utils.formatting import format_currency, format_months, format_percent, format_score
+from src.utils.formatting import (
+    format_currency,
+    format_months,
+    format_percent,
+    format_score,
+)
 from src.core.modeling import score_application, score_portfolio
 
 
@@ -44,13 +49,16 @@ def apply_scenario(
         -0.30,
         0.45,
     )
-    scenario["free_cash_flow"] = _number(scenario.get("free_cash_flow")) + (annual_revenue * fcf_margin_delta) - (
-        annual_revenue * operating_cost_pressure
+    scenario["free_cash_flow"] = (
+        _number(scenario.get("free_cash_flow"))
+        + (annual_revenue * fcf_margin_delta)
+        - (annual_revenue * operating_cost_pressure)
     )
     scenario["cash_flow_to_revenue_ratio"] = scenario["free_cash_flow"] / annual_revenue
     scenario["monthly_burn_rate"] = max(
         0,
-        _number(scenario.get("monthly_burn_rate")) + (annual_revenue * max(operating_cost_pressure, 0)) / 12,
+        _number(scenario.get("monthly_burn_rate"))
+        + (annual_revenue * max(operating_cost_pressure, 0)) / 12,
     )
     scenario["planned_debt_reduction_pct"] = _bounded(
         _number(scenario.get("planned_debt_reduction_pct")) + debt_reduction_delta
@@ -75,24 +83,40 @@ def apply_scenario(
             "forecast_support_uploaded",
         ]:
             scenario[key] = 1
-        scenario["document_edit_count"] = min(_number(scenario.get("document_edit_count")), 1)
-        scenario["late_stage_change_count"] = min(_number(scenario.get("late_stage_change_count")), 0)
+        scenario["document_edit_count"] = min(
+            _number(scenario.get("document_edit_count")), 1
+        )
+        scenario["late_stage_change_count"] = min(
+            _number(scenario.get("late_stage_change_count")), 0
+        )
 
     return scenario
 
 
-def scenario_comparison_rows(model_bundle, application, baseline_prediction, scenario_application, model_key=None):
+def scenario_comparison_rows(
+    model_bundle, application, baseline_prediction, scenario_application, model_key=None
+):
     selected_key = model_key or baseline_prediction.get("model_key")
-    scenario_prediction = score_application(model_bundle, scenario_application, model_key=selected_key)
+    scenario_prediction = score_application(
+        model_bundle, scenario_application, model_key=selected_key
+    )
     base_signals = add_derived_features(pd.DataFrame([application])).iloc[0]
-    scenario_signals = add_derived_features(pd.DataFrame([scenario_application])).iloc[0]
+    scenario_signals = add_derived_features(pd.DataFrame([scenario_application])).iloc[
+        0
+    ]
     return scenario_prediction, [
         {
             "Measure": "Application risk score",
-            "Current file": format_percent(baseline_prediction.get("fraud_probability", 0)),
+            "Current file": format_percent(
+                baseline_prediction.get("fraud_probability", 0)
+            ),
             "Scenario": format_percent(scenario_prediction.get("fraud_probability", 0)),
         },
-        {"Measure": "Grade", "Current file": baseline_prediction.get("grade", ""), "Scenario": scenario_prediction.get("grade", "")},
+        {
+            "Measure": "Grade",
+            "Current file": baseline_prediction.get("grade", ""),
+            "Scenario": scenario_prediction.get("grade", ""),
+        },
         {
             "Measure": "Model recommendation",
             "Current file": baseline_prediction.get("decision", ""),
@@ -106,27 +130,41 @@ def scenario_comparison_rows(model_bundle, application, baseline_prediction, sce
         {
             "Measure": "Forecast support",
             "Current file": _yes_no(application.get("forecast_support_uploaded", 0)),
-            "Scenario": _yes_no(scenario_application.get("forecast_support_uploaded", 0)),
+            "Scenario": _yes_no(
+                scenario_application.get("forecast_support_uploaded", 0)
+            ),
         },
         {
             "Measure": "Document completeness",
-            "Current file": format_score(base_signals.get("document_completeness_score", 0)),
-            "Scenario": format_score(scenario_signals.get("document_completeness_score", 0)),
+            "Current file": format_score(
+                base_signals.get("document_completeness_score", 0)
+            ),
+            "Scenario": format_score(
+                scenario_signals.get("document_completeness_score", 0)
+            ),
         },
         {
             "Measure": "Stressed DSCR",
-            "Current file": format_score(base_signals.get("stressed_debt_service_coverage_ratio", 0)),
-            "Scenario": format_score(scenario_signals.get("stressed_debt_service_coverage_ratio", 0)),
+            "Current file": format_score(
+                base_signals.get("stressed_debt_service_coverage_ratio", 0)
+            ),
+            "Scenario": format_score(
+                scenario_signals.get("stressed_debt_service_coverage_ratio", 0)
+            ),
         },
     ]
 
 
-def peer_benchmark_rows(model_bundle, applications, application, prediction, model_key=None):
+def peer_benchmark_rows(
+    model_bundle, applications, application, prediction, model_key=None
+):
     selected_key = model_key or prediction.get("model_key")
     scored = score_portfolio(model_bundle, applications, model_key=selected_key)
     app_signals = add_derived_features(pd.DataFrame([application])).iloc[0]
     industry_peers = scored[scored["industry"].eq(application.get("industry"))].copy()
-    regional_peers = industry_peers[industry_peers["region"].eq(application.get("region"))].copy()
+    regional_peers = industry_peers[
+        industry_peers["region"].eq(application.get("region"))
+    ].copy()
     peers = regional_peers if len(regional_peers) >= 8 else industry_peers
     if len(peers) < 8:
         peers = scored.copy()
@@ -197,22 +235,41 @@ def peer_benchmark_rows(model_bundle, applications, application, prediction, mod
 
 def data_source_coverage_rows(application, signals):
     open_banking_connected = bool(
-        _number(application.get("open_banking_connected", application.get("bank_statements_uploaded")))
+        _number(
+            application.get(
+                "open_banking_connected", application.get("bank_statements_uploaded")
+            )
+        )
     )
     accounting_connected = bool(
-        _number(application.get("accounting_connected", application.get("financial_statements_uploaded")))
+        _number(
+            application.get(
+                "accounting_connected", application.get("financial_statements_uploaded")
+            )
+        )
     )
     registry_connected = bool(
-        _number(application.get("registry_connected", application.get("ownership_docs_uploaded")))
+        _number(
+            application.get(
+                "registry_connected", application.get("ownership_docs_uploaded")
+            )
+        )
     )
     documents_connected = bool(
-        _number(application.get("documents_connected", signals.get("document_completeness_score", 0) >= 0.8))
+        _number(
+            application.get(
+                "documents_connected",
+                signals.get("document_completeness_score", 0) >= 0.8,
+            )
+        )
     )
     return [
         {
             "Source": "PSD2 / Open Banking",
             "MVP handling": "Company-controlled demo connection using account history, payment behavior, and transfer anomaly fields.",
-            "Current status": "Connected" if open_banking_connected else "Not connected",
+            "Current status": (
+                "Connected" if open_banking_connected else "Not connected"
+            ),
             "Production path": "Connect consented bank feeds for real-time transaction and cash-balance refresh.",
         },
         {
@@ -236,7 +293,11 @@ def data_source_coverage_rows(application, signals):
         {
             "Source": "Contextual signals",
             "MVP handling": "Captured as applicant narrative, executive context, sector, country risk, and forecast realism.",
-            "Current status": "Ready" if str(application.get("loan_purpose_context", "")).strip() else "Partial",
+            "Current status": (
+                "Ready"
+                if str(application.get("loan_purpose_context", "")).strip()
+                else "Partial"
+            ),
             "Production path": "Add verified market feeds, sector stress indicators, and contract evidence.",
         },
     ]
@@ -249,7 +310,9 @@ def sme_action_rows(application, signals, prediction):
             {
                 "Action": "Complete the evidence package",
                 "Why it helps": "Missing statements, KYB, tax, or forecast support can keep the case in manual review.",
-                "Current signal": format_score(signals.get("document_completeness_score", 0)),
+                "Current signal": format_score(
+                    signals.get("document_completeness_score", 0)
+                ),
             }
         )
     if _number(signals.get("stressed_debt_service_coverage_ratio")) < 1.2:
@@ -257,7 +320,9 @@ def sme_action_rows(application, signals, prediction):
             {
                 "Action": "Improve repayment coverage",
                 "Why it helps": "Higher free cash flow or a smaller requested amount improves DSCR and rate-stress resilience.",
-                "Current signal": format_score(signals.get("stressed_debt_service_coverage_ratio", 0)),
+                "Current signal": format_score(
+                    signals.get("stressed_debt_service_coverage_ratio", 0)
+                ),
             }
         )
     if _number(signals.get("cash_flow_pressure_score")) >= 0.35:
@@ -265,7 +330,9 @@ def sme_action_rows(application, signals, prediction):
             {
                 "Action": "Reduce cash-flow pressure",
                 "Why it helps": "Lower burn, better collections, or stronger cash conversion makes the score more resilient.",
-                "Current signal": format_score(signals.get("cash_flow_pressure_score", 0)),
+                "Current signal": format_score(
+                    signals.get("cash_flow_pressure_score", 0)
+                ),
             }
         )
     if _number(signals.get("forecast_execution_risk_score")) >= 0.35:
@@ -273,7 +340,9 @@ def sme_action_rows(application, signals, prediction):
             {
                 "Action": "Support the five-year plan",
                 "Why it helps": "Documented contracts and realistic growth assumptions reduce forecast execution risk.",
-                "Current signal": format_score(signals.get("forecast_execution_risk_score", 0)),
+                "Current signal": format_score(
+                    signals.get("forecast_execution_risk_score", 0)
+                ),
             }
         )
     if _number(signals.get("narrative_consistency_risk_score")) >= 0.35:
@@ -281,7 +350,9 @@ def sme_action_rows(application, signals, prediction):
             {
                 "Action": "Align the applicant story with evidence",
                 "Why it helps": "Consistent management context and financial evidence reduce follow-up questions.",
-                "Current signal": format_score(signals.get("narrative_consistency_risk_score", 0)),
+                "Current signal": format_score(
+                    signals.get("narrative_consistency_risk_score", 0)
+                ),
             }
         )
     if not rows:
@@ -311,9 +382,13 @@ def api_contract_payloads(application, prediction, metrics):
         },
         "evidence": {
             "open_banking": bool(_number(application.get("bank_statements_uploaded"))),
-            "accounting": bool(_number(application.get("financial_statements_uploaded"))),
+            "accounting": bool(
+                _number(application.get("financial_statements_uploaded"))
+            ),
             "registry_kyb": bool(_number(application.get("ownership_docs_uploaded"))),
-            "forecast_support": bool(_number(application.get("forecast_support_uploaded"))),
+            "forecast_support": bool(
+                _number(application.get("forecast_support_uploaded"))
+            ),
         },
         "financial_snapshot": {
             "annual_revenue": application.get("annual_revenue"),
@@ -324,7 +399,9 @@ def api_contract_payloads(application, prediction, metrics):
     }
     response = {
         "application_id": request["application_id"],
-        "application_risk_score": round(_number(prediction.get("fraud_probability")), 4),
+        "application_risk_score": round(
+            _number(prediction.get("fraud_probability")), 4
+        ),
         "grade": prediction.get("grade"),
         "model_recommendation": prediction.get("decision"),
         "model_context": {
@@ -344,7 +421,11 @@ def api_contract_payloads(application, prediction, metrics):
 def latest_or_sample_application(seed_data, model_bundle, model_key=None):
     applications = seed_data["applications"]
     scored = score_portfolio(model_bundle, applications, model_key=model_key)
-    sample = scored.sort_values("fraud_probability", ascending=False).iloc[len(scored) // 3].to_dict()
+    sample = (
+        scored.sort_values("fraud_probability", ascending=False)
+        .iloc[len(scored) // 3]
+        .to_dict()
+    )
     prediction = {
         "fraud_probability": sample["fraud_probability"],
         "grade": sample["grade"],

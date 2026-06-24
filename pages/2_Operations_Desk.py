@@ -9,19 +9,28 @@ from src.core.runtime import bootstrap_state
 from src.utils.table_views import application_table
 from src.ui.components import open_application_in_workspace, render_sidebar
 from src.features.workbench_features import build_application_queue
-from src.utils.workflow_transfer import SME_SUBMISSION_SOURCE, find_submitted_application, submitted_intake_rows
-
+from src.utils.workflow_transfer import (
+    SME_SUBMISSION_SOURCE,
+    find_submitted_application,
+    submitted_intake_rows,
+)
 
 st.set_page_config(page_title="Operations Desk", layout="wide")
 bootstrap_state()
 render_sidebar()
 
 applications = st.session_state.seed_data["applications"]
-selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
-queue = build_application_queue(st.session_state.model_bundle, applications, model_key=selected_model_key)
+selected_model_key = st.session_state.get(
+    "selected_ml_model", st.session_state.model_bundle.default_model_key
+)
+queue = build_application_queue(
+    st.session_state.model_bundle, applications, model_key=selected_model_key
+)
 final_decisions = st.session_state.bulk_final_decisions
 queue["final_decision"] = queue["application_id"].apply(
-    lambda application_id: final_decisions.get(application_id, {}).get("final_decision", "Pending")
+    lambda application_id: final_decisions.get(application_id, {}).get(
+        "final_decision", "Pending"
+    )
 )
 
 
@@ -34,7 +43,9 @@ def _upsert_portfolio_history(application_id, values):
 
 
 st.title("Operations Desk")
-st.caption("Team workboard for live SME lending tasks, evidence follow-up, and review routing.")
+st.caption(
+    "Team workboard for live SME lending tasks, evidence follow-up, and review routing."
+)
 
 submitted_rows = submitted_intake_rows(
     st.session_state.sme_submission_history,
@@ -45,20 +56,29 @@ submitted_rows = submitted_intake_rows(
 
 metric_cols = st.columns(4)
 metric_cols[0].metric("Open Work Items", len(queue))
-metric_cols[1].metric("Manual / Compliance", int(queue["queue_status"].isin(["Manual review", "Compliance review"]).sum()))
+metric_cols[1].metric(
+    "Manual / Compliance",
+    int(queue["queue_status"].isin(["Manual review", "Compliance review"]).sum()),
+)
 metric_cols[2].metric("Evidence Follow-Up", int((queue["missing_documents"] > 0).sum()))
-metric_cols[3].metric("Rejected Today", int((queue["final_decision"] == "Reject").sum()))
+metric_cols[3].metric(
+    "Rejected Today", int((queue["final_decision"] == "Reject").sum())
+)
 
 if submitted_rows:
     st.subheader("SME Portal Intake")
-    st.caption("Company-submitted applications available for lender review in this demo session.")
+    st.caption(
+        "Company-submitted applications available for lender review in this demo session."
+    )
     st.dataframe(submitted_rows, width="stretch", hide_index=True)
     intake_options = [
         f"{row['Application ID']} - {row['Company']} | {row['Status']}"
         for row in submitted_rows
     ]
     intake_cols = st.columns([2, 1])
-    selected_intake_label = intake_cols[0].selectbox("Submitted SME application", intake_options)
+    selected_intake_label = intake_cols[0].selectbox(
+        "Submitted SME application", intake_options
+    )
     selected_intake_id = selected_intake_label.split(" - ", 1)[0]
     if intake_cols[1].button("Open Submitted Application", width="stretch"):
         submitted_application = find_submitted_application(
@@ -73,9 +93,19 @@ if submitted_rows:
             st.error("The submitted application snapshot could not be found.")
 
 filter_cols = st.columns([1, 1, 1])
-status_filter = filter_cols[0].multiselect("Status", sorted(queue["queue_status"].unique()), default=sorted(queue["queue_status"].unique()))
-grade_filter = filter_cols[1].multiselect("Grade", list("ABCDEF"), default=list("ABCDEF"))
-analyst_filter = filter_cols[2].multiselect("Analyst", sorted(queue["assigned_analyst"].unique()), default=sorted(queue["assigned_analyst"].unique()))
+status_filter = filter_cols[0].multiselect(
+    "Status",
+    sorted(queue["queue_status"].unique()),
+    default=sorted(queue["queue_status"].unique()),
+)
+grade_filter = filter_cols[1].multiselect(
+    "Grade", list("ABCDEF"), default=list("ABCDEF")
+)
+analyst_filter = filter_cols[2].multiselect(
+    "Analyst",
+    sorted(queue["assigned_analyst"].unique()),
+    default=sorted(queue["assigned_analyst"].unique()),
+)
 
 filtered = queue[
     queue["queue_status"].isin(status_filter)
@@ -104,15 +134,22 @@ display = application_table(
 st.dataframe(display, width="stretch", hide_index=True)
 
 with st.expander("Bulk Actions", expanded=False):
-    st.caption("Select several visible work items and record one final decision for all of them.")
-    bulk_options = [f"{row.application_id} - {row.company_name} | Grade {row.grade}" for row in filtered.itertuples()]
+    st.caption(
+        "Select several visible work items and record one final decision for all of them."
+    )
+    bulk_options = [
+        f"{row.application_id} - {row.company_name} | Grade {row.grade}"
+        for row in filtered.itertuples()
+    ]
     with st.form("bulk_reject_form"):
         selected_bulk_labels = st.multiselect("Cases", bulk_options)
         bulk_note = st.text_area(
             "Decision note",
             value="Rejected from Operations Desk after reviewing task status, model recommendation, and available evidence.",
         )
-        reject_selected = st.form_submit_button("Reject Selected Cases", width="stretch")
+        reject_selected = st.form_submit_button(
+            "Reject Selected Cases", width="stretch"
+        )
 
     if reject_selected:
         selected_ids = [label.split(" - ", 1)[0] for label in selected_bulk_labels]
@@ -123,10 +160,19 @@ with st.expander("Bulk Actions", expanded=False):
             created_count = 0
             skipped_count = 0
             for application_id in selected_ids:
-                if st.session_state.bulk_final_decisions.get(application_id, {}).get("final_decision") == "Reject":
+                if (
+                    st.session_state.bulk_final_decisions.get(application_id, {}).get(
+                        "final_decision"
+                    )
+                    == "Reject"
+                ):
                     skipped_count += 1
                     continue
-                row = filtered[filtered["application_id"] == application_id].iloc[0].to_dict()
+                row = (
+                    filtered[filtered["application_id"] == application_id]
+                    .iloc[0]
+                    .to_dict()
+                )
                 review = {
                     "review_id": f"REV-{len(st.session_state.review_history) + 1:03d}",
                     "application_id": application_id,
@@ -153,11 +199,15 @@ with st.expander("Bulk Actions", expanded=False):
                 )
                 created_count += 1
             if created_count:
-                st.success(f"Rejected {created_count} case(s) and added the decision to the audit trail.")
+                st.success(
+                    f"Rejected {created_count} case(s) and added the decision to the audit trail."
+                )
             if skipped_count:
                 st.info(f"Skipped {skipped_count} already rejected case(s).")
             persist_demo_state()
-            rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+            rerun = getattr(st, "rerun", None) or getattr(
+                st, "experimental_rerun", None
+            )
             if rerun:
                 rerun()
 
@@ -174,7 +224,9 @@ if not filtered.empty:
     detail_cols[0].metric("Risk score", format_percent(selected["fraud_probability"]))
     detail_cols[1].metric("Grade", selected["grade"])
     detail_cols[2].metric("Decision", selected["decision"])
-    detail_cols[3].metric("Doc readiness", format_score(selected["document_completeness_score"]))
+    detail_cols[3].metric(
+        "Doc readiness", format_score(selected["document_completeness_score"])
+    )
     detail_cols[4].metric("SLA", selected["sla"])
 
     selected_details = pd.DataFrame(
@@ -182,10 +234,22 @@ if not filtered.empty:
             {"Field": "Company", "Value": selected["company_name"]},
             {"Field": "Industry", "Value": selected["industry"]},
             {"Field": "Region", "Value": selected["region"]},
-            {"Field": "Requested amount", "Value": format_currency(selected["requested_amount"])},
-            {"Field": "Interest rate", "Value": format_percent(selected["interest_rate"])},
-            {"Field": "Free cash flow", "Value": format_currency(selected["free_cash_flow"])},
-            {"Field": "Expected runway", "Value": f"{format_score(selected['expected_runway_months'], 0)} mo"},
+            {
+                "Field": "Requested amount",
+                "Value": format_currency(selected["requested_amount"]),
+            },
+            {
+                "Field": "Interest rate",
+                "Value": format_percent(selected["interest_rate"]),
+            },
+            {
+                "Field": "Free cash flow",
+                "Value": format_currency(selected["free_cash_flow"]),
+            },
+            {
+                "Field": "Expected runway",
+                "Value": f"{format_score(selected['expected_runway_months'], 0)} mo",
+            },
             {"Field": "Task status", "Value": selected["queue_status"]},
             {"Field": "Final decision", "Value": selected["final_decision"]},
             {"Field": "Assigned analyst", "Value": selected["assigned_analyst"]},

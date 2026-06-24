@@ -6,7 +6,6 @@ import streamlit as st
 from src.core.runtime import bootstrap_state
 from src.ui.components import get_profile, is_sme_profile, render_sidebar
 
-
 st.set_page_config(page_title="Support", layout="wide")
 bootstrap_state()
 render_sidebar()
@@ -117,16 +116,24 @@ def _active_faq():
 def _support_response(message):
     text = message.lower()
     if sme_mode:
-        if any(word in text for word in ["consultant", "call", "appointment", "speak", "contact"]):
+        if any(
+            word in text
+            for word in ["consultant", "call", "appointment", "speak", "contact"]
+        ):
             return "Use the consultant cards above or submit the form to connect with a YourBank SME consultant."
-        if any(word in text for word in ["document", "upload", "statement", "tax", "kyb"]):
+        if any(
+            word in text for word in ["document", "upload", "statement", "tax", "kyb"]
+        ):
             return (
                 "Upload the requested financial statements, bank statements, tax evidence, ownership/KYB files, and forecast support. "
                 "The lender verifies submitted evidence after you send the application."
             )
         if any(word in text for word in ["rating", "decision", "report", "published"]):
             return "The rating and evaluation report become visible only after the lender publishes the reviewed outcome."
-        if any(word in text for word in ["psd2", "bank", "accounting", "registry", "connection"]):
+        if any(
+            word in text
+            for word in ["psd2", "bank", "accounting", "registry", "connection"]
+        ):
             return "In this MVP, data connections are simulated. They show what consent and source selection would look like in production."
         return "Thanks. For applicant help, submit the consultant request above and include your application ID if you have one."
 
@@ -135,7 +142,10 @@ def _support_response(message):
             "For pricing questions, check Personal Workspace's interest rate, annual debt service, DSCR, and stressed DSCR fields. "
             "If DSCR is below 1.0, the case should usually remain in manual review."
         )
-    if any(word in text for word in ["document", "kyb", "upload", "checklist", "validation"]):
+    if any(
+        word in text
+        for word in ["document", "kyb", "upload", "checklist", "validation"]
+    ):
         return (
             "Use the Evidence tab in Personal Workspace to download SME-uploaded files and run lender document verification. "
             "Likely category mismatches should be handled as review evidence."
@@ -148,14 +158,16 @@ def _support_response(message):
     if any(word in text for word in ["email", "rep", "contact", "call"]):
         return "You can contact Mila, Daan, or Sofia using the email links at the top of this Support page."
     if any(word in text for word in ["api", "psd2", "accounting", "integration"]):
-        return (
-            "Personal connected apps live on Profile & Settings. Model data sources, such as file evidence and financial signals, are separate from those personal app connections."
-        )
+        return "Personal connected apps live on Profile & Settings. Model data sources, such as file evidence and financial signals, are separate from those personal app connections."
     return "Thanks. I logged that as a support question. For urgent case review, contact Daan Peters or use the request form above."
 
 
 def _mailto(rep, category, case_id, message):
-    prefix = "YourBank consultant request" if sme_mode else "YourBank risk-platform support request"
+    prefix = (
+        "YourBank consultant request"
+        if sme_mode
+        else "YourBank risk-platform support request"
+    )
     subject = quote(f"{prefix}: {category}")
     body = quote(
         "\n".join(
@@ -176,10 +188,14 @@ reps = _active_reps()
 faq_items = _active_faq()
 if sme_mode:
     st.title("Connect with a YourBank Consultant")
-    st.caption("Ask for application help, document guidance, or a conversation about next steps.")
+    st.caption(
+        "Ask for application help, document guidance, or a conversation about next steps."
+    )
 else:
     st.title("Support")
-    st.caption("Contact YourBank risk-platform support, submit a request, or use live chat.")
+    st.caption(
+        "Contact YourBank risk-platform support, submit a request, or use live chat."
+    )
 
 st.subheader("Consultants" if sme_mode else "Support Contacts")
 rep_cols = st.columns(len(reps))
@@ -194,7 +210,9 @@ st.subheader("Consultant Request" if sme_mode else "Support Request")
 with st.form("support_request_form"):
     form_left, form_right = st.columns(2)
     with form_left:
-        selected_name = st.selectbox("Consultant" if sme_mode else "Contact", [rep["name"] for rep in reps])
+        selected_name = st.selectbox(
+            "Consultant" if sme_mode else "Contact", [rep["name"] for rep in reps]
+        )
         category = st.selectbox(
             "Category",
             (
@@ -221,7 +239,11 @@ with st.form("support_request_form"):
     with form_right:
         preferred_contact = st.radio(
             "Preferred contact",
-            ["Email", "Phone call", "Video call"] if sme_mode else ["Email", "Slack", "Teams"],
+            (
+                ["Email", "Phone call", "Video call"]
+                if sme_mode
+                else ["Email", "Slack", "Teams"]
+            ),
             horizontal=True,
         )
         case_id = st.text_input(
@@ -237,7 +259,10 @@ with st.form("support_request_form"):
         ),
         height=110,
     )
-    submitted = st.form_submit_button("Request Consultant Contact" if sme_mode else "Submit Support Request", width="stretch")
+    submitted = st.form_submit_button(
+        "Request Consultant Contact" if sme_mode else "Submit Support Request",
+        width="stretch",
+    )
 
 if submitted:
     selected_rep = next(rep for rep in reps if rep["name"] == selected_name)
@@ -252,20 +277,30 @@ if submitted:
         "Status": "Prepared",
     }
     st.session_state.support_ticket_history.append(ticket)
-    st.success(f"Request prepared for {selected_rep['name']}. Preferred channel: {preferred_contact}.")
-    st.markdown(f"[Open email draft]({_mailto(selected_rep, category, case_id, message)})")
+    st.success(
+        f"Request prepared for {selected_rep['name']}. Preferred channel: {preferred_contact}."
+    )
+    st.markdown(
+        f"[Open email draft]({_mailto(selected_rep, category, case_id, message)})"
+    )
 
 if st.session_state.support_ticket_history:
     st.subheader("Recent Requests")
-    st.dataframe(st.session_state.support_ticket_history[-6:], width="stretch", hide_index=True)
+    st.dataframe(
+        st.session_state.support_ticket_history[-6:], width="stretch", hide_index=True
+    )
 
 chat_left, chat_right = st.columns([2, 1])
 with chat_left:
     st.subheader("Live Chat")
-    st.caption("This chat uses scripted responses and does not contact a real support desk.")
+    st.caption(
+        "This chat uses scripted responses and does not contact a real support desk."
+    )
     chat_key = "sme_support_chat_history" if sme_mode else "lender_support_chat_history"
     if chat_key not in st.session_state:
-        first_name = (profile.get("name") or profile.get("display_name") or "there").split()[0]
+        first_name = (
+            profile.get("name") or profile.get("display_name") or "there"
+        ).split()[0]
         greeting = (
             f"Hi {first_name}, I can help route you to a YourBank consultant or explain the SME application steps."
             if sme_mode
@@ -289,7 +324,9 @@ with chat_left:
         send_chat = st.form_submit_button("Send", width="stretch")
     if send_chat and prompt.strip():
         st.session_state[chat_key].append({"role": "user", "content": prompt.strip()})
-        st.session_state[chat_key].append({"role": "assistant", "content": _support_response(prompt.strip())})
+        st.session_state[chat_key].append(
+            {"role": "assistant", "content": _support_response(prompt.strip())}
+        )
         rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
         if rerun:
             rerun()

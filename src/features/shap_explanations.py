@@ -1,7 +1,16 @@
 import pandas as pd
 
-from src.core.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, add_derived_features
-from src.utils.formatting import format_currency, format_months, format_percent, format_score
+from src.core.data_pipeline import (
+    CATEGORICAL_COLUMNS,
+    NUMERIC_COLUMNS,
+    add_derived_features,
+)
+from src.utils.formatting import (
+    format_currency,
+    format_months,
+    format_percent,
+    format_score,
+)
 
 
 def _fraud_class_values(values):
@@ -58,11 +67,24 @@ def _format_value(application, feature):
         "planned_debt_reduction_pct",
     }:
         return format_percent(value)
-    if feature in {"expected_runway_months", "email_domain_age_months", "website_age_months", "bank_account_age_months"}:
+    if feature in {
+        "expected_runway_months",
+        "email_domain_age_months",
+        "website_age_months",
+        "bank_account_age_months",
+    }:
         return format_months(value, 1)
-    if feature in {"receivables_days", "payables_days", "inventory_days", "cash_conversion_cycle_days"}:
+    if feature in {
+        "receivables_days",
+        "payables_days",
+        "inventory_days",
+        "cash_conversion_cycle_days",
+    }:
         return f"{format_score(value, 0)} days"
-    if feature in {"debt_service_coverage_ratio", "stressed_debt_service_coverage_ratio"}:
+    if feature in {
+        "debt_service_coverage_ratio",
+        "stressed_debt_service_coverage_ratio",
+    }:
         return format_score(value)
     if feature.endswith("_score") or feature == "external_financing_pressure":
         return format_score(value)
@@ -82,7 +104,10 @@ def shap_driver_table(model_bundle, application):
     enriched_application = application_frame.iloc[0].to_dict()
     model_columns = NUMERIC_COLUMNS + CATEGORICAL_COLUMNS
     transformed = preprocessor.transform(application_frame[model_columns])
-    feature_names = [name.replace("numeric__", "").replace("categorical__", "") for name in preprocessor.get_feature_names_out()]
+    feature_names = [
+        name.replace("numeric__", "").replace("categorical__", "")
+        for name in preprocessor.get_feature_names_out()
+    ]
 
     explainer = shap.TreeExplainer(classifier)
     shap_values = _fraud_class_values(explainer.shap_values(transformed))
@@ -94,12 +119,22 @@ def shap_driver_table(model_bundle, application):
         rows.append({"driver": group, "contribution": float(contribution)})
 
     grouped = pd.DataFrame(rows).groupby("driver", as_index=False)["contribution"].sum()
-    grouped["application_value"] = grouped["driver"].apply(lambda feature: _format_value(enriched_application, feature))
+    grouped["application_value"] = grouped["driver"].apply(
+        lambda feature: _format_value(enriched_application, feature)
+    )
     grouped["impact"] = grouped["contribution"].apply(
-        lambda value: "Raises application risk" if value > 0 else "Lowers application risk" if value < 0 else "Neutral"
+        lambda value: (
+            "Raises application risk"
+            if value > 0
+            else "Lowers application risk" if value < 0 else "Neutral"
+        )
     )
     grouped["absolute_contribution"] = grouped["contribution"].abs()
-    grouped = grouped.sort_values("absolute_contribution", ascending=False).reset_index(drop=True)
+    grouped = grouped.sort_values("absolute_contribution", ascending=False).reset_index(
+        drop=True
+    )
 
-    predicted_probability = float(model_bundle.pipeline.predict_proba(application_frame[model_columns])[:, 1][0])
+    predicted_probability = float(
+        model_bundle.pipeline.predict_proba(application_frame[model_columns])[:, 1][0]
+    )
     return grouped, expected_value, predicted_probability

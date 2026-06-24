@@ -3,10 +3,18 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from src.core.data_pipeline import CATEGORICAL_COLUMNS, NUMERIC_COLUMNS, add_derived_features
-from src.utils.formatting import format_currency, format_months, format_percent, format_score
+from src.core.data_pipeline import (
+    CATEGORICAL_COLUMNS,
+    NUMERIC_COLUMNS,
+    add_derived_features,
+)
+from src.utils.formatting import (
+    format_currency,
+    format_months,
+    format_percent,
+    format_score,
+)
 from src.core.modeling import decision_from_grade, grade_from_probability
-
 
 DEMO_SCENARIOS = {
     "Custom application": None,
@@ -273,7 +281,13 @@ DEMO_SCENARIOS = {
 }
 
 
-REVIEW_ACTIONS = ["Approve", "Reject", "Manual Review", "Request Documents", "Escalate to Compliance"]
+REVIEW_ACTIONS = [
+    "Approve",
+    "Reject",
+    "Manual Review",
+    "Request Documents",
+    "Escalate to Compliance",
+]
 
 
 def _yes_no(value):
@@ -283,7 +297,11 @@ def _yes_no(value):
 def case_summary(application, prediction, explanation, review=None):
     derived = add_derived_features(pd.DataFrame([application])).iloc[0]
     flags = prediction.get("flags") or []
-    flag_lines = [f"- {flag}" for flag in flags] if flags else ["- No deterministic risk flags were triggered."]
+    flag_lines = (
+        [f"- {flag}" for flag in flags]
+        if flags
+        else ["- No deterministic risk flags were triggered."]
+    )
     lines = [
         "CredRisk.AI Underwriter Workbench Case Summary",
         f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
@@ -340,7 +358,9 @@ def case_summary(application, prediction, explanation, review=None):
     ]
     if any(text for _, text in applicant_context_lines):
         lines.extend(["", "Applicant narrative:"])
-        lines.extend(f"{label}: {text}" for label, text in applicant_context_lines if text)
+        lines.extend(
+            f"{label}: {text}" for label, text in applicant_context_lines if text
+        )
     context_lines = [
         ("CEO context", application.get("ceo_context", "")),
         ("CFO context", application.get("cfo_context", "")),
@@ -366,24 +386,37 @@ def case_summary(application, prediction, explanation, review=None):
     return "\n".join(lines)
 
 
-def similar_applications(model_bundle, applications, application, limit=5, model_key=None):
+def similar_applications(
+    model_bundle, applications, application, limit=5, model_key=None
+):
     selected_key = model_bundle._key(model_key)
     pipeline = model_bundle.pipeline_for(selected_key)
     portfolio = add_derived_features(applications)
     application_features = add_derived_features(pd.DataFrame([application])).iloc[0]
-    probabilities = pipeline.predict_proba(portfolio[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1]
+    probabilities = pipeline.predict_proba(
+        portfolio[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS]
+    )[:, 1]
     portfolio["fraud_probability"] = probabilities
-    portfolio["grade"] = [grade_from_probability(probability) for probability in probabilities]
+    portfolio["grade"] = [
+        grade_from_probability(probability) for probability in probabilities
+    ]
     portfolio["decision"] = [decision_from_grade(grade) for grade in portfolio["grade"]]
 
     numeric = portfolio[NUMERIC_COLUMNS].astype(float)
-    center = pd.Series({column: float(application_features.get(column, numeric[column].median())) for column in NUMERIC_COLUMNS})
+    center = pd.Series(
+        {
+            column: float(application_features.get(column, numeric[column].median()))
+            for column in NUMERIC_COLUMNS
+        }
+    )
     scale = numeric.std().replace(0, 1)
     numeric_distance = (((numeric - center) / scale) ** 2).sum(axis=1) ** 0.5
 
     category_distance = np.zeros(len(portfolio))
     for column in CATEGORICAL_COLUMNS:
-        category_distance += (portfolio[column] != application.get(column)).astype(float)
+        category_distance += (portfolio[column] != application.get(column)).astype(
+            float
+        )
 
     portfolio["similarity_score"] = numeric_distance + category_distance
     columns = [

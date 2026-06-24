@@ -4,8 +4,12 @@ from urllib.parse import urlencode
 import streamlit as st
 
 from src.core.runtime import bootstrap_state
-from src.ui.components import get_profile, is_sme_profile, render_sidebar, safe_page_link
-
+from src.ui.components import (
+    get_profile,
+    is_sme_profile,
+    render_sidebar,
+    safe_page_link,
+)
 
 st.set_page_config(page_title="Tutorials", layout="wide")
 bootstrap_state()
@@ -66,7 +70,13 @@ TUTORIALS = [
         "time": "10 min",
         "level": "Core workflow",
         "summary": "Load a case, review evidence, score the application, and record the analyst decision.",
-        "features": ["Case queue", "Application intake", "Risk result", "Metric guide", "Case review"],
+        "features": [
+            "Case queue",
+            "Application intake",
+            "Risk result",
+            "Metric guide",
+            "Case review",
+        ],
         "objectives": [
             "Start from a queue or example case",
             "Understand the scoring inputs and output",
@@ -108,7 +118,12 @@ TUTORIALS = [
         "time": "8 min",
         "level": "Advanced",
         "summary": "Generate internal and SME-facing evaluation reports and inspect SHAP drivers.",
-        "features": ["Provider choice", "Internal report", "SME report draft", "SHAP drivers"],
+        "features": [
+            "Provider choice",
+            "Internal report",
+            "SME report draft",
+            "SHAP drivers",
+        ],
         "objectives": [
             "Choose the appropriate review provider",
             "Compare AI and supervised-model outputs",
@@ -193,7 +208,12 @@ TUTORIALS = [
         "time": "7 min",
         "level": "Intermediate",
         "summary": "Monitor portfolio composition, review queues, high-risk cases, and analyst activity.",
-        "features": ["Portfolio filters", "Risk KPIs", "Distributions", "Review activity"],
+        "features": [
+            "Portfolio filters",
+            "Risk KPIs",
+            "Distributions",
+            "Review activity",
+        ],
         "objectives": [
             "Build a relevant portfolio slice",
             "Read grade and decision distributions",
@@ -397,7 +417,12 @@ TUTORIALS = [
         "time": "6 min",
         "level": "Reference",
         "summary": "Look up model dimensions, derived signals, grade meanings, and usage boundaries.",
-        "features": ["Input definitions", "Derived signals", "Grade policy", "Limitations"],
+        "features": [
+            "Input definitions",
+            "Derived signals",
+            "Grade policy",
+            "Limitations",
+        ],
         "objectives": [
             "Look up unfamiliar scoring terms",
             "Understand why a signal matters",
@@ -442,7 +467,12 @@ SME_TUTORIALS = [
         "time": "5 min",
         "level": "Beginner",
         "summary": "Enter company details, loan request, financial snapshot, and business context before submitting to YourBank.",
-        "features": ["Company data", "Loan request", "Financial snapshot", "Business context"],
+        "features": [
+            "Company data",
+            "Loan request",
+            "Financial snapshot",
+            "Business context",
+        ],
         "objectives": [
             "Complete the company profile",
             "Explain the loan purpose",
@@ -484,7 +514,12 @@ SME_TUTORIALS = [
         "time": "6 min",
         "level": "Core task",
         "summary": "Select simulated data connections, inspect example files, and save application documents to the local vault.",
-        "features": ["PSD2 consent", "Example files", "Document uploads", "Saved-file vault"],
+        "features": [
+            "PSD2 consent",
+            "Example files",
+            "Document uploads",
+            "Saved-file vault",
+        ],
         "objectives": [
             "Understand the simulated connections",
             "Use example files as format guidance",
@@ -526,7 +561,12 @@ SME_TUTORIALS = [
         "time": "5 min",
         "level": "Beginner",
         "summary": "Submit the application, wait for lender review, and view the published rating and evaluation report.",
-        "features": ["Submission", "Lender review", "Published rating", "Post-rating what-if"],
+        "features": [
+            "Submission",
+            "Lender review",
+            "Published rating",
+            "Post-rating what-if",
+        ],
         "objectives": [
             "Submit the saved application",
             "Understand what remains private",
@@ -910,9 +950,7 @@ def _current_query_params():
 
 def _tutorial_href(slug=None):
     params = {
-        key: value
-        for key, value in _current_query_params().items()
-        if key != "guide"
+        key: value for key, value in _current_query_params().items() if key != "guide"
     }
     if slug:
         params["guide"] = slug
@@ -932,7 +970,7 @@ def _map_preview(kind):
         return (
             '<div class="map-form">'
             '<i></i><i></i><i class="wide"></i><span></span><span></span>'
-            '</div>'
+            "</div>"
         )
     if kind == "score":
         return (
@@ -943,7 +981,7 @@ def _map_preview(kind):
         return (
             '<div class="map-chart">'
             '<i class="bar-one"></i><i class="bar-two"></i><i class="bar-three"></i><i class="bar-four"></i>'
-            '</div>'
+            "</div>"
         )
     if kind == "split":
         return '<div class="map-split"><i></i><i></i></div>'
@@ -977,17 +1015,14 @@ def _map_preview(kind):
 
 def _feature_map(tutorial):
     sections = PAGE_MAPS[tutorial["slug"]]
-    cards = "".join(
-        f"""
+    cards = "".join(f"""
         <div class="page-map-card">
             <div class="page-map-number">{index:02d}</div>
             <div class="page-map-preview">{_map_preview(section["kind"])}</div>
             <div class="page-map-title">{escape(section["title"])}</div>
             <div class="page-map-detail">{escape(section["detail"])}</div>
         </div>
-        """
-        for index, section in enumerate(sections, start=1)
-    )
+        """ for index, section in enumerate(sections, start=1))
     return f"""
     <div class="feature-map">
         <div class="page-map-browser">
@@ -1804,7 +1839,9 @@ def _render_hub():
     )
 
     if not visible:
-        st.info("No tutorials match that search. Try “documents”, “support”, or “application”.")
+        st.info(
+            "No tutorials match that search. Try “documents”, “support”, or “application”."
+        )
         return
 
     for start in range(0, len(visible), 3):
@@ -1821,7 +1858,8 @@ def _render_guide(tutorial):
         unsafe_allow_html=True,
     )
     objectives = "".join(
-        f'<span class="objective-chip">{escape(objective)}</span>' for objective in tutorial["objectives"]
+        f'<span class="objective-chip">{escape(objective)}</span>'
+        for objective in tutorial["objectives"]
     )
     st.markdown(
         f"""
@@ -1884,7 +1922,9 @@ def _render_guide(tutorial):
     )
     link_col, back_col, _ = st.columns([1, 1, 2])
     with link_col:
-        safe_page_link(tutorial["page"], f"Open {tutorial['title']}", ":material/open_in_new:")
+        safe_page_link(
+            tutorial["page"], f"Open {tutorial['title']}", ":material/open_in_new:"
+        )
     with back_col:
         st.markdown(
             f'<a class="guide-back" href="{hub_href}" target="_self">Browse another guide</a>',
@@ -1894,7 +1934,10 @@ def _render_guide(tutorial):
 
 _render_styles()
 selected_slug = _query_value("guide")
-selected_tutorial = next((tutorial for tutorial in ACTIVE_TUTORIALS if tutorial["slug"] == selected_slug), None)
+selected_tutorial = next(
+    (tutorial for tutorial in ACTIVE_TUTORIALS if tutorial["slug"] == selected_slug),
+    None,
+)
 
 if selected_tutorial:
     _render_guide(selected_tutorial)
