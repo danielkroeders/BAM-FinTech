@@ -53,7 +53,7 @@ WORKSPACE_HELP = {
     "application_risk_score": "Model-estimated application risk on a 0-100% scale. Higher percentages mean the file looks riskier relative to the synthetic training portfolio; this is decision support, not an automatic rejection.",
     "risk_grade": "Immutable A-F model grade derived from the application risk score. The analyst can publish a separate reviewed rating, but the model grade remains visible for auditability.",
     "model_recommendation": "Decision-support recommendation produced by the local scoring model. It summarizes what the model suggests before the analyst checks documents, context, and policy exceptions.",
-    "ml_technique": "Supervised ML technique used for this score. Both options convert the same application fields into a 0-1 application risk probability so analysts can compare model behavior.",
+    "ml_technique": "Scoring model used for this score. The lender workflow uses the Random Forest baseline to convert application fields into a 0-1 application risk probability.",
     "stressed_dscr": "Debt Service Coverage Ratio after adding a +2 percentage point interest-rate stress. Above 1.00 means projected cash flow still covers estimated debt service; below 1.00 means the borrower may not cover payments under stress.",
     "final_decision": "Latest analyst decision recorded for this case. Pending Review means no final human action has been saved, even if the model already produced a grade.",
     "review_status": "Timestamp of the latest saved review, or Awaiting analyst before review submission. This separates scoring from the human decision trail.",
@@ -162,7 +162,6 @@ PROVIDERS = ["Deterministic", "OpenAI API", "Local server"]
 
 MODEL_DESCRIPTIONS = {
     "random_forest": "Tree-based ensemble used to produce the baseline application risk score.",
-    "logistic_regression": "Linear probability model used to produce the baseline application risk score.",
 }
 
 ALLOWED_DOCUMENT_TYPES = ["pdf", "csv", "xlsx", "xls", "docx", "png", "jpg", "jpeg"]

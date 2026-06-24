@@ -5,7 +5,6 @@ from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -32,7 +31,6 @@ THRESHOLD_MAP = {"A": 0.15, "B": 0.28, "C": 0.42, "D": 0.58, "E": 0.74, "F": 1.0
 DEFAULT_MODEL_KEY = "random_forest"
 MODEL_LABELS = {
     "random_forest": "Random Forest",
-    "logistic_regression": "Logistic Regression",
 }
 
 
@@ -189,11 +187,6 @@ def train_model(applications):
             min_samples_leaf=4,
             random_state=42,
             class_weight="balanced",
-        ),
-        "logistic_regression": LogisticRegression(
-            max_iter=2500,
-            class_weight="balanced",
-            solver="lbfgs",
         ),
     }
     models = {}

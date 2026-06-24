@@ -25,7 +25,7 @@ if is_sme_profile(profile):
     st.stop()
 
 applications = st.session_state.seed_data["applications"]
-selected_model_key = st.session_state.get("selected_ml_model", st.session_state.model_bundle.default_model_key)
+selected_model_key = st.session_state.model_bundle.default_model_key
 workboard = build_application_queue(st.session_state.model_bundle, applications, model_key=selected_model_key)
 
 analyst_name = profile["display_name"]

@@ -11,47 +11,72 @@ Use this guide for investor demos and live walkthroughs.
 
 ## Core Message
 
-CredRisk.AI Underwriter Workbench puts an analyst inside a live SME lending operation: current tasks, Slack and calendar context, applicant-first application scoring, explainability, human review, and audit history.
+CredRisk.AI shows an end-to-end SME lending journey: the SME owns the intake and evidence package, the analyst reviews a frozen submitted snapshot, and the SME sees only the lender-reviewed published outcome.
 
 This is not a production underwriting, legal, or compliance decision system. High-risk cases require human compliance review.
 
 ## Five-Minute Demo Flow
 
-### 1. Home
+### 1. SME Company Portal
 
-First enter the login screen. Enter any 6 digit code you cn think of. Enter another random 6 digit code in the two step authorization screen.
+Start on the login screen. The default demo account should be `SME company`. Enter any password, then enter any random 6-digit code in the two-step authorization screen.
 
-Start on the home page.
+Open the company portal.
 
 Say:
 
-> This is Ms. Cooper's working day. She sees her open cases, Slack updates, and calendar commitments before moving into case work.
+> This is the starting point of the platform. The SME enters its own company and loan data, controls which evidence sources it connects, and submits the file into the lender workflow. Internal lender ratings stay hidden until the lender publishes a reviewed result.
+
+Point out:
+
+- Company and loan data entry
+- `Load sample intake` in Company Data for a fast demo setup
+- Recommended sample cases:
+  - `Low-risk established borrower` for a clean approval case
+  - `A2M Logistics Loan` for the fuel-cost pressure and new long-term contract example
+  - `Credit stacking case` for manual review behavior
+  - `Suspicious transfers` for a high-risk compliance case
+  - `High country-risk borrower` for jurisdictional risk discussion
+- PSD2/Open Banking consent simulation
+- Accounting and registry/KYB connection simulation
+- Generated CSV examples for each document category, with sample evidence files seeded when a sample intake is loaded
+- Real local file uploads for financial statements, bank statements, tax returns, ownership/KYB, and forecast support
+- Saved-file metadata, SHA-256 hashes, and lender download access
+- Application-readiness checks
+- Ways to strengthen the evidence package
+- Evidence-source coverage
+- Submit Application to Lender Review
+- SME Tutorials and Support show applicant-facing guides and consultant contact, not the internal analyst helpdesk
+
+Submit the application.
+
+### 2. Analyst Home
+
+Sign out, choose the `Lender analyst` demo account, complete the password and six-digit verification steps, and start on `Home`.
+
+Say:
+
+> This is Ms. Cooper's working day. She sees her open cases, Slack updates, and calendar commitments before moving into case work. The SME-submitted application is now available in the lender queue.
 
 Point out:
 
 - Welcome message for Ms. Cooper
 - Current tasks and SLA status
-- Slack Updates
+- Slack Updates or Workspace Updates
 - Calendar today
+- SME Portal Intake
 
-### 2. Personal Workspace
+Open the submitted application from `SME Portal Intake`, or open `Personal Workspace` and select it there.
 
-Open `Personal Workspace`.
+### 3. Personal Workspace
 
-Use the example-case loader and select one scenario:
-
-- `Low-risk established borrower` for a clean approval case
-- `A2M Logistics Loan` for the fuel-cost pressure and new long-term contract example
-- `Credit stacking case` for manual review behavior
-- `Suspicious transfers` for a high-risk compliance case
-- `High country-risk borrower` for jurisdictional risk discussion
-
-Click `Score Application`.
+The submitted SME portal file appears as a read-only loaded intake snapshot. Opening a submitted SME file auto-scores it for lender review; task snapshots can be scored with `Score Loaded Intake`.
 
 Point out:
 
-- ML scoring technique selector: Random Forest or Logistic Regression, both outputting a 0-1 application risk score
-- SME Portal Intake appears for company-submitted files; opening one in Personal Workspace auto-scores the submitted snapshot for lender review
+- Applicant data is locked in Personal Workspace; changes must happen in the SME Company Portal and be resubmitted
+- The loaded intake snapshot: company profile, loan request, financials, five-year plan, narrative, and evidence
+- Random Forest scoring baseline outputting a 0-1 application risk score
 - Application risk score
 - Risk grade
 - Model recommendation
@@ -72,30 +97,6 @@ Point out:
 - Peer benchmark position against similar SME applications
 - Downloadable case summary
 
-### 3. SME Company Portal
-
-Sign out, choose the `SME company` demo account, complete the password and six-digit verification steps, and open the company portal.
-
-Say:
-
-> This is the starting point of the platform. The SME enters its own company and loan data, controls which evidence sources it connects, and submits the file into the lender workflow. Internal lender ratings stay hidden until the lender publishes a reviewed result.
-
-Point out:
-
-- Company and loan data entry
-- PSD2/Open Banking consent simulation
-- Accounting and registry/KYB connection simulation
-- Generated CSV examples for each document category, with a demo save action for missing categories
-- Real local file uploads for financial statements, bank statements, tax returns, ownership/KYB, and forecast support
-- Saved-file metadata, SHA-256 hashes, and lender download access
-- Application-readiness checks
-- Ways to strengthen the evidence package
-- Evidence-source coverage
-- Submit Application to Lender Review
-- After lender publication, applicant-safe post-rating what-if planning in the SME portal
-- SME Tutorials and Support show applicant-facing guides and consultant contact, not the internal analyst helpdesk
-
-After submission, sign back in with the `Lender analyst` account and open `Home`, `Operations Desk`, or `Personal Workspace`. The SME portal file appears in `SME Portal Intake`; opening it in Personal Workspace auto-scores the submitted snapshot for lender review.
 Open the Evidence tab to download the exact files saved by the SME and run lender document verification. Use deterministic validation for the fully local path, or choose OpenAI/local model validation to show AI-assisted document classification on bounded previews. If the validation finds a likely mismatch, show how the lender can reject or request clarification using the evidence-mismatch rationale.
 
 ### 4. Case Review
@@ -116,9 +117,27 @@ Point out:
 
 Open `LLM Integration` and click `Generate Internal + SME Reports`. Show that the internal lender report is private while the second tab contains an applicant-safe improvement report.
 
-Return to `Personal Workspace`, open `Publish rating to SME`, review or edit the attached SME report, write the company-facing message, decide whether to disclose the numerical risk score, and publish. Sign back in as the SME to show the rating and downloadable evaluation report. Neither becomes visible before publication.
+Return to `Personal Workspace`, open `Publish rating to SME`, review or edit the attached SME report, write the company-facing message, decide whether to disclose the numerical risk score, and publish.
 
-### 5. Operations Desk
+### 5. SME Published Outcome
+
+Sign out, choose the `SME company` demo account again, and open the company portal.
+
+Say:
+
+> The SME sees only the lender-reviewed outcome. The internal model output, analyst notes, and private lender report remain inside the lender workspace.
+
+Point out:
+
+- Published rating
+- Lender decision
+- Company-facing message
+- Downloadable SME evaluation report
+- Numerical risk score only if the analyst chose to disclose it
+- Applicant-safe post-rating what-if planning in the SME portal
+- The rating and report were not visible before publication
+
+### 6. Operations Desk
 
 Open `Operations Desk`.
 
@@ -135,7 +154,7 @@ Point out:
 - Filters by task status, grade, and analyst
 - Selected-case detail and handoff to Personal Workspace
 
-### 6. Risk Dashboard
+### 7. Risk Dashboard
 
 Open `Risk Dashboard`.
 
@@ -152,7 +171,7 @@ Point out:
 - Live session decisions
 - Analyst review audit trail
 
-### 7. Model Insights
+### 8. Model Insights
 
 Open `Model Insights`.
 
@@ -161,7 +180,7 @@ Point out:
 - Accuracy, precision, recall, F1, ROC-AUC
 - Balanced accuracy, average precision, MCC, and precision at top review queues
 - Confusion matrix
-- Model comparison between Random Forest and Logistic Regression
+- Random Forest model validation and governance metrics
 - A-F grading policy
 - Sample risk-score API request and response
 - Top feature importances
@@ -170,7 +189,7 @@ Say:
 
 > The model is intentionally transparent for a demo. The thresholds are explicit, analysts can see which variables matter most, and the API preview shows how the score could be embedded into a lender workflow.
 
-### 8. AI Evaluation Package
+### 9. AI Evaluation Package
 
 Open `LLM Integration` after scoring an application.
 
@@ -192,17 +211,18 @@ Say:
 
 Use this if time is short:
 
-1. Open `Home.py` and show Ms. Cooper's current tasks plus Slack/calendar context.
-2. Open `Personal Workspace`.
-3. Select `Suspicious transfers`.
-4. Score the application.
-5. Show risk flags, explanation, similar applications, and final decision workflow.
-6. Open `Risk Dashboard`.
-7. Show compliance queue and review audit trail.
+1. Log in as `SME company`.
+2. Load `Suspicious transfers` from `Load sample intake`.
+3. Submit the application to lender review.
+4. Sign out and log in as `Lender analyst`.
+5. Open the submitted file from `SME Portal Intake` in Personal Workspace.
+6. Show the locked intake snapshot, Random Forest score, risk flags, explanation, and evidence tab.
+7. Save a case review, generate the SME report draft if time allows, and publish the rating.
+8. Sign back in as `SME company` and show the published rating/report.
 
 ## Suggested Closing
 
-> CredRisk.AI brings applicant-first scoring, explainability, analyst review, optional AI second opinion, and portfolio operations into one lender-side workflow. The next step would be connecting PSD2, accounting, registry, document verification, and production monitoring systems.
+> CredRisk.AI connects the full SME-to-lender-to-SME journey: applicant-owned intake, frozen lender review, explainability, analyst publication, and a clear company-facing outcome. The next step would be connecting PSD2, accounting, registry, document verification, and production monitoring systems.
 
 ## Demo Safety Notes
 

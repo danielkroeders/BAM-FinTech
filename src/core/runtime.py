@@ -7,6 +7,8 @@ from src.utils.demo_persistence import persist_demo_state, restore_demo_state
 from src.utils.llm_profiles import load_local_llm_profile
 from src.core.modeling import train_model
 
+MODEL_CACHE_VERSION = "rf-only-v1"
+
 
 @st.cache_data(show_spinner="Loading portfolio")
 def get_seed_data():
@@ -14,7 +16,7 @@ def get_seed_data():
 
 
 @st.cache_resource(show_spinner="Training application risk model")
-def get_model_bundle():
+def get_model_bundle(cache_version=MODEL_CACHE_VERSION):
     seed_data = ensure_seed_data()
     return train_model(seed_data["applications"])
 
@@ -41,11 +43,7 @@ def _seed_data_has_named_companies(seed_data):
 
 def _model_bundle_has_current_metrics(model_bundle):
     models = getattr(model_bundle, "models", None)
-    if (
-        not isinstance(models, dict)
-        or "random_forest" not in models
-        or "logistic_regression" not in models
-    ):
+    if not isinstance(models, dict) or set(models) != {"random_forest"}:
         return False
     required_metrics = {
         "precision_at_5pct",
@@ -53,9 +51,7 @@ def _model_bundle_has_current_metrics(model_bundle):
         "precision_at_20pct",
         "estimated_total_error_cost",
     }
-    return all(
-        all(key in spec.metrics for key in required_metrics) for spec in models.values()
-    )
+    return all(key in models["random_forest"].metrics for key in required_metrics)
 
 
 def bootstrap_state():
@@ -65,13 +61,12 @@ def bootstrap_state():
         or not _seed_data_has_current_schema(st.session_state.seed_data)
         or not _seed_data_has_named_companies(st.session_state.seed_data)
     ):
-        st.session_state.seed_data = ensure_seed_data()
+        st.session_state.seed_data = get_seed_data()
     if "model_bundle" not in st.session_state or not _model_bundle_has_current_metrics(
         st.session_state.model_bundle
     ):
-        st.session_state.model_bundle = train_model(
-            st.session_state.seed_data["applications"]
-        )
+        # Reuse the RF-only bundle across reruns and pages; model selection is no longer exposed.
+        st.session_state.model_bundle = get_model_bundle(MODEL_CACHE_VERSION)
     if "portfolio_history" not in st.session_state:
         st.session_state.portfolio_history = []
     if "score_history" not in st.session_state:
@@ -114,10 +109,6 @@ def bootstrap_state():
         st.session_state.document_validation_results = {}
     if "llm_provider" not in st.session_state:
         st.session_state.llm_provider = "OpenAI API"
-    if "selected_ml_model" not in st.session_state:
-        st.session_state.selected_ml_model = "random_forest"
-    elif st.session_state.selected_ml_model not in st.session_state.model_bundle.models:
-        st.session_state.selected_ml_model = "random_forest"
     if "explanation_model" not in st.session_state:
         st.session_state.explanation_model = "gpt-4.1-mini"
     saved_local_profile = load_local_llm_profile()

@@ -45,11 +45,20 @@ render_sidebar()
 profile = get_profile()
 company_mode = is_sme_profile(profile)
 applications = st.session_state.seed_data["applications"]
-selected_model_key = st.session_state.get(
-    "selected_ml_model", st.session_state.model_bundle.default_model_key
-)
+selected_model_key = st.session_state.model_bundle.default_model_key
 demo_session_id = ensure_demo_session()
 MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
+TERM_OPTIONS = [12, 18, 24, 36, 48, 60, 72, 84]
+SAMPLE_CASE_OPTIONS = [
+    name for name, values in DEMO_SCENARIOS.items() if isinstance(values, dict)
+]
+SAMPLE_DOCUMENT_FIELDS = {
+    "financial_statements": "financial_statements_uploaded",
+    "bank_statements": "bank_statements_uploaded",
+    "tax_returns": "tax_return_uploaded",
+    "ownership_kyb": "ownership_docs_uploaded",
+    "forecast_support": "forecast_support_uploaded",
+}
 
 
 def _default_company_application():
@@ -73,6 +82,59 @@ def _default_company_application():
     return application
 
 
+def _sample_company_application(scenario_name):
+    sample_values = DEMO_SCENARIOS.get(scenario_name)
+    if not isinstance(sample_values, dict):
+        raise ValueError("Choose a named sample case before loading it.")
+
+    application = dict(sample_values)
+    sample_code = "".join(
+        character for character in scenario_name.upper() if character.isalnum()
+    )[:8]
+    application.update(
+        {
+            "application_id": (
+                "SME-A2M-001"
+                if scenario_name == "A2M Logistics Loan"
+                else f"SME-{sample_code or 'CASE'}-001"
+            ),
+            "company_id": (
+                "SME-CO-001"
+                if scenario_name == "A2M Logistics Loan"
+                else f"SME-CO-{sample_code or 'CASE'}"
+            ),
+            "company_name": (
+                "A2M Logistics"
+                if scenario_name == "A2M Logistics Loan"
+                else scenario_name
+            ),
+            "sample_case_name": scenario_name,
+            "open_banking_connected": int(
+                bool(sample_values.get("bank_statements_uploaded", 0))
+            ),
+            "accounting_connected": int(
+                bool(sample_values.get("financial_statements_uploaded", 0))
+            ),
+            "registry_connected": int(
+                bool(sample_values.get("ownership_docs_uploaded", 0))
+            ),
+            "documents_connected": int(
+                any(
+                    sample_values.get(field, 0)
+                    for field in [
+                        "financial_statements_uploaded",
+                        "bank_statements_uploaded",
+                        "tax_return_uploaded",
+                        "ownership_docs_uploaded",
+                        "forecast_support_uploaded",
+                    ]
+                )
+            ),
+        }
+    )
+    return application
+
+
 def _company_application():
     if st.session_state.get("sme_company_application"):
         return dict(st.session_state.sme_company_application)
@@ -84,6 +146,36 @@ def _company_application():
 def _store_company_application(application):
     st.session_state.sme_company_application = dict(application)
     persist_demo_state()
+
+
+def _save_sample_documents(application):
+    examples = build_document_examples(application)
+    saved_count = 0
+    for category, field_name in SAMPLE_DOCUMENT_FIELDS.items():
+        if not application.get(field_name):
+            continue
+        example = examples[category]
+        _, created = save_document(
+            demo_session_id,
+            application["application_id"],
+            category,
+            example["file_name"],
+            example["content"],
+            example["mime_type"],
+        )
+        if created:
+            saved_count += 1
+    return saved_count
+
+
+def _term_option_index(value):
+    try:
+        term = int(value)
+    except (TypeError, ValueError):
+        term = 60
+    if term in TERM_OPTIONS:
+        return TERM_OPTIONS.index(term)
+    return min(range(len(TERM_OPTIONS)), key=lambda index: abs(TERM_OPTIONS[index] - term))
 
 
 def _sync_document_evidence(application):
@@ -753,6 +845,57 @@ if company_mode:
         regions = sorted(applications["region"].dropna().unique())
         company_types = sorted(applications["company_type"].dropna().unique())
 
+        with st.expander("Load sample intake", expanded=False):
+            st.caption(
+                "Sample intake starts on the SME side. After loading it, review the data and submit the snapshot to the lender."
+            )
+            sample_case_name = st.selectbox(
+                "Sample case", SAMPLE_CASE_OPTIONS, key="sme_sample_case_name"
+            )
+            if st.button("Load Sample Case", width="stretch"):
+                try:
+                    application = _sample_company_application(sample_case_name)
+                except ValueError as exc:
+                    st.error(str(exc))
+                else:
+                    # Keep sample cases SME-owned; the lender receives only the submitted snapshot.
+                    document_seed_error = None
+                    try:
+                        saved_sample_documents = _save_sample_documents(application)
+                    except (OSError, ValueError) as exc:
+                        saved_sample_documents = 0
+                        document_seed_error = str(exc)
+                    st.session_state.sme_connection_status = {
+                        "open_banking": bool(application.get("open_banking_connected")),
+                        "open_banking_consent": bool(
+                            application.get("open_banking_connected")
+                        ),
+                        "accounting": bool(application.get("accounting_connected")),
+                        "registry": bool(application.get("registry_connected")),
+                        "documents": bool(application.get("documents_connected")),
+                        "refreshed_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    }
+                    _store_company_application(application)
+                    _update_lifecycle(
+                        application["application_id"],
+                        status="Draft",
+                        company_name=application["company_name"],
+                        sample_case_name=sample_case_name,
+                    )
+                    st.success(
+                        f"{sample_case_name} loaded into the SME intake. "
+                        f"{saved_sample_documents} sample evidence file(s) were saved."
+                    )
+                    if document_seed_error:
+                        st.warning(
+                            f"The intake loaded, but sample evidence files could not all be saved: {document_seed_error}"
+                        )
+                    rerun = getattr(st, "rerun", None) or getattr(
+                        st, "experimental_rerun", None
+                    )
+                    if rerun:
+                        rerun()
+
         with st.form("sme_company_data_form"):
             company_left, company_right = st.columns(2)
             with company_left:
@@ -822,10 +965,8 @@ if company_mode:
                 )
                 term_months = st.selectbox(
                     "Requested term",
-                    [12, 18, 24, 36, 48, 60, 72, 84],
-                    index=[12, 18, 24, 36, 48, 60, 72, 84].index(
-                        int(application.get("term_months", 60))
-                    ),
+                    TERM_OPTIONS,
+                    index=_term_option_index(application.get("term_months", 60)),
                     format_func=lambda value: f"{value} months",
                 )
 

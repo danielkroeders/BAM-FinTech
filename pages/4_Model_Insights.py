@@ -20,19 +20,10 @@ st.caption(
     "Supervised SME application-risk model performance, grading policy, and research-backed signal design."
 )
 
-model_options = bundle.model_options()
-model_keys = [key for key, _ in model_options]
-saved_model_key = st.session_state.get("selected_ml_model", bundle.default_model_key)
-selected_model_key = (
-    saved_model_key if saved_model_key in model_keys else bundle.default_model_key
+selected_model_key = bundle.default_model_key
+st.info(
+    "CredRisk.AI now uses one deterministic supervised baseline for all scoring: Random Forest."
 )
-selected_model_key = st.selectbox(
-    "ML scoring technique",
-    model_keys,
-    index=model_keys.index(selected_model_key),
-    format_func=bundle.label_for,
-)
-st.session_state.selected_ml_model = selected_model_key
 metrics = bundle.metrics_for(selected_model_key)
 
 model_comparison = pd.DataFrame(
@@ -53,7 +44,7 @@ model_comparison = pd.DataFrame(
 )
 st.dataframe(model_comparison, width="stretch", hide_index=True)
 st.caption(
-    "Plain Linear Regression was considered but not exposed because its raw output is not naturally bounded to 0-1; Logistic Regression is the probability-style linear baseline."
+    "The Random Forest model returns a bounded 0-1 application risk probability and is the only model used by the lender workflow."
 )
 
 

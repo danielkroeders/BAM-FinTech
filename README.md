@@ -48,7 +48,7 @@ For the research grounding behind the risk ratios, cash-flow signals, anomaly me
 
 ## Optional LLM Providers
 
-The app works without an external LLM by using deterministic explanations. The supervised ML layer can score with Random Forest or Logistic Regression, both returning a continuous 0-1 application risk score. Hosted or local LLMs can act as a second reviewer on the LLM Integration page and generate two persisted outputs: a private detailed lender report and an applicant-safe SME report draft. The lender reviews the SME draft and publishes the exact approved copy with the final rating.
+The app works without an external LLM by using deterministic explanations. The supervised ML layer uses a Random Forest model that returns a continuous 0-1 application risk score. Hosted or local LLMs can act as a second reviewer on the LLM Integration page and generate two persisted outputs: a private detailed lender report and an applicant-safe SME report draft. The lender reviews the SME draft and publishes the exact approved copy with the final rating.
 
 For hosted explanations, set `OPENAI_API_KEY` in Streamlit secrets or the environment, then choose `OpenAI API` on the LLM Integration page and click `Generate Internal + SME Reports`.
 

@@ -696,7 +696,7 @@ def _render_login_screen():
                 )
                 account_type = st.selectbox(
                     "Demo account",
-                    ["lender", "sme"],
+                    ["sme", "lender"],
                     format_func=lambda value: (
                         "Lender analyst" if value == "lender" else "SME company"
                     ),
@@ -722,7 +722,7 @@ def _render_login_screen():
 
 
 def _complete_login():
-    account_type = st.session_state.get("pending_login_account_type", "lender")
+    account_type = st.session_state.get("pending_login_account_type", "sme")
     login_profile = SME_PROFILE if account_type == "sme" else PROFILE
     transition = st.empty()
     progress = st.progress(0, text="Verifying security code")

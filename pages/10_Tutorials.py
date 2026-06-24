@@ -78,21 +78,21 @@ TUTORIALS = [
             "Case review",
         ],
         "objectives": [
-            "Start from a queue or example case",
+            "Start from a queue or SME-submitted intake",
             "Understand the scoring inputs and output",
             "Save a human review to the audit trail",
         ],
         "steps": [
             {
-                "title": "Choose the scoring model and case",
-                "body": "Select the ML scoring technique, then start a case from SME Portal Intake, Current Tasks, the A2M example, or Manual Entry. The active-intake banner confirms which application is loaded and where it came from.",
-                "action": "For the full SME-to-lender walkthrough, open the submitted SME application from SME Portal Intake. For a fast standalone walkthrough, use Start A2M Example Case.",
-                "tip": "Submitted SME applications auto-score when opened in Personal Workspace. Example and manual cases can still be scored with the Score Application button.",
+                "title": "Load a lender snapshot",
+                "body": "Start a case from SME Portal Intake or Current Tasks. The active-intake banner confirms which submitted snapshot is loaded and where it came from.",
+                "action": "For the full SME-to-lender walkthrough, load a sample intake in the SME Company Portal, submit it, then open it from SME Portal Intake.",
+                "tip": "Submitted SME applications auto-score when opened in Personal Workspace. Other loaded task snapshots can be scored with Score Loaded Intake.",
             },
             {
-                "title": "Review and complete the intake",
-                "body": "Work through company profile, loan request, financial snapshot, working-capital ratios, the five-year plan, applicant and executive context, the evidence checklist, and advanced risk indicators. Tooltips explain what each input contributes to the assessment.",
-                "action": "Check requested amount, free cash flow, recent loans, suspicious transfers, and the applicant evidence checklist, then choose Score Application.",
+                "title": "Review the locked intake",
+                "body": "Inspect the read-only company profile, loan request, financial snapshot, five-year plan, applicant narrative, and evidence checklist. Applicant data changes belong in the SME Company Portal.",
+                "action": "Check requested amount, free cash flow, recent loans, suspicious transfers, and evidence readiness, then choose Score Loaded Intake if the snapshot has not already been scored.",
                 "tip": "Do not interpret a single field in isolation. The model combines pressure, anomaly, liquidity, and evidence signals.",
             },
             {
@@ -134,7 +134,7 @@ TUTORIALS = [
             {
                 "title": "Prepare a scored case",
                 "body": "LLM Integration works from the latest application and prediction in session state. Score an application in Personal Workspace first so the page has a complete case to review.",
-                "action": "Confirm the model baseline score, grade, recommendation, and ML technique before running a review.",
+                "action": "Confirm the Random Forest baseline score, grade, and recommendation before running a review.",
                 "tip": "The deterministic option works without external credentials and is the safest demo path.",
             },
             {
@@ -145,7 +145,7 @@ TUTORIALS = [
             },
             {
                 "title": "Compare the review output",
-                "body": "Every run creates an evaluation package with a private lender report and a separate SME-facing draft. Successful hosted or local output can also show a qualitative AI review score, implied grade, and comparison with the selected ML grade.",
+                "body": "Every run creates an evaluation package with a private lender report and a separate SME-facing draft. Successful hosted or local output can also show a qualitative AI review score, implied grade, and comparison with the Random Forest grade.",
                 "action": "Review both tabs. Investigate material model disagreement and check that the SME draft is fair, understandable, and actionable.",
                 "tip": "The SME draft is not visible to the company until the lender reviews it and publishes the final outcome.",
             },
@@ -153,7 +153,7 @@ TUTORIALS = [
                 "title": "Inspect SHAP driver analysis",
                 "body": "The SHAP section uses the Random Forest baseline and shows how individual features move this application away from its baseline risk. The chart and table rank the largest positive and negative contributions.",
                 "action": "Translate the largest drivers back to source evidence in the application file.",
-                "tip": "When the selected ML technique is Logistic Regression, the SHAP section still explains the Random Forest baseline. A contribution does not prove causality.",
+                "tip": "SHAP contributions explain the Random Forest baseline. A contribution does not prove causality.",
             },
         ],
     },
@@ -254,19 +254,19 @@ TUTORIALS = [
         "category": "Operations & risk",
         "time": "9 min",
         "level": "Advanced",
-        "summary": "Compare models, inspect metrics and thresholds, and understand the signal design.",
-        "features": ["Model compare", "Metrics", "Feature importance", "Governance"],
+        "summary": "Inspect the model baseline, validation metrics, thresholds, and signal design.",
+        "features": ["Model baseline", "Metrics", "Feature importance", "Governance"],
         "objectives": [
-            "Compare the available scoring techniques",
+            "Interpret the Random Forest scoring baseline",
             "Interpret performance beyond accuracy",
             "Understand thresholds, governance, and signal design",
         ],
         "steps": [
             {
-                "title": "Compare scoring techniques",
-                "body": "Choose Random Forest or Logistic Regression and compare probability output, ROC-AUC, balanced accuracy, and precision in the highest-risk queue.",
-                "action": "Use the same model selection when comparing pages so the outputs remain consistent.",
-                "tip": "Logistic Regression is the bounded linear baseline; plain Linear Regression is not suitable for probability output.",
+                "title": "Review the scoring baseline",
+                "body": "Review the Random Forest probability output, ROC-AUC, balanced accuracy, and precision in the highest-risk queue.",
+                "action": "Use the Model Insights page to explain the single deterministic baseline used across lender pages.",
+                "tip": "Plain Linear Regression is not suitable for probability output because its raw output is not naturally bounded to 0-1.",
             },
             {
                 "title": "Select meaningful metrics",
@@ -708,17 +708,17 @@ PAGE_MAPS = {
         {
             "kind": "queue",
             "title": "Current Tasks",
-            "detail": "Next application · Start Selected Case · A2M example · Manual Entry",
+            "detail": "Next application · Start Selected Case · SME Portal Intake",
         },
         {
             "kind": "form",
-            "title": "Loan intake",
-            "detail": "Company · Loan · Financials · Five-Year Plan · Context · Evidence · Advanced Signals",
+            "title": "Loaded intake snapshot",
+            "detail": "Company · Loan · Financials · Five-Year Plan · Context · Evidence",
         },
         {
             "kind": "score",
             "title": "Score Output",
-            "detail": "Application risk score · Risk grade · Recommendation · ML technique · Stressed DSCR",
+            "detail": "Application risk score · Risk grade · Recommendation · Random Forest · Stressed DSCR",
         },
         {
             "kind": "review",
@@ -796,7 +796,7 @@ PAGE_MAPS = {
         {
             "kind": "table",
             "title": "Model comparison",
-            "detail": "ML scoring technique · ROC-AUC · Balanced accuracy · Precision top 10%",
+            "detail": "Random Forest · ROC-AUC · Balanced accuracy · Precision top 10%",
         },
         {
             "kind": "metrics",

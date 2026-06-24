@@ -12,14 +12,13 @@ from src.features.alignment_features import (
     scenario_comparison_rows,
 )
 from src.features.case_workflow import (
-    DEMO_SCENARIOS,
     REVIEW_ACTIONS,
     case_summary,
     similar_applications,
 )
 from src.core.data_pipeline import add_derived_features, build_forecast_table
 from src.utils.demo_persistence import ensure_demo_session, persist_demo_state
-from src.utils.document_storage import document_counts, list_documents, read_document
+from src.utils.document_storage import list_documents, read_document
 from src.utils.workflow_transfer import (
     SME_SUBMISSION_SOURCE,
     find_submitted_application,
@@ -32,12 +31,10 @@ from src.ui.document_validation import (
 )
 from src.utils.formatting import (
     format_currency,
-    format_currency_input,
     format_integer,
     format_months,
     format_percent,
     format_score,
-    parse_eu_number,
 )
 from src.core.runtime import bootstrap_state
 from src.ui.components import render_sidebar, safe_page_link
@@ -285,64 +282,7 @@ st.markdown(
 )
 
 applications = st.session_state.seed_data["applications"]
-industries = sorted(applications["industry"].unique())
-regions = sorted(applications["region"].unique())
-company_types = sorted(applications["company_type"].unique())
-model_options = st.session_state.model_bundle.model_options()
-model_keys = [key for key, _ in model_options]
-saved_model_key = st.session_state.get(
-    "selected_ml_model", st.session_state.model_bundle.default_model_key
-)
-selected_model_key = (
-    saved_model_key
-    if saved_model_key in model_keys
-    else st.session_state.model_bundle.default_model_key
-)
-
-
-def _scenario_value(scenario, key, default):
-    active_values = st.session_state.get("active_queue_application") or {}
-    if key in active_values and pd.notna(active_values.get(key)):
-        return active_values.get(key)
-    values = DEMO_SCENARIOS.get(scenario) or {}
-    return values.get(key, default)
-
-
-def _system_signal_defaults(scenario):
-    return {
-        "document_edit_count": int(_scenario_value(scenario, "document_edit_count", 1)),
-        "late_stage_change_count": int(
-            _scenario_value(scenario, "late_stage_change_count", 0)
-        ),
-        "process_deviation_score": float(
-            _scenario_value(scenario, "process_deviation_score", 0.05)
-        ),
-        "email_domain_age_months": int(
-            _scenario_value(scenario, "email_domain_age_months", 36)
-        ),
-        "website_age_months": int(_scenario_value(scenario, "website_age_months", 36)),
-        "bank_account_age_months": int(
-            _scenario_value(scenario, "bank_account_age_months", 24)
-        ),
-        "location_mismatch_score": float(
-            _scenario_value(scenario, "location_mismatch_score", 0.05)
-        ),
-        "duplicate_contact_score": float(
-            _scenario_value(scenario, "duplicate_contact_score", 0.02)
-        ),
-        "related_party_exposure_score": float(
-            _scenario_value(scenario, "related_party_exposure_score", 0.05)
-        ),
-        "counterparty_concentration_score": float(
-            _scenario_value(scenario, "counterparty_concentration_score", 0.20)
-        ),
-        "shared_identifier_score": float(
-            _scenario_value(scenario, "shared_identifier_score", 0.02)
-        ),
-        "narrative_contradiction_score": float(
-            _scenario_value(scenario, "narrative_contradiction_score", 0.05)
-        ),
-    }
+selected_model_key = st.session_state.model_bundle.default_model_key
 
 
 def _clear_scored_case():
@@ -375,17 +315,180 @@ def _clear_active_intake_case():
         rerun()
 
 
-def _example_application(scenario_name):
-    values = dict(DEMO_SCENARIOS.get(scenario_name) or {})
-    values["application_id"] = (
-        "DEMO-A2M-001"
-        if scenario_name == "A2M Logistics Loan"
-        else f"DEMO-{scenario_name[:8].upper()}"
+READ_ONLY_INTAKE_SECTIONS = [
+    (
+        "Company Profile",
+        [
+            ("Application ID", "application_id"),
+            ("Company", "company_name"),
+            ("Industry", "industry"),
+            ("Region", "region"),
+            ("Company type", "company_type"),
+            ("Years in business", "years_in_business"),
+            ("Employees", "employees"),
+        ],
+    ),
+    (
+        "Loan Request",
+        [
+            ("Requested amount", "requested_amount"),
+            ("Term", "term_months"),
+            ("Interest rate", "interest_rate"),
+            ("Collateral coverage", "collateral_ratio"),
+            ("Existing debt", "existing_debt"),
+            ("Recent loans", "num_recent_loans"),
+        ],
+    ),
+    (
+        "Financial Snapshot",
+        [
+            ("Annual revenue", "annual_revenue"),
+            ("Free cash flow", "free_cash_flow"),
+            ("Monthly burn rate", "monthly_burn_rate"),
+            ("Cash flow / revenue", "cash_flow_to_revenue_ratio"),
+            ("Expected runway", "expected_runway_months"),
+            ("Current ratio", "current_ratio"),
+            ("Quick ratio", "quick_ratio"),
+            ("Receivables days", "receivables_days"),
+            ("Payables days", "payables_days"),
+            ("Inventory days", "inventory_days"),
+        ],
+    ),
+    (
+        "Five-Year Plan",
+        [
+            ("Revenue growth", "forecast_revenue_cagr"),
+            ("Employee growth", "forecast_employee_cagr"),
+            ("Year 5 FCF margin", "forecast_fcf_margin_year5"),
+            ("Planned debt reduction", "planned_debt_reduction_pct"),
+        ],
+    ),
+    (
+        "Evidence",
+        [
+            ("Financial statements", "financial_statements_uploaded"),
+            ("Bank statements", "bank_statements_uploaded"),
+            ("Tax return", "tax_return_uploaded"),
+            ("Ownership/KYB", "ownership_docs_uploaded"),
+            ("Forecast support", "forecast_support_uploaded"),
+        ],
+    ),
+]
+
+READ_ONLY_NARRATIVE_FIELDS = [
+    ("Loan purpose", "loan_purpose_context"),
+    ("Current business context", "current_business_context"),
+    ("Future business context", "future_business_context"),
+    ("CEO context", "ceo_context"),
+    ("CFO context", "cfo_context"),
+    ("COO context", "coo_context"),
+]
+
+READ_ONLY_PERCENT_FIELDS = {
+    "interest_rate",
+    "collateral_ratio",
+    "cash_flow_to_revenue_ratio",
+    "forecast_revenue_cagr",
+    "forecast_employee_cagr",
+    "forecast_fcf_margin_year5",
+    "planned_debt_reduction_pct",
+}
+READ_ONLY_CURRENCY_FIELDS = {
+    "requested_amount",
+    "existing_debt",
+    "annual_revenue",
+    "free_cash_flow",
+    "monthly_burn_rate",
+}
+READ_ONLY_MONTH_FIELDS = {"term_months", "expected_runway_months"}
+READ_ONLY_DOCUMENT_FIELDS = {
+    "financial_statements_uploaded",
+    "bank_statements_uploaded",
+    "tax_return_uploaded",
+    "ownership_docs_uploaded",
+    "forecast_support_uploaded",
+}
+
+
+def _present(value):
+    if value is None:
+        return False
+    try:
+        return not pd.isna(value)
+    except (TypeError, ValueError):
+        return True
+
+
+def _read_only_value(application, field_name):
+    value = application.get(field_name)
+    if not _present(value):
+        return "N/A"
+    if field_name in READ_ONLY_CURRENCY_FIELDS:
+        return format_currency(value)
+    if field_name in READ_ONLY_PERCENT_FIELDS:
+        return format_percent(value)
+    if field_name in READ_ONLY_MONTH_FIELDS:
+        return format_months(value)
+    if field_name in READ_ONLY_DOCUMENT_FIELDS:
+        return _yes_no(value)
+    if field_name in {"years_in_business", "current_ratio", "quick_ratio"}:
+        return format_score(value)
+    if field_name in {"employees", "num_recent_loans", "receivables_days", "payables_days", "inventory_days"}:
+        return format_integer(value)
+    return str(value)
+
+
+def _read_only_rows(application, fields):
+    return [
+        {"Field": label, "Submitted value": _read_only_value(application, field_name)}
+        for label, field_name in fields
+    ]
+
+
+def _render_read_only_intake(application):
+    # The SME Portal owns application intake. The lender sees a frozen copy for scoring and review.
+    st.subheader("Loaded Intake Snapshot")
+    st.caption(
+        "Read-only lender view. Change applicant data from the SME Company Portal and resubmit the application."
     )
-    values["company_name"] = (
-        "A2M Logistics" if scenario_name == "A2M Logistics Loan" else scenario_name
+    tabs = st.tabs([section[0] for section in READ_ONLY_INTAKE_SECTIONS] + ["Narrative"])
+    for tab, (section_title, fields) in zip(tabs, READ_ONLY_INTAKE_SECTIONS):
+        with tab:
+            st.dataframe(
+                pd.DataFrame(_read_only_rows(application, fields)),
+                width="stretch",
+                hide_index=True,
+            )
+    with tabs[-1]:
+        narrative_rows = [
+            {"Field": label, "Submitted value": str(application.get(field_name, "")).strip()}
+            for label, field_name in READ_ONLY_NARRATIVE_FIELDS
+            if str(application.get(field_name, "")).strip()
+        ]
+        if narrative_rows:
+            st.dataframe(pd.DataFrame(narrative_rows), width="stretch", hide_index=True)
+        else:
+            st.info("No applicant narrative was submitted with this intake.")
+
+
+def _score_loaded_intake(application, model_key):
+    scored_application = dict(application)
+    scored_application["application_id"] = scored_application.get(
+        "application_id"
+    ) or f"INTAKE-{len(st.session_state.portfolio_history) + 1:03d}"
+    scored_application["company_name"] = (
+        scored_application.get("company_name") or "Submitted Applicant"
     )
-    return values
+    annual_revenue = float(scored_application.get("annual_revenue", 0) or 0)
+    free_cash_flow = float(scored_application.get("free_cash_flow", 0) or 0)
+    scored_application["cash_flow_to_revenue_ratio"] = free_cash_flow / max(
+        annual_revenue, 1
+    )
+    prediction = st.session_state.model_bundle.score_one(
+        scored_application, model_key=model_key
+    )
+    explanation = explain_prediction(scored_application, prediction, use_llm=False)
+    _store_prediction(scored_application, prediction, explanation)
 
 
 def _money(value):
@@ -693,28 +796,6 @@ def _add_signal_interpretations(rows):
         )
         interpreted_rows.append(enriched)
     return interpreted_rows
-
-
-def _parse_money(label, raw_value, errors, min_value=None, max_value=None):
-    try:
-        value = parse_eu_number(raw_value)
-    except ValueError:
-        errors.append(f"{label} must be a valid amount, for example €1.000.000,00.")
-        return 0
-    if min_value is not None and value < min_value:
-        errors.append(f"{label} must be at least {format_currency_input(min_value)}.")
-    if max_value is not None and value > max_value:
-        errors.append(
-            f"{label} must be no more than {format_currency_input(max_value)}."
-        )
-    return value
-
-
-def _preview_money(raw_value, default):
-    try:
-        return parse_eu_number(raw_value)
-    except ValueError:
-        return float(default)
 
 
 def _context_completeness(application):
@@ -1150,14 +1231,6 @@ if hasattr(st, "dialog"):
 
 st.title("Personal Workspace")
 st.caption("Live analyst workspace for Ms. Cooper's current SME lending tasks.")
-# selected_model_key = st.selectbox(
-#     "ML scoring technique",
-#     model_keys,
-#     index=model_keys.index(selected_model_key),
-#     format_func=st.session_state.model_bundle.label_for,
-#     help="Choose the supervised model used to turn the SME application into a 0-1 application risk score.",
-# )
-# st.session_state.selected_ml_model = selected_model_key
 
 st.subheader("Current Tasks")
 queue = build_application_queue(
@@ -1288,15 +1361,9 @@ with st.container():
         .iloc[0]
         .to_dict()
     )
-    queue_actions = st.columns([1, 1, 1, 2])
+    queue_actions = st.columns([1, 3])
     if queue_actions[0].button("Start Selected Case", width="stretch"):
         _activate_intake_case(selected_queue_row, "Current tasks")
-    if queue_actions[1].button("Start A2M Example Case", width="stretch"):
-        _activate_intake_case(
-            _example_application("A2M Logistics Loan"), "Example case"
-        )
-    if queue_actions[2].button("Manual Entry", width="stretch"):
-        _clear_active_intake_case()
 
 active_case = st.session_state.get("active_queue_application")
 if active_case:
@@ -1305,7 +1372,7 @@ if active_case:
         f"""
         <div class="active-case-card">
             <div class="active-case-title">Active intake: {escape(str(active_case.get("application_id", "Session")))} - {escape(str(active_case.get("company_name", "Applicant")))}</div>
-            <div class="active-case-copy">Source: {escape(st.session_state.get("active_intake_source", "Manual entry"))}. Applicant data is loaded into the working file below; Ms. Cooper can adjust fields before scoring.</div>
+            <div class="active-case-copy">Source: {escape(st.session_state.get("active_intake_source", "Loaded snapshot"))}. Applicant data is locked in the lender workspace; use the SME Company Portal to change and resubmit intake data.</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1314,511 +1381,37 @@ if active_case:
         st.info(
             "SME journey status: "
             f"{active_lifecycle.get('status', 'Submitted to lender review')}. "
-            "Score the file, save the lender evaluation, then publish the reviewed rating when it is ready for the company."
+            "Score the submitted snapshot, save the lender evaluation, then publish the reviewed rating when it is ready for the company."
         )
         if _auto_score_submitted_intake(active_case, selected_model_key):
             st.success(
                 "Submitted SME application was automatically scored for the lender review. "
                 "Open LLM Integration to generate the internal and SME-facing evaluation package."
             )
+
+    _render_read_only_intake(active_case)
+    active_application_id = active_case.get("application_id")
+    already_scored = bool(
+        active_application_id
+        and _last_prediction_matches(active_application_id, selected_model_key)
+    )
+    intake_actions = st.columns([1, 1, 2])
+    if intake_actions[0].button(
+        "Score Loaded Intake",
+        width="stretch",
+        disabled=already_scored,
+        help="Scores the immutable intake snapshot with the Random Forest model.",
+    ):
+        _score_loaded_intake(active_case, selected_model_key)
+        st.success("Loaded intake snapshot scored with the Random Forest model.")
+    if intake_actions[1].button("Clear Loaded Intake", width="stretch"):
+        _clear_active_intake_case()
+    if already_scored:
+        st.caption("This loaded intake has already been scored with the current Random Forest model.")
 else:
     st.info(
-        "No active workspace case yet. Start a task above or use Manual Entry to build a custom applicant."
+        "No active intake loaded. Start an assigned task above, or sign in as the SME company account to create, load, and submit sample intake cases from the SME Company Portal."
     )
-
-with st.expander("Example Cases", expanded=False):
-    scenario = st.selectbox(
-        "Case example", list(DEMO_SCENARIOS.keys()), key="loan_example_scenario"
-    )
-    if st.button("Load selected example", width="stretch"):
-        if scenario == "Custom application":
-            _clear_active_intake_case()
-        else:
-            _activate_intake_case(_example_application(scenario), "Example case")
-
-scenario_values = DEMO_SCENARIOS.get(scenario) or {}
-company_name_default = _scenario_value(
-    scenario,
-    "company_name",
-    "Session Applicant" if scenario == "Custom application" else scenario,
-)
-sme_document_evidence_locked = bool(
-    active_case
-    and st.session_state.get("active_intake_source") == SME_SUBMISSION_SOURCE
-    and active_case.get("application_id")
-)
-saved_document_counts = (
-    document_counts(demo_session_id, active_case["application_id"])
-    if sme_document_evidence_locked
-    else {}
-)
-
-
-def _document_evidence_value(category, field_name):
-    if sme_document_evidence_locked:
-        return bool(saved_document_counts.get(category, 0))
-    return bool(_scenario_value(scenario, field_name, 1))
-
-
-with st.form("loan_intake_form"):
-    st.subheader("Company Profile")
-    profile_left, profile_right = st.columns(2)
-    with profile_left:
-        company_name = st.text_input(
-            "Company name",
-            value=company_name_default,
-            help=FIELD_HELP["company_name"],
-        )
-        industry_default = _scenario_value(scenario, "industry", "Construction")
-        region_default = _scenario_value(scenario, "region", regions[0])
-        type_default = _scenario_value(scenario, "company_type", company_types[0])
-        industry = st.selectbox(
-            "Industry",
-            industries,
-            index=(
-                industries.index(industry_default)
-                if industry_default in industries
-                else 0
-            ),
-            help=FIELD_HELP["industry"],
-        )
-        region = st.selectbox(
-            "Region",
-            regions,
-            index=regions.index(region_default) if region_default in regions else 0,
-            help=FIELD_HELP["region"],
-        )
-    with profile_right:
-        company_type = st.selectbox(
-            "Company type",
-            company_types,
-            index=(
-                company_types.index(type_default)
-                if type_default in company_types
-                else 0
-            ),
-            help=FIELD_HELP["company_type"],
-        )
-        years_in_business = st.number_input(
-            "Years in business",
-            min_value=0.0,
-            max_value=75.0,
-            value=float(_scenario_value(scenario, "years_in_business", 4.0)),
-            step=0.5,
-            help=FIELD_HELP["years_in_business"],
-        )
-        employees = st.number_input(
-            "Employees",
-            min_value=1,
-            max_value=10000,
-            value=int(_scenario_value(scenario, "employees", 42)),
-            step=1,
-            help=FIELD_HELP["employees"],
-        )
-
-    st.subheader("Loan Request")
-    loan_left, loan_right = st.columns(2)
-    with loan_left:
-        requested_amount_default = int(
-            _scenario_value(scenario, "requested_amount", 350000)
-        )
-        requested_amount_text = st.text_input(
-            "Requested amount",
-            value=format_currency_input(requested_amount_default),
-            help=FIELD_HELP["requested_amount"],
-        )
-        term_months = st.slider(
-            "Term months",
-            min_value=6,
-            max_value=84,
-            value=int(_scenario_value(scenario, "term_months", 36)),
-            step=6,
-            help=FIELD_HELP["term_months"],
-        )
-        interest_rate_pct = st.slider(
-            "Interest rate",
-            min_value=0.0,
-            max_value=30.0,
-            value=float(_scenario_value(scenario, "interest_rate", 0.085)) * 100,
-            step=0.25,
-            format="%.2f%%",
-            help=FIELD_HELP["interest_rate"],
-        )
-        collateral_ratio = st.slider(
-            "Collateral coverage",
-            min_value=0.0,
-            max_value=2.0,
-            value=float(_scenario_value(scenario, "collateral_ratio", 0.65)),
-            step=0.05,
-            help=FIELD_HELP["collateral_ratio"],
-        )
-    with loan_right:
-        existing_debt_default = int(_scenario_value(scenario, "existing_debt", 550000))
-        existing_debt_text = st.text_input(
-            "Existing debt",
-            value=format_currency_input(existing_debt_default),
-            help=FIELD_HELP["existing_debt"],
-        )
-        num_recent_loans = st.slider(
-            "Recent loans in the last 12 months",
-            min_value=0,
-            max_value=12,
-            value=int(_scenario_value(scenario, "num_recent_loans", 2)),
-            help=FIELD_HELP["num_recent_loans"],
-        )
-
-    st.subheader("Financial Snapshot")
-    financial_left, financial_right = st.columns(2)
-    with financial_left:
-        annual_revenue_default = int(
-            _scenario_value(scenario, "annual_revenue", 1800000)
-        )
-        annual_revenue_text = st.text_input(
-            "Annual revenue",
-            value=format_currency_input(annual_revenue_default),
-            help=FIELD_HELP["annual_revenue"],
-        )
-        free_cash_flow_default = int(
-            _scenario_value(scenario, "free_cash_flow", 120000)
-        )
-        free_cash_flow_text = st.text_input(
-            "Free cash flow",
-            value=format_currency_input(free_cash_flow_default),
-            help=FIELD_HELP["free_cash_flow"],
-        )
-    with financial_right:
-        monthly_burn_rate_default = int(
-            _scenario_value(scenario, "monthly_burn_rate", 25000)
-        )
-        monthly_burn_rate_text = st.text_input(
-            "Monthly burn rate",
-            value=format_currency_input(monthly_burn_rate_default),
-            help=FIELD_HELP["monthly_burn_rate"],
-        )
-        expected_runway_months = st.slider(
-            "Expected runway months",
-            min_value=0,
-            max_value=60,
-            value=int(_scenario_value(scenario, "expected_runway_months", 18)),
-            step=1,
-            help=FIELD_HELP["expected_runway_months"],
-        )
-        annual_revenue_preview = _preview_money(
-            annual_revenue_text, annual_revenue_default
-        )
-        free_cash_flow_preview = _preview_money(
-            free_cash_flow_text, free_cash_flow_default
-        )
-        cash_flow_to_revenue_ratio = free_cash_flow_preview / max(
-            float(annual_revenue_preview), 1
-        )
-        st.metric(
-            "Cash flow / revenue",
-            _ratio(cash_flow_to_revenue_ratio),
-            help=FIELD_HELP["cash_flow_to_revenue_ratio"],
-        )
-
-    with st.expander("Working Capital Ratios", expanded=False):
-        wc_first, wc_second, wc_third, wc_fourth, wc_fifth = st.columns(5)
-        with wc_first:
-            current_ratio = st.slider(
-                "Current ratio",
-                min_value=0.0,
-                max_value=5.0,
-                value=float(_scenario_value(scenario, "current_ratio", 1.45)),
-                step=0.05,
-                format="%.2f",
-                help=FIELD_HELP["current_ratio"],
-            )
-        with wc_second:
-            quick_ratio = st.slider(
-                "Quick ratio",
-                min_value=0.0,
-                max_value=4.0,
-                value=float(_scenario_value(scenario, "quick_ratio", 1.05)),
-                step=0.05,
-                format="%.2f",
-                help=FIELD_HELP["quick_ratio"],
-            )
-        with wc_third:
-            receivables_days = st.slider(
-                "Receivables days",
-                min_value=0,
-                max_value=180,
-                value=int(_scenario_value(scenario, "receivables_days", 48)),
-                help=FIELD_HELP["receivables_days"],
-            )
-        with wc_fourth:
-            payables_days = st.slider(
-                "Payables days",
-                min_value=0,
-                max_value=180,
-                value=int(_scenario_value(scenario, "payables_days", 44)),
-                help=FIELD_HELP["payables_days"],
-            )
-        with wc_fifth:
-            inventory_days = st.slider(
-                "Inventory days",
-                min_value=0,
-                max_value=220,
-                value=int(_scenario_value(scenario, "inventory_days", 35)),
-                help=FIELD_HELP["inventory_days"],
-            )
-
-    st.subheader("Five-Year Plan")
-    plan_left, plan_right = st.columns(2)
-    with plan_left:
-        forecast_revenue_cagr = st.slider(
-            "Expected annual revenue growth",
-            min_value=-0.20,
-            max_value=0.60,
-            value=float(_scenario_value(scenario, "forecast_revenue_cagr", 0.08)),
-            step=0.01,
-            format="%.2f",
-            help=FIELD_HELP["forecast_revenue_cagr"],
-        )
-        forecast_employee_cagr = st.slider(
-            "Expected annual employee growth",
-            min_value=-0.10,
-            max_value=0.50,
-            value=float(_scenario_value(scenario, "forecast_employee_cagr", 0.04)),
-            step=0.01,
-            format="%.2f",
-            help=FIELD_HELP["forecast_employee_cagr"],
-        )
-        forecast_fcf_margin_year5 = st.slider(
-            "Year 5 FCF margin target",
-            min_value=-0.25,
-            max_value=0.35,
-            value=float(_scenario_value(scenario, "forecast_fcf_margin_year5", 0.08)),
-            step=0.01,
-            format="%.2f",
-            help=FIELD_HELP["forecast_fcf_margin_year5"],
-        )
-    with plan_right:
-        planned_debt_reduction_pct = st.slider(
-            "Planned debt reduction",
-            min_value=0.0,
-            max_value=1.0,
-            value=float(_scenario_value(scenario, "planned_debt_reduction_pct", 0.20)),
-            step=0.05,
-            format="%.2f",
-            help=FIELD_HELP["planned_debt_reduction_pct"],
-        )
-
-    st.subheader("Applicant Narrative")
-    narrative_left, narrative_middle, narrative_right = st.columns(3)
-    with narrative_left:
-        loan_purpose_context = st.text_area(
-            "Loan purpose",
-            value=_scenario_value(scenario, "loan_purpose_context", ""),
-            height=120,
-            help=FIELD_HELP["loan_purpose_context"],
-        )
-    with narrative_middle:
-        current_business_context = st.text_area(
-            "Current business context",
-            value=_scenario_value(scenario, "current_business_context", ""),
-            height=120,
-            help=FIELD_HELP["current_business_context"],
-        )
-    with narrative_right:
-        future_business_context = st.text_area(
-            "Future business context",
-            value=_scenario_value(scenario, "future_business_context", ""),
-            height=120,
-            help=FIELD_HELP["future_business_context"],
-        )
-
-    st.subheader("Executive Context")
-    context_left, context_middle, context_right = st.columns(3)
-    with context_left:
-        ceo_context = st.text_area(
-            "CEO context",
-            value=_scenario_value(scenario, "ceo_context", ""),
-            height=110,
-            help=FIELD_HELP["ceo_context"],
-        )
-    with context_middle:
-        cfo_context = st.text_area(
-            "CFO context",
-            value=_scenario_value(scenario, "cfo_context", ""),
-            height=110,
-            help=FIELD_HELP["cfo_context"],
-        )
-    with context_right:
-        coo_context = st.text_area(
-            "COO context",
-            value=_scenario_value(scenario, "coo_context", ""),
-            height=110,
-            help=FIELD_HELP["coo_context"],
-        )
-
-    st.subheader("Applicant Evidence Checklist")
-    if sme_document_evidence_locked:
-        st.caption(
-            "These indicators are locked to files actually saved by the SME. "
-            "Open the Evidence tab after scoring to inspect or download them."
-        )
-    doc_cols = st.columns(5)
-    with doc_cols[0]:
-        financial_statements_uploaded = st.checkbox(
-            "Financial statements",
-            value=_document_evidence_value(
-                "financial_statements", "financial_statements_uploaded"
-            ),
-            disabled=sme_document_evidence_locked,
-            help=FIELD_HELP["financial_statements_uploaded"],
-        )
-    with doc_cols[1]:
-        bank_statements_uploaded = st.checkbox(
-            "Bank statements",
-            value=_document_evidence_value(
-                "bank_statements", "bank_statements_uploaded"
-            ),
-            disabled=sme_document_evidence_locked,
-            help=FIELD_HELP["bank_statements_uploaded"],
-        )
-    with doc_cols[2]:
-        tax_return_uploaded = st.checkbox(
-            "Tax return",
-            value=_document_evidence_value("tax_returns", "tax_return_uploaded"),
-            disabled=sme_document_evidence_locked,
-            help=FIELD_HELP["tax_return_uploaded"],
-        )
-    with doc_cols[3]:
-        ownership_docs_uploaded = st.checkbox(
-            "Ownership/KYB",
-            value=_document_evidence_value("ownership_kyb", "ownership_docs_uploaded"),
-            disabled=sme_document_evidence_locked,
-            help=FIELD_HELP["ownership_docs_uploaded"],
-        )
-    with doc_cols[4]:
-        forecast_support_uploaded = st.checkbox(
-            "Forecast support",
-            value=_document_evidence_value(
-                "forecast_support", "forecast_support_uploaded"
-            ),
-            disabled=sme_document_evidence_locked,
-            help=FIELD_HELP["forecast_support_uploaded"],
-        )
-
-    with st.expander("Advanced Signals", expanded=False):
-        signal_left, signal_right, signal_third = st.columns(3)
-        with signal_left:
-            late_payment_ratio = st.slider(
-                "Late payment ratio",
-                min_value=0.0,
-                max_value=1.0,
-                value=float(_scenario_value(scenario, "late_payment_ratio", 0.12)),
-                step=0.01,
-                help=FIELD_HELP["late_payment_ratio"],
-            )
-        with signal_right:
-            suspicious_transfer_ratio = st.slider(
-                "Suspicious transfer ratio",
-                min_value=0.0,
-                max_value=1.0,
-                value=float(
-                    _scenario_value(scenario, "suspicious_transfer_ratio", 0.08)
-                ),
-                step=0.01,
-                help=FIELD_HELP["suspicious_transfer_ratio"],
-            )
-        with signal_third:
-            country_risk_score = st.slider(
-                "Country risk score",
-                min_value=0.0,
-                max_value=1.0,
-                value=float(_scenario_value(scenario, "country_risk_score", 0.25)),
-                step=0.01,
-                help=FIELD_HELP["country_risk_score"],
-            )
-
-    submitted = st.form_submit_button("Score Application", width="stretch")
-
-if submitted:
-    errors = []
-    active_application_id = None
-    if st.session_state.get("active_queue_application"):
-        active_application_id = st.session_state.active_queue_application.get(
-            "application_id"
-        )
-    requested_amount = _parse_money(
-        "Requested amount", requested_amount_text, errors, 10000, 5000000
-    )
-    annual_revenue = _parse_money(
-        "Annual revenue", annual_revenue_text, errors, 50000, 50000000
-    )
-    existing_debt = _parse_money(
-        "Existing debt", existing_debt_text, errors, 0, 20000000
-    )
-    free_cash_flow = _parse_money(
-        "Free cash flow", free_cash_flow_text, errors, -20000000, 50000000
-    )
-    monthly_burn_rate = _parse_money(
-        "Monthly burn rate", monthly_burn_rate_text, errors, 0, 5000000
-    )
-    interest_rate = interest_rate_pct / 100
-    cash_flow_to_revenue_ratio = free_cash_flow / max(float(annual_revenue), 1)
-
-    if errors:
-        st.error(" ".join(errors))
-    else:
-        application = {
-            "application_id": active_application_id
-            or f"SESSION-{len(st.session_state.portfolio_history) + 1:03d}",
-            "company_name": company_name or "Session Applicant",
-            "industry": industry,
-            "region": region,
-            "company_type": company_type,
-            "requested_amount": requested_amount,
-            "term_months": term_months,
-            "interest_rate": interest_rate,
-            "annual_revenue": annual_revenue,
-            "years_in_business": years_in_business,
-            "existing_debt": existing_debt,
-            "num_recent_loans": num_recent_loans,
-            "late_payment_ratio": late_payment_ratio,
-            "suspicious_transfer_ratio": suspicious_transfer_ratio,
-            "collateral_ratio": collateral_ratio,
-            "employees": employees,
-            "country_risk_score": country_risk_score,
-            "free_cash_flow": free_cash_flow,
-            "monthly_burn_rate": monthly_burn_rate,
-            "cash_flow_to_revenue_ratio": cash_flow_to_revenue_ratio,
-            "expected_runway_months": expected_runway_months,
-            "forecast_revenue_cagr": forecast_revenue_cagr,
-            "forecast_employee_cagr": forecast_employee_cagr,
-            "forecast_fcf_margin_year5": forecast_fcf_margin_year5,
-            "planned_debt_reduction_pct": planned_debt_reduction_pct,
-            "current_ratio": current_ratio,
-            "quick_ratio": quick_ratio,
-            "receivables_days": receivables_days,
-            "payables_days": payables_days,
-            "inventory_days": inventory_days,
-            "financial_statements_uploaded": int(financial_statements_uploaded),
-            "bank_statements_uploaded": int(bank_statements_uploaded),
-            "tax_return_uploaded": int(tax_return_uploaded),
-            "ownership_docs_uploaded": int(ownership_docs_uploaded),
-            "forecast_support_uploaded": int(forecast_support_uploaded),
-            "loan_purpose_context": loan_purpose_context,
-            "current_business_context": current_business_context,
-            "future_business_context": future_business_context,
-            "ceo_context": ceo_context,
-            "cfo_context": cfo_context,
-            "coo_context": coo_context,
-            **_system_signal_defaults(scenario),
-        }
-        prediction = st.session_state.model_bundle.score_one(
-            application, model_key=selected_model_key
-        )
-        explanation = explain_prediction(
-            application,
-            prediction,
-            use_llm=False,
-        )
-        _store_prediction(application, prediction, explanation)
 
 if st.session_state.last_prediction:
     application = st.session_state.last_application
@@ -1887,7 +1480,7 @@ if st.session_state.last_prediction:
             help=WORKSPACE_HELP["model_recommendation"],
         )
         score_cols[3].metric(
-            "ML technique", prediction_model_label, help=WORKSPACE_HELP["ml_technique"]
+            "Scoring model", prediction_model_label, help=WORKSPACE_HELP["ml_technique"]
         )
         score_cols[4].metric(
             "Stressed DSCR",
@@ -1939,7 +1532,7 @@ if st.session_state.last_prediction:
         )
         review_cols[2].metric("Publication", publication_status)
         review_cols[3].metric(
-            "ML technique", prediction_model_label, help=WORKSPACE_HELP["ml_technique"]
+            "Scoring model", prediction_model_label, help=WORKSPACE_HELP["ml_technique"]
         )
         st.dataframe(
             pd.DataFrame({"Review condition": decision_conditions}),
@@ -2025,7 +1618,7 @@ if st.session_state.last_prediction:
     recommendation_label = _tip_label(
         "Model recommendation", WORKSPACE_HELP["model_recommendation"]
     )
-    ml_technique_label = _tip_label("ML technique", WORKSPACE_HELP["ml_technique"])
+    ml_technique_label = _tip_label("Scoring model", WORKSPACE_HELP["ml_technique"])
     review_status_label = _tip_label("Review status", WORKSPACE_HELP["review_status"])
     stressed_dscr_label = _tip_label("Stressed DSCR", WORKSPACE_HELP["stressed_dscr"])
     st.markdown(

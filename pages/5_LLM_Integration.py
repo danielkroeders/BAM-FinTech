@@ -120,9 +120,7 @@ else:
         st.session_state.llm_chat_error = None
         st.session_state.llm_chat_signature = signature
 
-    model_key = prediction.get(
-        "model_key", st.session_state.get("selected_ml_model", "random_forest")
-    )
+    model_key = prediction.get("model_key", st.session_state.model_bundle.default_model_key)
     model_label = prediction.get(
         "model_label", st.session_state.model_bundle.label_for(model_key)
     )
@@ -342,7 +340,7 @@ else:
                 "under the configured thresholds. Treat the implied grade as the normalized comparison."
             )
         st.caption(
-            "AI grade uses the same A-F thresholds as the selected ML score. This is a qualitative second-review score, not a calibrated probability."
+            "AI grade uses the same A-F thresholds as the Random Forest score. This is a qualitative second-review score, not a calibrated probability."
         )
     if saved_package and not current_package:
         st.warning(
