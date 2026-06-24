@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+from src.constants import *
 from src.core.data_pipeline import add_derived_features, build_forecast_table
 from src.core.modeling import score_application
 from src.core.runtime import bootstrap_state
@@ -49,7 +50,6 @@ selected_model_key = st.session_state.get(
 )
 demo_session_id = ensure_demo_session()
 MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
-ALLOWED_DOCUMENT_TYPES = ["pdf", "csv", "xlsx", "xls", "docx", "png", "jpg", "jpeg"]
 
 
 def _default_company_application():

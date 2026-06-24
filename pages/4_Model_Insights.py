@@ -2,10 +2,9 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from src.features.alignment_features import api_contract_payloads
+from src.constants import *
 from src.core.data_pipeline import NUMERIC_COLUMNS, add_derived_features
 from src.utils.formatting import format_currency, format_score
-from src.core.modeling import score_application
 from src.core.runtime import bootstrap_state
 from src.ui.components import render_sidebar
 
@@ -57,46 +56,6 @@ st.caption(
     "Plain Linear Regression was considered but not exposed because its raw output is not naturally bounded to 0-1; Logistic Regression is the probability-style linear baseline."
 )
 
-metric_catalog = {
-    "Accuracy": "accuracy",
-    "Balanced Accuracy": "balanced_accuracy",
-    "Precision": "precision",
-    "Recall": "recall",
-    "F1": "f1",
-    "ROC-AUC": "roc_auc",
-    "Average Precision": "average_precision",
-    "MCC": "mcc",
-    "Precision At Top 5%": "precision_at_5pct",
-    "Precision At Top 10%": "precision_at_10pct",
-    "Precision At Top 20%": "precision_at_20pct",
-    "False Positive Rate": "false_positive_rate",
-    "False Negative Rate": "false_negative_rate",
-    "Predicted Review Rate": "predicted_review_rate",
-    "Estimated Review Cost": "estimated_review_cost",
-    "Estimated False Positive Cost": "estimated_false_positive_cost",
-    "Estimated False Negative Cost": "estimated_false_negative_cost",
-    "Estimated Total Error Cost": "estimated_total_error_cost",
-}
-metric_help = {
-    "Accuracy": "Share of all predictions that are correct. Misleading when high-risk cases are rare — prefer Balanced Accuracy.",
-    "Balanced Accuracy": "Average accuracy across high-risk and low-risk classes. Corrects for class imbalance; a fairer headline score than raw Accuracy.",
-    "Precision": "Of every application the model flags as high-risk, the share that truly is. High Precision means fewer good applicants wrongly declined.",
-    "Recall": "Of every genuinely high-risk application, the share the model catches. High Recall means fewer defaults slip through undetected.",
-    "F1": "Harmonic mean of Precision and Recall. Useful when you need a single number that balances both miss types.",
-    "ROC-AUC": "Probability that the model ranks a random high-risk case above a random low-risk one. 0.5 = coin flip; 1.0 = perfect separation.",
-    "Average Precision": "Area under the Precision-Recall curve. More informative than ROC-AUC when defaults are rare; penalises models that miss the tail.",
-    "MCC": "Matthews Correlation Coefficient — a single quality score robust to class imbalance. Ranges from −1 (worse than random) to +1 (perfect).",
-    "Precision At Top 5%": "Of the 5% of applications the model scores as highest-risk, the share that are genuinely high-risk. Relevant for a very selective review queue.",
-    "Precision At Top 10%": "Of the top-decile highest-risk applications, the share that are genuinely high-risk. The primary queue-efficiency metric for most review teams.",
-    "Precision At Top 20%": "Of the top quintile, the share that are genuinely high-risk. Useful when bandwidth allows a broader review sweep.",
-    "False Positive Rate": "Share of low-risk applicants incorrectly flagged as high-risk. Drives unnecessary review cost and approval friction for good customers.",
-    "False Negative Rate": "Share of high-risk applicants the model misses entirely. Each miss is a potential default that reaches the portfolio undetected.",
-    "Predicted Review Rate": "Fraction of all applications the model routes to manual review under current thresholds. Directly sets analyst workload.",
-    "Estimated Review Cost": "Total estimated cost of manually reviewing every flagged case at current review-rate and cost assumptions.",
-    "Estimated False Positive Cost": "Revenue lost by declining or over-scrutinising applications that would have performed well.",
-    "Estimated False Negative Cost": "Expected default losses from high-risk applications the model approved or under-flagged.",
-    "Estimated Total Error Cost": "Sum of false-positive (lost revenue) and false-negative (default loss) costs. The primary financial headline for portfolio risk.",
-}
 
 default_metric_labels = [
     "Balanced Accuracy",
@@ -132,25 +91,25 @@ metric_presets = {
         "Estimated Review Cost",
         "Estimated Total Error Cost",
     ],
-    "All metrics": list(metric_catalog.keys()),
+    "All metrics": list(METRIC_CATALOG.keys()),
 }
 metric_preset = st.selectbox("Metric preset", list(metric_presets.keys()), index=1)
 selected_metric_labels = st.multiselect(
     "Visible metrics",
-    list(metric_catalog.keys()),
+    list(METRIC_CATALOG.keys()),
     default=metric_presets.get(metric_preset, default_metric_labels),
     key=f"visible_metrics_{metric_preset}",
 )
 cols = st.columns(4)
 for index, label in enumerate(selected_metric_labels):
-    key = metric_catalog[label]
+    key = METRIC_CATALOG[label]
     col = cols[index % 4]
     value = (
         format_currency(metrics[key])
         if key.startswith("estimated_")
         else format_score(metrics[key], 3)
     )
-    col.metric(label, value, help=metric_help.get(label))
+    col.metric(label, value, help=METRIC_HELP.get(label))
 
 queue_rows = pd.DataFrame(
     [
@@ -175,8 +134,10 @@ metric_left, metric_middle, metric_right, metric_extra = st.columns(4)
 numeric_options = [
     column for column in NUMERIC_COLUMNS if column in applications.columns
 ]
+
 with metric_left:
     custom_metric_name = st.text_input("Metric name", value="Custom portfolio metric")
+
 with metric_middle:
     numerator_column = st.selectbox(
         "Numerator",
@@ -187,6 +148,7 @@ with metric_middle:
             else 0
         ),
     )
+
 with metric_right:
     denominator_options = ["None"] + numeric_options
     denominator_column = st.selectbox(
@@ -198,16 +160,20 @@ with metric_right:
             else 0
         ),
     )
+
 with metric_extra:
     aggregation = st.selectbox("Aggregation", ["Average", "Median", "Sum", "P90"])
 
 metric_series = pd.to_numeric(applications[numerator_column], errors="coerce")
+
 if denominator_column != "None":
     denominator = pd.to_numeric(
         applications[denominator_column], errors="coerce"
     ).replace(0, pd.NA)
     metric_series = metric_series / denominator
+
 metric_series = metric_series.dropna()
+
 if aggregation == "Median":
     custom_value = metric_series.median()
 elif aggregation == "Sum":
@@ -216,15 +182,18 @@ elif aggregation == "P90":
     custom_value = metric_series.quantile(0.90)
 else:
     custom_value = metric_series.mean()
+
 money_like = denominator_column == "None" and any(
     token in numerator_column for token in ["amount", "revenue", "debt", "cash", "burn"]
 )
+
 st.metric(
     custom_metric_name or "Custom metric",
     format_currency(custom_value) if money_like else format_score(custom_value, 3),
 )
 
 left, right = st.columns(2)
+
 with left:
     st.subheader("Confusion Matrix")
     matrix = pd.DataFrame(
@@ -233,6 +202,7 @@ with left:
         columns=["Predicted lower risk", "Predicted high risk"],
     )
     st.dataframe(matrix, width="stretch")
+
 with right:
     st.subheader("A-F Grading Thresholds")
     thresholds = pd.DataFrame(
@@ -290,26 +260,15 @@ governance_rows = pd.DataFrame(
 )
 st.dataframe(governance_rows, width="stretch", hide_index=True)
 
-# st.subheader("Risk Score API Contract Preview")
-# st.caption("MVP preview of how a lender could embed the score in an existing underwriting workflow. This is not a running external API yet.")
-# api_application = st.session_state.last_application or applications.iloc[0].to_dict()
-# api_prediction = st.session_state.last_prediction or score_application(bundle, api_application, model_key=selected_model_key)
-# api_metrics = bundle.metrics_for(api_prediction.get("model_key", selected_model_key))
-# request_json, response_json = api_contract_payloads(api_application, api_prediction, api_metrics)
-# api_cols = st.columns(2)
-# with api_cols[0]:
-#     st.caption("Example request")
-#     st.code(request_json, language="json")
-# with api_cols[1]:
-#     st.caption("Example response")
-#     st.code(response_json, language="json")
-
 st.subheader("Top Feature Importances")
 importance_raw = bundle.feature_importance_for(selected_model_key).head(20).copy()
+
 importance_display = importance_raw.copy()
+
 importance_display["importance"] = importance_display["importance"].apply(
     lambda value: format_score(value, 4)
 )
+
 st.dataframe(importance_display, width="stretch", hide_index=True)
 importance_chart = (
     alt.Chart(importance_raw.head(12))
@@ -325,7 +284,6 @@ importance_chart = (
     )
     .configure_view(strokeOpacity=0)
 )
-# st.altair_chart(importance_chart, width="stretch")
 
 st.subheader("Research-Backed Derived Signals")
 derived_signals = pd.DataFrame(

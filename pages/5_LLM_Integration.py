@@ -2,6 +2,7 @@ import re
 
 import streamlit as st
 
+from src.constants import *
 from src.utils.demo_persistence import persist_demo_state
 from src.features.explanations import (
     deterministic_explanation,
@@ -25,13 +26,6 @@ st.caption(
 
 application = st.session_state.last_application
 prediction = st.session_state.last_prediction
-
-PROVIDERS = ["Deterministic", "OpenAI API", "Local server"]
-MODEL_DESCRIPTIONS = {
-    "random_forest": "Tree-based ensemble used to produce the baseline application risk score.",
-    "logistic_regression": "Linear probability model used to produce the baseline application risk score.",
-}
-
 
 def _provider_index():
     saved = st.session_state.get("llm_chat_provider", "Deterministic")

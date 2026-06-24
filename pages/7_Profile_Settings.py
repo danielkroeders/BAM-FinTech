@@ -3,89 +3,13 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+from src.constants import *
 from src.core.runtime import bootstrap_state
 from src.ui.components import get_profile, render_sidebar, save_profile
 
 st.set_page_config(page_title="Profile & Settings", layout="wide")
 bootstrap_state()
 render_sidebar()
-
-PROFILE_TYPES = [
-    "Team Member",
-    "Team Manager",
-    "Risk Lead",
-    "Support Specialist",
-    "Read-only Reviewer",
-]
-PERMISSIONS = [
-    "Credit review and manual decision approval",
-    "Credit review",
-    "Portfolio monitoring",
-    "Team management",
-    "Read-only portfolio access",
-    "Administrator",
-]
-MANAGERS = ["Ravi Meijer", "Mila Verhoeven", "Daan Peters", "Sofia de Vries"]
-CHANNELS = ["Slack", "Teams", "Email"]
-EMAIL_APPS = ["Outlook", "Gmail"]
-INTEGRATION_CATALOG = [
-    {
-        "key": "slack",
-        "name": "Slack",
-        "category": "Messaging",
-        "account": "#sme-credit-ops",
-        "use": "Queue alerts and analyst handoffs.",
-    },
-    {
-        "key": "teams",
-        "name": "Microsoft Teams",
-        "category": "Messaging",
-        "account": "SME Credit Review",
-        "use": "Team calls, approvals, and case escalations.",
-    },
-    {
-        "key": "gmail",
-        "name": "Gmail",
-        "category": "Email & Calendar",
-        "account": "alice.cooper@yourbank.com",
-        "use": "Personal inbox, drafts, and email follow-ups.",
-    },
-    {
-        "key": "outlook",
-        "name": "Outlook",
-        "category": "Email & Calendar",
-        "account": "alice.cooper@yourbank.com",
-        "use": "Personal calendar, mailbox, and reminders.",
-    },
-    {
-        "key": "google_drive",
-        "name": "Google Drive",
-        "category": "Personal Files",
-        "account": "Alice Cooper Drive",
-        "use": "Personal notes, exports, and working files.",
-    },
-    {
-        "key": "onedrive",
-        "name": "OneDrive",
-        "category": "Personal Files",
-        "account": "Alice Cooper OneDrive",
-        "use": "Personal drafts, downloads, and local working files.",
-    },
-    {
-        "key": "sharepoint",
-        "name": "SharePoint",
-        "category": "Personal Files",
-        "account": "Alice Cooper workspace",
-        "use": "Personal team folders and shared working documents.",
-    },
-    {
-        "key": "zoom",
-        "name": "Zoom",
-        "category": "Meetings",
-        "account": "alice.cooper@yourbank.com",
-        "use": "Personal meeting links and review calls.",
-    },
-]
 
 
 def _option_index(options, value):

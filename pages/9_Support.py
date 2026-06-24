@@ -3,6 +3,7 @@ from datetime import datetime
 
 import streamlit as st
 
+from src.constants import *
 from src.core.runtime import bootstrap_state
 from src.ui.components import get_profile, is_sme_profile, render_sidebar
 
@@ -11,98 +12,6 @@ bootstrap_state()
 render_sidebar()
 profile = get_profile()
 sme_mode = is_sme_profile(profile)
-
-LENDER_SUPPORT_REPS = [
-    {
-        "name": "Mila Verhoeven",
-        "role": "Risk Platform Lead",
-        "email": "mila.verhoeven@yourbank.com",
-        "focus": "Workspace setup, lender workflow questions, and analyst onboarding.",
-    },
-    {
-        "name": "Daan Peters",
-        "role": "Risk Support Specialist",
-        "email": "daan.peters@yourbank.com",
-        "focus": "Scoring, DSCR, risk flags, document verification, and model explanation questions.",
-    },
-    {
-        "name": "Sofia de Vries",
-        "role": "Operations Enablement",
-        "email": "sofia.devries@yourbank.com",
-        "focus": "Account access, support routing, and training material.",
-    },
-]
-
-SME_CONSULTANTS = [
-    {
-        "name": "Emma de Vries",
-        "role": "SME Finance Consultant",
-        "email": "emma.devries@yourbank.com",
-        "focus": "Application readiness, lender questions, and next-step planning.",
-    },
-    {
-        "name": "Noah Bakker",
-        "role": "Business Lending Consultant",
-        "email": "noah.bakker@yourbank.com",
-        "focus": "Loan-purpose discussion, affordability questions, and document expectations.",
-    },
-    {
-        "name": "Sofia de Vries",
-        "role": "Applicant Support Consultant",
-        "email": "sme.support@yourbank.com",
-        "focus": "Portal access, upload issues, and scheduling a consultant conversation.",
-    },
-]
-
-LENDER_FAQ_ITEMS = [
-    (
-        "Is this a production credit decision system?",
-        "No. This is a decision-support workspace. It helps analysts review risk signals, explanations, and workflow controls, but it does not make legal, compliance, or final credit decisions.",
-    ),
-    (
-        "Where does the data come from?",
-        "The workspace uses application, accounting, document, KYB, transaction, forecast, and pricing inputs available to the review file.",
-    ),
-    (
-        "Does the model consider interest rates and repayment affordability?",
-        "Yes. Personal Workspace includes an offered interest rate, annual debt service, DSCR, and a +2 percentage point stressed DSCR.",
-    ),
-    (
-        "Can analysts override the model result?",
-        "Yes. The Case Review workflow stores the analyst's final action separately from the model recommendation and AI review output.",
-    ),
-    (
-        "How should high-risk outcomes be handled?",
-        "High-risk E/F outcomes should be routed to human compliance-style review before any external decision is communicated.",
-    ),
-    (
-        "What integrations are supported?",
-        "Personal connected apps include Slack, Teams, Gmail, Outlook, file storage, and meeting tools. Risk-model data sources are handled separately from personal app connections.",
-    ),
-]
-
-SME_FAQ_ITEMS = [
-    (
-        "Can I speak with someone about my application?",
-        "Yes. Use the consultant cards or request form to connect with a YourBank SME consultant about your application, documents, or next steps.",
-    ),
-    (
-        "Does submitting an application show me the lender's internal score?",
-        "No. Internal model scores, verification notes, and lender review details stay private unless the lender publishes a reviewed result.",
-    ),
-    (
-        "What happens if my documents are incomplete or inconsistent?",
-        "The lender may request clarification, ask for updated evidence, or decline the application if submitted evidence cannot be verified.",
-    ),
-    (
-        "Are PSD2, accounting, and registry connections live?",
-        "In this MVP they are simulated. The portal demonstrates consent and source selection without connecting to real bank, accounting, or registry systems.",
-    ),
-    (
-        "When will I see a rating or evaluation report?",
-        "Only after the lender completes review and chooses to publish the outcome. Until then, the SME portal shows readiness guidance rather than an internal lender rating.",
-    ),
-]
 
 
 def _active_reps():
