@@ -1593,7 +1593,7 @@ if submitted_rows:
             f"{row['Application ID']} - {row['Company']} | {row['Status']}"
             for row in submitted_rows
         ]
-        intake_cols = st.columns([2, 1])
+        intake_cols = st.columns([2, 1],vertical_alignment="bottom")
         selected_intake_label = intake_cols[0].selectbox(
             "Submitted SME application", intake_options
         )
