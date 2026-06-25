@@ -1,3 +1,4 @@
+# Scenario and alignment helpers that compare an application to policy signals.
 import json
 
 import pandas as pd
@@ -11,6 +12,9 @@ from src.utils.formatting import (
 )
 from src.core.modeling import score_application, score_portfolio
 
+# Alignment helpers are used in both lender and SME views. They simulate
+# scenario planning, peer context, source coverage, and API contracts without
+# mutating the original application record.
 
 def _number(value, default=0.0):
     try:
@@ -39,6 +43,7 @@ def apply_scenario(
     scenario = dict(application)
     annual_revenue = max(_number(scenario.get("annual_revenue")), 1)
 
+    # Scenario controls adjust applicant assumptions without mutating the original submitted file.
     scenario["forecast_revenue_cagr"] = _bounded(
         _number(scenario.get("forecast_revenue_cagr")) + revenue_growth_delta,
         -0.25,
@@ -75,6 +80,7 @@ def apply_scenario(
         )
 
     if complete_documents:
+        # Completing documents models a better evidence package, not a direct reduction of credit risk.
         for key in [
             "financial_statements_uploaded",
             "bank_statements_uploaded",
@@ -96,6 +102,9 @@ def apply_scenario(
 def scenario_comparison_rows(
     model_bundle, application, baseline_prediction, scenario_application, model_key=None
 ):
+    # Compare the immutable current file with a temporary scenario. The scenario
+    # is scored using the same model key so differences are caused by changed
+    # assumptions, not by a different model.
     selected_key = model_key or baseline_prediction.get("model_key")
     scenario_prediction = score_application(
         model_bundle, scenario_application, model_key=selected_key
@@ -158,6 +167,9 @@ def scenario_comparison_rows(
 def peer_benchmark_rows(
     model_bundle, applications, application, prediction, model_key=None
 ):
+    # Peer benchmarks are explanatory context for analysts/SMEs. They compare
+    # the active application to similar synthetic cases and should not be read as
+    # external market data.
     selected_key = model_key or prediction.get("model_key")
     scored = score_portfolio(model_bundle, applications, model_key=selected_key)
     app_signals = add_derived_features(pd.DataFrame([application])).iloc[0]
@@ -165,6 +177,7 @@ def peer_benchmark_rows(
     regional_peers = industry_peers[
         industry_peers["region"].eq(application.get("region"))
     ].copy()
+    # Prefer regional industry peers, but widen the group when the synthetic sample is too small.
     peers = regional_peers if len(regional_peers) >= 8 else industry_peers
     if len(peers) < 8:
         peers = scored.copy()
@@ -234,6 +247,9 @@ def peer_benchmark_rows(
 
 
 def data_source_coverage_rows(application, signals):
+    # Source coverage translates technical evidence flags into business-facing
+    # source categories: banking, accounting, documents, KYB, narrative, and
+    # forecast support.
     open_banking_connected = bool(
         _number(
             application.get(
@@ -304,6 +320,8 @@ def data_source_coverage_rows(application, signals):
 
 
 def sme_action_rows(application, signals, prediction):
+    # Applicant-facing action rows avoid internal model jargon. They explain
+    # concrete ways to strengthen a future review without promising approval.
     rows = []
     if _number(signals.get("document_completeness_score")) < 0.95:
         rows.append(
@@ -367,6 +385,7 @@ def sme_action_rows(application, signals, prediction):
 
 
 def api_contract_payloads(application, prediction, metrics):
+    # API payloads are illustrative contracts for the MVP, not live external endpoints.
     request = {
         "application_id": application.get("application_id", "APP-001"),
         "company": {
@@ -419,6 +438,8 @@ def api_contract_payloads(application, prediction, metrics):
 
 
 def latest_or_sample_application(seed_data, model_bundle, model_key=None):
+    # Pages that need a single example use a stable mid/high-risk seed row when
+    # no active case has been scored yet.
     applications = seed_data["applications"]
     scored = score_portfolio(model_bundle, applications, model_key=model_key)
     sample = (

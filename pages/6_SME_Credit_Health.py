@@ -1,10 +1,16 @@
+# SME loan intake portal for applicant-owned data, evidence, and published results.
 from datetime import datetime
 
 import pandas as pd
 import streamlit as st
 
 from src.constants import *
-from src.core.data_pipeline import add_derived_features, build_forecast_table
+from src.core.data_pipeline import (
+    add_derived_features,
+    build_forecast_table,
+    forecast_metrics_from_plan_rows,
+    validate_forecast_plan_rows,
+)
 from src.core.modeling import score_application
 from src.core.runtime import bootstrap_state
 from src.features.alignment_features import (
@@ -55,6 +61,9 @@ SME_WORKFLOW_STEPS = [
     "3. Credit Health",
     "4. Submit to Lender",
 ]
+# Evidence cases are the demo's "sample projects." They are loaded inside the
+# SME portal because the applicant owns intake creation. The lender only sees a
+# locked submitted snapshot after step 4.
 EVIDENCE_CASES = {
     "Blank manual intake": {
         "scenario": None,
@@ -105,9 +114,172 @@ SAMPLE_DOCUMENT_FIELDS = {
     "ownership_kyb": "ownership_docs_uploaded",
     "forecast_support": "forecast_support_uploaded",
 }
+FORECAST_PLAN_COLUMNS = [
+    "forecast_year",
+    "projected_revenue",
+    "projected_employees",
+    "projected_free_cash_flow",
+    "projected_debt",
+]
+FORECAST_PLAN_PROFILES = {
+    # The five-year paths are intentionally non-linear so sample cases feel like
+    # real plans instead of a straight interpolation from today to year five.
+    "Clean evidence": {
+        "revenue_factors": [1.07, 1.16, 1.28, 1.40, 1.54],
+        "employee_factors": [1.03, 1.08, 1.15, 1.24, 1.34],
+        "fcf_margins": [0.12, 0.125, 0.135, 0.145, 0.16],
+        "debt_factors": [0.90, 0.80, 0.70, 0.58, 0.45],
+    },
+    "Neutral evidence": {
+        "revenue_factors": [0.97, 1.02, 1.10, 1.19, 1.29],
+        "employee_factors": [0.99, 1.00, 1.05, 1.10, 1.16],
+        "fcf_margins": [0.00, 0.018, 0.035, 0.055, 0.075],
+        "debt_factors": [0.98, 0.94, 0.86, 0.78, 0.70],
+    },
+    "Risky evidence": {
+        "revenue_factors": [1.18, 1.06, 1.28, 1.42, 1.68],
+        "employee_factors": [1.00, 1.02, 1.05, 1.12, 1.18],
+        "fcf_margins": [-0.11, -0.07, -0.025, 0.02, 0.06],
+        "debt_factors": [0.99, 0.98, 0.94, 0.88, 0.82],
+    },
+    "Fraudulent evidence": {
+        "revenue_factors": [1.35, 2.05, 3.10, 4.35, 5.75],
+        "employee_factors": [1.00, 1.02, 1.03, 1.05, 1.07],
+        "fcf_margins": [-0.02, 0.14, 0.24, 0.33, 0.42],
+        "debt_factors": [0.92, 1.08, 0.74, 0.96, 0.38],
+    },
+    "Ambiguous evidence": {
+        "revenue_factors": [1.12, 0.96, 1.30, 1.18, 1.46],
+        "employee_factors": [1.05, 1.00, 1.12, 1.10, 1.22],
+        "fcf_margins": [0.02, -0.04, 0.06, 0.01, 0.08],
+        "debt_factors": [0.95, 0.91, 0.97, 0.79, 0.72],
+    },
+}
+
+
+def _coerce_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _blank_forecast_plan_rows():
+    # Blank manual intakes deliberately keep plan values empty. The validator
+    # will block submission until the applicant fills all five annual rows.
+    return [
+        {
+            "forecast_year": year,
+            "projected_revenue": None,
+            "projected_employees": None,
+            "projected_free_cash_flow": None,
+            "projected_debt": None,
+        }
+        for year in range(1, 6)
+    ]
+
+
+def _sample_forecast_plan_rows(application, evidence_case_name):
+    if evidence_case_name == "Blank manual intake":
+        return _blank_forecast_plan_rows()
+
+    profile = FORECAST_PLAN_PROFILES.get(
+        evidence_case_name, FORECAST_PLAN_PROFILES["Neutral evidence"]
+    )
+    annual_revenue = max(_coerce_float(application.get("annual_revenue")), 0.0)
+    employees = max(int(_coerce_float(application.get("employees"), 1)), 1)
+    existing_debt = max(_coerce_float(application.get("existing_debt")), 0.0)
+    rows = []
+    for year, revenue_factor, employee_factor, fcf_margin, debt_factor in zip(
+        range(1, 6),
+        profile["revenue_factors"],
+        profile["employee_factors"],
+        profile["fcf_margins"],
+        profile["debt_factors"],
+    ):
+        projected_revenue = annual_revenue * revenue_factor
+        rows.append(
+            {
+                "forecast_year": year,
+                "projected_revenue": round(projected_revenue, 2),
+                "projected_employees": max(round(employees * employee_factor), 1),
+                "projected_free_cash_flow": round(projected_revenue * fcf_margin, 2),
+                "projected_debt": round(max(existing_debt * debt_factor, 0.0), 2),
+            }
+        )
+    return rows
+
+
+def _apply_forecast_plan_metrics(application, forecast_plan_rows):
+    # Store the exact annual rows for review, then derive the legacy year-5/CAGR
+    # fields required by the current Random Forest feature contract.
+    metrics, errors = forecast_metrics_from_plan_rows(
+        forecast_plan_rows,
+        annual_revenue=application.get("annual_revenue", 0),
+        employees=application.get("employees", 1),
+        existing_debt=application.get("existing_debt", 0),
+    )
+    if not errors:
+        application.update(metrics)
+    return errors
+
+
+def _forecast_plan_rows_for_editor(application):
+    rows, errors = validate_forecast_plan_rows(application.get("forecast_plan_rows"))
+    if rows and not errors:
+        return rows
+    if application.get("sample_case_name") == "Blank manual intake":
+        return _blank_forecast_plan_rows()
+
+    # Legacy sessions created before forecast_plan_rows still need to open in
+    # the editor. The generated fallback is only an editable starting point.
+    fallback = build_forecast_table(pd.DataFrame([application]))
+    if not fallback.empty:
+        return fallback[FORECAST_PLAN_COLUMNS].to_dict("records")
+    return _blank_forecast_plan_rows()
+
+
+def _format_forecast_plan_display(application):
+    forecast = build_forecast_table(pd.DataFrame([application]))
+    if forecast.empty:
+        return pd.DataFrame(
+            columns=[
+                "Year",
+                "Projected revenue",
+                "Projected employees",
+                "Projected FCF",
+                "Projected debt",
+            ]
+        )
+    display = forecast.rename(
+        columns={
+            "forecast_year": "Year",
+            "projected_revenue": "Projected revenue",
+            "projected_employees": "Projected employees",
+            "projected_free_cash_flow": "Projected FCF",
+            "projected_debt": "Projected debt",
+        }
+    )[
+        [
+            "Year",
+            "Projected revenue",
+            "Projected employees",
+            "Projected FCF",
+            "Projected debt",
+        ]
+    ].copy()
+    for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
+        display[column] = display[column].apply(format_currency)
+    display["Projected employees"] = display["Projected employees"].apply(
+        format_integer
+    )
+    return display
 
 
 def _default_company_application():
+    # The default keeps the demo immediately usable on first launch while still
+    # behaving like an SME-owned draft. It is not submitted to the lender until
+    # the explicit submission step creates a snapshot.
     application = dict(DEMO_SCENARIOS["A2M Logistics Loan"])
     application.update(
         {
@@ -125,10 +297,18 @@ def _default_company_application():
             "forecast_support_uploaded": 0,
         }
     )
+    application["sample_case_name"] = "Neutral evidence"
+    application["forecast_plan_rows"] = _sample_forecast_plan_rows(
+        application, "Neutral evidence"
+    )
+    _apply_forecast_plan_metrics(application, application["forecast_plan_rows"])
     return application
 
 
 def _blank_company_application():
+    # Manual intakes need unique IDs before the company has entered a name. The
+    # timestamp avoids collisions with seeded sample cases and gives uploads a
+    # stable vault path as soon as the blank draft is created.
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:17]
     return {
         "application_id": f"SME-MANUAL-{timestamp}",
@@ -162,6 +342,7 @@ def _blank_company_application():
         "forecast_employees_year5": 1,
         "forecast_fcf_year5": 0.0,
         "planned_debt_reduction_amount": 0.0,
+        "forecast_plan_rows": _blank_forecast_plan_rows(),
         "forecast_revenue_cagr": 0.0,
         "forecast_employee_cagr": 0.0,
         "forecast_fcf_margin_year5": 0.0,
@@ -211,6 +392,7 @@ def _sample_company_application(evidence_case_name):
     if not evidence_case:
         raise ValueError("Choose a named evidence case before loading it.")
     if evidence_case.get("is_blank"):
+        # Blank intake is the only sample option that intentionally leaves the user in full manual-entry mode.
         return _blank_company_application()
 
     scenario_name = evidence_case["scenario"]
@@ -221,6 +403,7 @@ def _sample_company_application(evidence_case_name):
     application = dict(sample_values)
     document_categories = evidence_case.get("document_categories")
     if document_categories:
+        # Scenario document flags mirror the sample evidence pack so readiness metrics update immediately.
         for category in document_categories:
             field_name = SAMPLE_DOCUMENT_FIELDS.get(category)
             if field_name:
@@ -272,10 +455,17 @@ def _sample_company_application(evidence_case_name):
             ),
         }
     )
+    application["forecast_plan_rows"] = _sample_forecast_plan_rows(
+        application, evidence_case_name
+    )
+    _apply_forecast_plan_metrics(application, application["forecast_plan_rows"])
     return application
 
 
 def _company_application():
+    # The SME portal edits the live draft held in session state. Every save
+    # writes a full copy so reruns, navigation, and refresh-safe persistence all
+    # see the same applicant-owned intake.
     if st.session_state.get("sme_company_application"):
         return dict(st.session_state.sme_company_application)
     application = _default_company_application()
@@ -289,6 +479,9 @@ def _store_company_application(application):
 
 
 def _save_sample_documents(application):
+    # Loading a sample case can optionally seed local fictional evidence files.
+    # This uses the same storage path as user uploads so downstream document
+    # validation does not care whether a file was uploaded or sample-generated.
     examples = build_document_examples(application)
     saved_count = 0
     sample_categories = application.get("sample_document_categories") or [
@@ -297,6 +490,7 @@ def _save_sample_documents(application):
         if application.get(field_name)
     ]
     for category in sample_categories:
+        # Saving sample documents uses the same local vault path as real SME uploads.
         field_name = SAMPLE_DOCUMENT_FIELDS.get(category)
         if category not in examples:
             continue
@@ -347,6 +541,9 @@ def _select_value(value):
 
 
 def _field_help(field_name):
+    # Field help centralizes SME-facing explanations in constants.py. When a
+    # new input is added without help text, fall back to a neutral explanation
+    # rather than leaving a blank tooltip.
     return FIELD_HELP.get(
         field_name,
         "Application input used to prepare the SME file before lender submission.",
@@ -378,6 +575,9 @@ def _default_collateral_value(application):
 
 
 def _default_current_liabilities(application):
+    # Some old seed/sample rows still store ratios instead of raw balance-sheet
+    # amounts. These defaults reconstruct reasonable editable amounts so the SME
+    # form can show applicant-understandable fields instead of asking for ratios.
     value = application.get("current_liabilities")
     if value is not None:
         return max(_positive(value), 1.0)
@@ -415,62 +615,6 @@ def _default_cash_balance(application):
     return _positive(application.get("annual_revenue")) * 0.08
 
 
-def _future_value_from_cagr(base_value, cagr, years=5):
-    return _positive(base_value) * (1 + _number(cagr)) ** years
-
-
-def _default_year5_revenue(application):
-    value = application.get("forecast_revenue_year5")
-    if value is not None:
-        return _positive(value)
-    return _future_value_from_cagr(
-        application.get("annual_revenue"), application.get("forecast_revenue_cagr")
-    )
-
-
-def _default_year5_employees(application):
-    value = application.get("forecast_employees_year5")
-    if value is not None:
-        return max(int(_positive(value)), 1)
-    return max(
-        int(
-            round(
-                _future_value_from_cagr(
-                    application.get("employees"),
-                    application.get("forecast_employee_cagr"),
-                )
-            )
-        ),
-        1,
-    )
-
-
-def _default_year5_free_cash_flow(application):
-    value = application.get("forecast_fcf_year5")
-    if value is not None:
-        return _number(value)
-    return _default_year5_revenue(application) * _number(
-        application.get("forecast_fcf_margin_year5")
-    )
-
-
-def _default_debt_reduction_amount(application):
-    value = application.get("planned_debt_reduction_amount")
-    if value is not None:
-        return _positive(value)
-    return _positive(application.get("existing_debt")) * _positive(
-        application.get("planned_debt_reduction_pct")
-    )
-
-
-def _cagr_from_target(base_value, target_value, years=5):
-    base = _positive(base_value)
-    target = _positive(target_value)
-    if base <= 0 or target <= 0:
-        return 0.0
-    return (target / base) ** (1 / years) - 1
-
-
 def _rerun():
     rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
     if rerun:
@@ -478,6 +622,9 @@ def _rerun():
 
 
 def _set_sme_workflow_step(offset):
+    # Previous/next buttons and the radio widget share the same session-state
+    # key. This helper bounds movement so the buttons cannot step outside the
+    # four-page intake workflow.
     current_step = st.session_state.get("sme_workflow_step", SME_WORKFLOW_STEPS[0])
     current_index = (
         SME_WORKFLOW_STEPS.index(current_step)
@@ -489,6 +636,9 @@ def _set_sme_workflow_step(offset):
 
 
 def _render_sme_step_buttons(selected_step, location):
+    # Render this control at both the top and bottom of the portal. The location
+    # suffix makes widget keys unique while both button sets update the same
+    # workflow-step state.
     current_index = SME_WORKFLOW_STEPS.index(selected_step)
     nav_cols = st.columns([1, 1, 3])
     if nav_cols[0].button(
@@ -525,6 +675,8 @@ def _render_sme_workflow_nav():
 
 
 def _documents_by_category(documents):
+    # Uploads are stored as a flat manifest, but the UI renders one upload slot
+    # per expected evidence category. Grouping here keeps the page code simple.
     grouped = {category: [] for category in DOCUMENT_CATEGORIES}
     for document in documents:
         category = document.get("category")
@@ -534,6 +686,9 @@ def _documents_by_category(documents):
 
 
 def _render_compact_download(application, document):
+    # Each upload slot shows a small download action for the first saved file in
+    # that category. This replaced large table-level download buttons that made
+    # the portal feel crowded.
     content, metadata = read_document(
         demo_session_id,
         application["application_id"],
@@ -556,6 +711,7 @@ def _render_compact_download(application, document):
 def _sync_document_evidence(application):
     counts = document_counts(demo_session_id, application["application_id"])
     documents = list_documents(demo_session_id, application["application_id"])
+    # Treat the file vault as the source of truth for evidence flags after upload/download actions.
     application.update(
         {
             "financial_statements_uploaded": int(counts["financial_statements"] > 0),
@@ -615,6 +771,9 @@ def _example_document_table(examples, category_counts):
 def _render_document_examples(
     application, category_counts, saved_documents, connection_status, prediction
 ):
+    # Example documents are deliberately fictional and category-specific. They
+    # let users load clean, risky, fraudulent, ambiguous, or blank cases without
+    # needing real business documents on their machine.
     examples = build_document_examples(application)
     with st.expander("Sample document cases and evidence checklist", expanded=True):
         st.caption(
@@ -639,6 +798,7 @@ def _render_document_examples(
             help="Adds fictional demo files only where this application has no saved file for that document category.",
             width="stretch",
         ):
+            # Only missing categories are backfilled so user-uploaded files are never overwritten.
             saved_count = 0
             duplicate_count = 0
             errors = []
@@ -698,6 +858,9 @@ def _update_lifecycle(application_id, **values):
 
 
 def _render_application_readiness(application, prediction):
+    # Before the lender publishes anything, the SME sees only readiness guidance:
+    # evidence completeness, runway, stressed DSCR, and forecast support. The
+    # internal model score/grade stays lender-side until publication.
     signals = add_derived_features(pd.DataFrame([application])).iloc[0]
     st.info(
         "No lender rating has been published yet. This view helps prepare the application but does not expose "
@@ -769,33 +932,17 @@ def _render_application_readiness(application, prediction):
             hide_index=True,
         )
     with forecast_tab:
-        forecast = build_forecast_table(pd.DataFrame([application]))
-        display = forecast.rename(
-            columns={
-                "forecast_year": "Year",
-                "projected_revenue": "Projected revenue",
-                "projected_employees": "Projected employees",
-                "projected_free_cash_flow": "Projected FCF",
-                "projected_debt": "Projected debt",
-            }
-        )[
-            [
-                "Year",
-                "Projected revenue",
-                "Projected employees",
-                "Projected FCF",
-                "Projected debt",
-            ]
-        ].copy()
-        for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
-            display[column] = display[column].apply(format_currency)
-        display["Projected employees"] = display["Projected employees"].apply(
-            format_integer
+        st.dataframe(
+            _format_forecast_plan_display(application),
+            width="stretch",
+            hide_index=True,
         )
-        st.dataframe(display, width="stretch", hide_index=True)
 
 
 def _render_published_rating(application, lifecycle):
+    # Publication is the return leg of the SME -> analyst -> SME workflow. Only
+    # fields explicitly written by the lender publication form are shown here;
+    # internal notes and model-only details remain private.
     st.success("The lender has published a reviewed rating for this application.")
     published_cols = st.columns(4)
     published_cols[0].metric(
@@ -856,6 +1003,9 @@ def _status_label(value, strong=0.8, partial=0.5):
 
 
 def _render_post_publication_health_view(application, prediction, lifecycle):
+    # After publication, the SME can explore improvement scenarios. These what-if
+    # calculations are applicant planning aids and never overwrite the published
+    # lender rating or the submitted snapshot.
     signals = add_derived_features(pd.DataFrame([application])).iloc[0]
     published_grade = lifecycle.get("published_grade") or "Published"
     published_decision = lifecycle.get("published_decision") or "Reviewed"
@@ -1093,33 +1243,16 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
             hide_index=True,
         )
     with forecast_tab:
-        forecast = build_forecast_table(pd.DataFrame([application]))
-        display = forecast.rename(
-            columns={
-                "forecast_year": "Year",
-                "projected_revenue": "Projected revenue",
-                "projected_employees": "Projected employees",
-                "projected_free_cash_flow": "Projected FCF",
-                "projected_debt": "Projected debt",
-            }
-        )[
-            [
-                "Year",
-                "Projected revenue",
-                "Projected employees",
-                "Projected FCF",
-                "Projected debt",
-            ]
-        ].copy()
-        for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
-            display[column] = display[column].apply(format_currency)
-        display["Projected employees"] = display["Projected employees"].apply(
-            format_integer
+        st.dataframe(
+            _format_forecast_plan_display(application),
+            width="stretch",
+            hide_index=True,
         )
-        st.dataframe(display, width="stretch", hide_index=True)
 
 
 if company_mode:
+    # The SME branch is the only place where the intake is editable. Lender users
+    # visiting this page are redirected to the review tools at the bottom.
     st.title("Loan Intake Portal")
     st.caption(
         "Enter company data, manage evidence connections, review credit health, and submit the file to a lender."
@@ -1177,6 +1310,9 @@ if company_mode:
     selected_step = _render_sme_workflow_nav()
 
     if selected_step == SME_WORKFLOW_STEPS[0]:
+        # Step 1 captures applicant-entered company, loan, financial snapshot,
+        # working-capital, five-year-plan, and narrative context. Derived ratios
+        # are recalculated after save rather than edited directly.
         st.subheader("Company and loan application data")
         st.caption(
             "The SME enters and owns this information before sharing the application with a lender."
@@ -1246,6 +1382,8 @@ if company_mode:
                         rerun()
 
         with st.form("sme_company_data_form"):
+            # Streamlit forms delay writes until submit, so partially typed
+            # values do not mutate the draft or recalculated model preview.
             company_left, company_right = st.columns(2)
             with company_left:
                 company_name = st.text_input(
@@ -1429,43 +1567,56 @@ if company_mode:
                 )
 
             st.markdown("**Five-year plan**")
-            plan_left, plan_middle, plan_right, plan_fourth = st.columns(4)
-            with plan_left:
-                forecast_revenue_year5 = st.number_input(
-                    "Projected year 5 revenue (EUR)",
-                    min_value=0.0,
-                    max_value=2_000_000_000.0,
-                    value=_default_year5_revenue(application),
-                    step=50_000.0,
-                    help=_field_help("forecast_revenue_year5"),
-                )
-            with plan_middle:
-                forecast_employees_year5 = st.number_input(
-                    "Projected year 5 employees",
-                    min_value=1,
-                    max_value=100000,
-                    value=_default_year5_employees(application),
-                    step=1,
-                    help=_field_help("forecast_employees_year5"),
-                )
-            with plan_right:
-                forecast_fcf_year5 = st.number_input(
-                    "Projected year 5 free cash flow (EUR)",
-                    min_value=-100_000_000.0,
-                    max_value=1_000_000_000.0,
-                    value=_default_year5_free_cash_flow(application),
-                    step=25_000.0,
-                    help=_field_help("forecast_fcf_year5"),
-                )
-            with plan_fourth:
-                planned_debt_reduction_amount = st.number_input(
-                    "Planned debt paydown (EUR)",
-                    min_value=0.0,
-                    max_value=1_000_000_000.0,
-                    value=_default_debt_reduction_amount(application),
-                    step=25_000.0,
-                    help=_field_help("planned_debt_reduction_amount"),
-                )
+            forecast_plan_editor = st.data_editor(
+                pd.DataFrame(_forecast_plan_rows_for_editor(application)),
+                column_order=FORECAST_PLAN_COLUMNS,
+                column_config={
+                    "forecast_year": st.column_config.NumberColumn(
+                        "Year",
+                        help="Forecast year 1 through 5. This is fixed so the plan always covers the full horizon.",
+                        min_value=1,
+                        max_value=5,
+                        step=1,
+                        format="%d",
+                    ),
+                    "projected_revenue": st.column_config.NumberColumn(
+                        "Projected revenue (EUR)",
+                        help=_field_help("forecast_plan_rows"),
+                        min_value=0.0,
+                        step=50_000.0,
+                        format="%.2f",
+                    ),
+                    "projected_employees": st.column_config.NumberColumn(
+                        "Projected employees",
+                        help="Expected employee count for that forecast year.",
+                        min_value=1,
+                        step=1,
+                        format="%d",
+                    ),
+                    "projected_free_cash_flow": st.column_config.NumberColumn(
+                        "Projected free cash flow (EUR)",
+                        help="Expected annual free cash flow. This may be negative in early years.",
+                        step=25_000.0,
+                        format="%.2f",
+                    ),
+                    "projected_debt": st.column_config.NumberColumn(
+                        "Projected debt remaining (EUR)",
+                        help="Expected outstanding business debt at the end of that forecast year.",
+                        min_value=0.0,
+                        step=25_000.0,
+                        format="%.2f",
+                    ),
+                },
+                disabled=["forecast_year"],
+                hide_index=True,
+                num_rows="fixed",
+                width="stretch",
+                key=(
+                    f"sme_forecast_plan_editor_"
+                    f"{application.get('application_id', 'draft')}_"
+                    f"{application.get('sample_case_name', 'manual')}"
+                ),
+            )
 
             loan_purpose_context = st.text_area(
                 "What will the financing be used for?",
@@ -1512,73 +1663,86 @@ if company_mode:
             )
 
         if saved_company_data:
-            application.update(
-                {
-                    "company_name": company_name.strip(),
-                    "industry": _select_value(industry),
-                    "region": _select_value(region),
-                    "company_type": _select_value(company_type),
-                    "years_in_business": years_in_business,
-                    "employees": employees,
-                    "annual_revenue": annual_revenue,
-                    "existing_debt": existing_debt,
-                    "requested_amount": requested_amount,
-                    "term_months": term_months,
-                    "collateral_value": collateral_value,
-                    "collateral_ratio": _safe_ratio(collateral_value, requested_amount),
-                    "free_cash_flow": free_cash_flow,
-                    "monthly_burn_rate": monthly_burn_rate,
-                    "cash_balance_at_application": cash_balance,
-                    "cash_flow_to_revenue_ratio": free_cash_flow
-                    / max(annual_revenue, 1),
-                    "num_recent_loans": num_recent_loans,
-                    "current_assets": current_assets,
-                    "current_liabilities": current_liabilities,
-                    "liquid_assets": liquid_assets,
-                    "current_ratio": _safe_ratio(
-                        current_assets, current_liabilities
-                    ),
-                    "quick_ratio": _safe_ratio(liquid_assets, current_liabilities),
-                    "receivables_days": receivables_days,
-                    "payables_days": payables_days,
-                    "inventory_days": inventory_days,
-                    "expected_runway_months": _safe_ratio(
-                        cash_balance, monthly_burn_rate
-                    ),
-                    "forecast_revenue_year5": forecast_revenue_year5,
-                    "forecast_employees_year5": forecast_employees_year5,
-                    "forecast_fcf_year5": forecast_fcf_year5,
-                    "planned_debt_reduction_amount": planned_debt_reduction_amount,
-                    "forecast_revenue_cagr": _cagr_from_target(
-                        annual_revenue, forecast_revenue_year5
-                    ),
-                    "forecast_employee_cagr": _cagr_from_target(
-                        employees, forecast_employees_year5
-                    ),
-                    "forecast_fcf_margin_year5": forecast_fcf_year5
-                    / max(forecast_revenue_year5, 1),
-                    "planned_debt_reduction_pct": planned_debt_reduction_amount
-                    / max(existing_debt, 1),
-                    "loan_purpose_context": loan_purpose_context,
-                    "current_business_context": current_business_context,
-                    "future_business_context": future_business_context,
-                    "ceo_context": ceo_context,
-                    "cfo_context": cfo_context,
-                    "coo_context": coo_context,
-                    "company_data_updated_at": datetime.now().strftime(
-                        "%Y-%m-%d %H:%M"
-                    ),
-                }
+            forecast_plan_rows, forecast_plan_errors = validate_forecast_plan_rows(
+                forecast_plan_editor
             )
-            _store_company_application(application)
-            prediction = score_application(
-                st.session_state.model_bundle, application, model_key=selected_model_key
-            )
-            st.success(
-                "Company data saved. The credit-health preview has been recalculated."
-            )
+            if forecast_plan_errors:
+                st.warning(
+                    "Complete the five-year plan before saving: "
+                    + " ".join(forecast_plan_errors)
+                )
+            else:
+                # Persist both the applicant-facing raw amounts and the model-facing
+                # derived ratios. The lender later receives this exact saved snapshot.
+                application.update(
+                    {
+                        "company_name": company_name.strip(),
+                        "industry": _select_value(industry),
+                        "region": _select_value(region),
+                        "company_type": _select_value(company_type),
+                        "years_in_business": years_in_business,
+                        "employees": employees,
+                        "annual_revenue": annual_revenue,
+                        "existing_debt": existing_debt,
+                        "requested_amount": requested_amount,
+                        "term_months": term_months,
+                        "collateral_value": collateral_value,
+                        "collateral_ratio": _safe_ratio(
+                            collateral_value, requested_amount
+                        ),
+                        "free_cash_flow": free_cash_flow,
+                        "monthly_burn_rate": monthly_burn_rate,
+                        "cash_balance_at_application": cash_balance,
+                        "cash_flow_to_revenue_ratio": free_cash_flow
+                        / max(annual_revenue, 1),
+                        "num_recent_loans": num_recent_loans,
+                        "current_assets": current_assets,
+                        "current_liabilities": current_liabilities,
+                        "liquid_assets": liquid_assets,
+                        "current_ratio": _safe_ratio(
+                            current_assets, current_liabilities
+                        ),
+                        "quick_ratio": _safe_ratio(liquid_assets, current_liabilities),
+                        "receivables_days": receivables_days,
+                        "payables_days": payables_days,
+                        "inventory_days": inventory_days,
+                        "expected_runway_months": _safe_ratio(
+                            cash_balance, monthly_burn_rate
+                        ),
+                        "loan_purpose_context": loan_purpose_context,
+                        "current_business_context": current_business_context,
+                        "future_business_context": future_business_context,
+                        "ceo_context": ceo_context,
+                        "cfo_context": cfo_context,
+                        "coo_context": coo_context,
+                        "company_data_updated_at": datetime.now().strftime(
+                            "%Y-%m-%d %H:%M"
+                        ),
+                    }
+                )
+                forecast_metric_errors = _apply_forecast_plan_metrics(
+                    application, forecast_plan_rows
+                )
+                if forecast_metric_errors:
+                    st.warning(
+                        "Complete the five-year plan before saving: "
+                        + " ".join(forecast_metric_errors)
+                    )
+                else:
+                    _store_company_application(application)
+                    prediction = score_application(
+                        st.session_state.model_bundle,
+                        application,
+                        model_key=selected_model_key,
+                    )
+                    st.success(
+                        "Company data saved. The credit-health preview has been recalculated."
+                    )
 
     if selected_step == SME_WORKFLOW_STEPS[1]:
+        # Step 2 represents consented source coverage. Connections are simulated
+        # for the assignment, while uploads are real local files in the demo
+        # vault so validation and downloads can exercise real file metadata.
         st.subheader("Company-controlled data connections")
         st.caption(
             "These controls demonstrate consent and source selection. Production integrations would use authorised providers and secure OAuth flows."
@@ -1684,6 +1848,9 @@ if company_mode:
                         st.caption("No file loaded")
 
         if st.button("Save Uploaded Files", type="primary", width="stretch"):
+            # Uploaded files are saved before updating evidence flags. This
+            # keeps checkboxes and document counts aligned with what actually
+            # exists in the local vault.
             saved_count = 0
             duplicate_count = 0
             errors = []
@@ -1742,6 +1909,9 @@ if company_mode:
             st.caption(f"Last evidence refresh: {connection_status['refreshed_at']}")
 
     if selected_step == SME_WORKFLOW_STEPS[2]:
+        # Step 3 changes meaning after publication. Before publication it is a
+        # readiness view; after publication it becomes a rating/report and
+        # improvement-planning surface.
         st.subheader("Application status and credit health")
         lifecycle = _lifecycle_for(application["application_id"])
         if lifecycle.get("status") == "Rating published":
@@ -1751,9 +1921,15 @@ if company_mode:
             _render_application_readiness(application, prediction)
 
     if selected_step == SME_WORKFLOW_STEPS[3]:
+        # Step 4 is the only handoff to the lender. It copies the current draft,
+        # connection status, and document counts into submission history so later
+        # SME edits cannot silently change the analyst's review file.
         st.subheader("Submit the application to lender review")
         st.caption(
             "Submission shares the current company snapshot and connection statuses with the lender-side Personal Workspace."
+        )
+        submitted_plan_rows, submitted_plan_errors = validate_forecast_plan_rows(
+            application.get("forecast_plan_rows")
         )
         submission_rows = [
             {
@@ -1779,11 +1955,20 @@ if company_mode:
                 "Status": f"{connected_count}/4 connected",
             },
             {
+                "Check": "Five-year plan",
+                "Status": "Ready" if submitted_plan_rows else "Missing",
+            },
+            {
                 "Check": "Lender rating",
                 "Status": lifecycle.get("status", "Not submitted"),
             },
         ]
         st.dataframe(pd.DataFrame(submission_rows), width="stretch", hide_index=True)
+        if submitted_plan_errors:
+            st.warning(
+                "Please use the Company Data step to complete and save the five-year plan before submitting: "
+                + " ".join(submitted_plan_errors)
+            )
         submission_confirmed = st.checkbox(
             "I confirm that the company information is accurate for this demo submission.",
             key="sme_submission_confirmation",
@@ -1791,9 +1976,10 @@ if company_mode:
         if st.button(
             "Submit Application to Lender Review",
             width="stretch",
-            disabled=not submission_confirmed,
+            disabled=not submission_confirmed or bool(submitted_plan_errors),
             type="primary",
         ):
+            # The lender receives a snapshot, not a live reference, preserving the submitted version.
             submission = {
                 "submission_id": f"SUB-{len(st.session_state.sme_submission_history) + 1:03d}",
                 "application_id": application["application_id"],

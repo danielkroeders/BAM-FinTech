@@ -1,12 +1,20 @@
+# Fictional document pack generator for SME sample evidence cases.
 import csv
 import re
 from datetime import datetime
 from io import StringIO
 
+import pandas as pd
+
+from src.core.data_pipeline import build_forecast_table
 from src.utils.document_storage import DOCUMENT_CATEGORIES
 
+# Sample evidence files are intentionally CSV and fictional. They are realistic
+# enough for the validation workflow to detect categories/red flags, but they
+# never represent real companies or real financial statements.
 
 def _safe_filename(value):
+    # Generated file names use the company name but must remain safe for local storage.
     cleaned = re.sub(r"[^a-z0-9]+", "-", str(value or "sme-applicant").lower()).strip(
         "-"
     )
@@ -14,6 +22,8 @@ def _safe_filename(value):
 
 
 def _number(application, key, fallback=0.0):
+    # Sample documents are generated from whatever fields are currently present
+    # on the application, so missing or blank values need safe numeric fallbacks.
     try:
         return float(application.get(key, fallback) or fallback)
     except (TypeError, ValueError):
@@ -21,6 +31,7 @@ def _number(application, key, fallback=0.0):
 
 
 def _csv_bytes(rows, fieldnames):
+    # CSV examples are simple text files so users can inspect and download them without special tooling.
     buffer = StringIO()
     writer = csv.DictWriter(buffer, fieldnames=fieldnames)
     writer.writeheader()
@@ -34,6 +45,47 @@ def _month_label(year_month_index):
     return f"{year}-{month:02d}"
 
 
+def _annual_forecast_support_rows(application, loan_purpose, fraudulent=False):
+    # Forecast support mirrors the exact five annual rows the SME submits. That
+    # keeps sample evidence aligned with the intake table and avoids pretending
+    # that a monthly pipeline file is the same thing as a five-year plan.
+    forecast = build_forecast_table(pd.DataFrame([application]))
+    standard_notes = {
+        1: "Run-rate bridge from current revenue and signed near-term work.",
+        2: "Pipeline conversion and operating-cost assumptions reviewed by management.",
+        3: "Capacity, staffing, and gross-margin assumptions tied to the submitted plan.",
+        4: "Debt schedule assumes normal amortisation and no hidden refinancing.",
+        5: f"Long-range plan case supporting the loan purpose: {loan_purpose[:80]}",
+    }
+    fraudulent_notes = {
+        1: "Unsupported growth assumption introduced after bank statements; audit trail missing.",
+        2: "Unsigned LOI treated as contracted revenue; manual revenue adjustment not disclosed.",
+        3: "Pipeline revenue conflicts with tax turnover; related-party concentration not disclosed.",
+        4: "Debt paydown jumps despite negative bank cash flow; repayment source not reconciled.",
+        5: "Free-cash-flow improvement unsupported by contracts; late-stage spreadsheet override.",
+    }
+    notes = fraudulent_notes if fraudulent else standard_notes
+
+    rows = []
+    for record in forecast.to_dict("records"):
+        year = int(record["forecast_year"])
+        rows.append(
+            {
+                "forecast_year": year,
+                "projected_revenue_eur": round(float(record["projected_revenue"])),
+                "projected_employees": int(record["projected_employees"]),
+                "projected_free_cash_flow_eur": round(
+                    float(record["projected_free_cash_flow"])
+                ),
+                "projected_debt_eur": round(float(record["projected_debt"])),
+                "assumptions_evidence_note": notes.get(
+                    year, "Annual plan assumption supplied by the applicant."
+                ),
+            }
+        )
+    return rows
+
+
 def _fraudulent_document_rows(
     company,
     safe_company,
@@ -45,11 +97,12 @@ def _fraudulent_document_rows(
     free_cash_flow,
     monthly_burn_rate,
     base_monthly_revenue,
-    forecast_growth,
-    loan_purpose,
 ):
-    """Return fictional document rows with deliberate red flags for demo review."""
+    """Return fictional non-forecast document rows with deliberate red flags."""
 
+    # Fraudulent packs intentionally contradict tax, bank, KYB, and forecast evidence for lender validation.
+    # The contradictions use phrases from RED_FLAG_MARKERS in document_validation
+    # so the lender can demonstrate a mismatch/needs-review workflow.
     claimed_revenue = revenue * 1.48
     tax_reported_revenue = revenue * 0.56
     adjusted_cash_flow = max(abs(free_cash_flow) * 0.6, revenue * 0.06)
@@ -205,30 +258,7 @@ def _fraudulent_document_rows(
         },
     ]
 
-    forecast_rows = []
-    for offset in range(1, 7):
-        growth_factor = 1 + forecast_growth * (offset / 6)
-        expected_revenue = base_monthly_revenue * growth_factor * 1.9
-        contracted_revenue = expected_revenue * 0.18
-        operating_costs = max(monthly_burn_rate * 0.55, expected_revenue * 0.38)
-        debt_service = requested_amount / max(12, offset * 10)
-        forecast_rows.append(
-            {
-                "forecast_month": _month_label(
-                    generated_on.year * 12 + generated_on.month + offset
-                ),
-                "contracted_revenue_eur": round(contracted_revenue),
-                "pipeline_revenue_eur": round(expected_revenue - contracted_revenue),
-                "operating_costs_eur": round(operating_costs),
-                "planned_debt_service_eur": round(debt_service),
-                "evidence_note": (
-                    "Unsupported growth assumption; unsigned LOI treated as contracted revenue. "
-                    f"Purpose: {loan_purpose[:70]}"
-                ),
-            }
-        )
-
-    return financial_rows, bank_rows, tax_rows, kyb_rows, forecast_rows
+    return financial_rows, bank_rows, tax_rows, kyb_rows
 
 
 def build_document_examples(application, generated_on=None):
@@ -239,6 +269,9 @@ def build_document_examples(application, generated_on=None):
     """
 
     generated_on = generated_on or datetime.now()
+    # The sample pack is derived from the active application so filenames and values match the scenario.
+    # Standard packs are mostly coherent; fraudulent packs below replace the row
+    # contents with deliberately inconsistent evidence.
     company = (
         str(application.get("company_name") or "SME Applicant").strip()
         or "SME Applicant"
@@ -252,7 +285,6 @@ def build_document_examples(application, generated_on=None):
     monthly_burn_rate = max(
         _number(application, "monthly_burn_rate", revenue / 18), 1.0
     )
-    forecast_growth = _number(application, "forecast_revenue_cagr", 0.12)
     base_monthly_revenue = revenue / 12
     loan_purpose = str(
         application.get("loan_purpose_context")
@@ -402,27 +434,7 @@ def build_document_examples(application, generated_on=None):
         },
     ]
 
-    forecast_rows = []
-    for offset in range(1, 7):
-        growth_factor = 1 + forecast_growth * (offset / 12)
-        expected_revenue = base_monthly_revenue * growth_factor
-        contracted_revenue = expected_revenue * 0.62
-        operating_costs = max(monthly_burn_rate, expected_revenue * 0.72)
-        debt_service = (
-            requested_amount / max(_number(application, "term_months", 60), 1) * 1.08
-        )
-        forecast_rows.append(
-            {
-                "forecast_month": _month_label(
-                    generated_on.year * 12 + generated_on.month + offset
-                ),
-                "contracted_revenue_eur": round(contracted_revenue),
-                "pipeline_revenue_eur": round(expected_revenue - contracted_revenue),
-                "operating_costs_eur": round(operating_costs),
-                "planned_debt_service_eur": round(debt_service),
-                "evidence_note": loan_purpose[:120],
-            }
-        )
+    forecast_rows = _annual_forecast_support_rows(application, loan_purpose)
 
     file_variant = "example"
     descriptions = {
@@ -430,7 +442,7 @@ def build_document_examples(application, generated_on=None):
         "bank_statements": "Six months of inflows, outflows, balances, overdraft days, and counterparties.",
         "tax_returns": "Filed turnover, taxable profit, tax paid, and filing status.",
         "ownership_kyb": "Registry, director, UBO, shareholder, and screening evidence.",
-        "forecast_support": "Monthly revenue forecast, committed pipeline, costs, debt service, and assumptions.",
+        "forecast_support": "Annual five-year plan rows, free-cash-flow assumptions, debt path, and evidence notes.",
     }
     if str(application.get("sample_document_profile", "")).lower() == "fraudulent":
         (
@@ -438,7 +450,6 @@ def build_document_examples(application, generated_on=None):
             bank_rows,
             tax_rows,
             kyb_rows,
-            forecast_rows,
         ) = _fraudulent_document_rows(
             company,
             safe_company,
@@ -450,8 +461,9 @@ def build_document_examples(application, generated_on=None):
             free_cash_flow,
             monthly_burn_rate,
             base_monthly_revenue,
-            forecast_growth,
-            loan_purpose,
+        )
+        forecast_rows = _annual_forecast_support_rows(
+            application, loan_purpose, fraudulent=True
         )
         file_variant = "flagged"
         descriptions = {
@@ -459,7 +471,7 @@ def build_document_examples(application, generated_on=None):
             "bank_statements": "Bank activity with round-number transfers, overdrafts, and related-party counterparties.",
             "tax_returns": "Tax summary that conflicts with the submitted financial statements.",
             "ownership_kyb": "KYB evidence with UBO, registry, and screening inconsistencies.",
-            "forecast_support": "Forecast support with unsupported growth and unsigned pipeline assumptions.",
+            "forecast_support": "Annual forecast support with unsupported jumps, debt contradictions, and unsigned assumptions.",
         }
 
     generated_date = generated_on.strftime("%Y-%m-%d")
@@ -522,12 +534,12 @@ def build_document_examples(application, generated_on=None):
             "content": _csv_bytes(
                 forecast_rows,
                 [
-                    "forecast_month",
-                    "contracted_revenue_eur",
-                    "pipeline_revenue_eur",
-                    "operating_costs_eur",
-                    "planned_debt_service_eur",
-                    "evidence_note",
+                    "forecast_year",
+                    "projected_revenue_eur",
+                    "projected_employees",
+                    "projected_free_cash_flow_eur",
+                    "projected_debt_eur",
+                    "assumptions_evidence_note",
                 ],
             ),
             "generated_date": generated_date,

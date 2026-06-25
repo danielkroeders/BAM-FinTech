@@ -1,3 +1,4 @@
+# Shared Streamlit UI components for login, sidebar, theming, and session controls.
 import base64
 from html import escape
 from pathlib import Path
@@ -73,6 +74,8 @@ SME_PROFILE = {
 }
 
 
+# Navigation is role-scoped. Lender users get credit/risk pages; SME users get
+# only the applicant portal and applicant-safe help pages.
 NAV_SECTIONS = [
     (
         "Credit Work",
@@ -141,6 +144,8 @@ DEMO_PROMPT_CHECKBOX_KEY = "demo_prompt_remember_checkbox"
 
 
 def _streamlit_theme_type():
+    # Theme is controlled through Streamlit settings. The app reads that setting
+    # and emits CSS variables rather than maintaining a separate dark-mode toggle.
     theme = getattr(getattr(st, "context", None), "theme", {}) or {}
     if isinstance(theme, dict):
         theme_type = theme.get("type") or theme.get("base") or ""
@@ -165,9 +170,13 @@ def is_dark_mode():
 
 
 def get_profile():
+    # Profiles are demo identities, not real auth records. They are kept in
+    # session state so fake SSO, sidebar labels, support routing, and integration
+    # toggles all see the same current user.
     saved_profile = st.session_state.get("user_profile", {})
     defaults = SME_PROFILE if saved_profile.get("account_type") == "sme" else PROFILE
     profile = {**defaults, **saved_profile}
+    # Migrate older saved demo profiles to current YourBank/SME labels without forcing users to clear state.
     previous_lender_bank = "Rabo" + "bank"
     previous_lender_email = "alice.cooper@" + "rabo" + "bank.nl"
     previous_sme_email = "finance@" + "a2m" + "logistics.eu"
@@ -202,6 +211,9 @@ def get_profile():
 
 
 def save_profile(profile):
+    # Save a normalized profile back to session state and demo persistence. The
+    # function keeps legacy id/user_id fields aligned because older pages still
+    # read both during demos and tests.
     defaults = SME_PROFILE if profile.get("account_type") == "sme" else PROFILE
     updated_profile = {**defaults, **profile}
     if updated_profile.get("user_type") == "Internal analyst":
@@ -214,6 +226,7 @@ def save_profile(profile):
     }
     updated_profile["slack_connected"] = updated_profile["integrations"]["slack"]
     updated_profile["teams_connected"] = updated_profile["integrations"]["teams"]
+    # Keep old and new profile identifiers in sync because several pages still read both names.
     updated_profile["user_id"] = updated_profile.get("user_id") or updated_profile.get(
         "id", PROFILE["id"]
     )
@@ -261,6 +274,9 @@ def _clear_scored_workspace_case():
 
 
 def open_application_in_workspace(application, source="Workspace"):
+    # Cross-page opener used by Home, Risk Dashboard, and Operations Desk. It
+    # copies the selected application into session state, clears any prior score,
+    # and then navigates to Personal Workspace when the Streamlit API allows it.
     st.session_state.active_queue_application = dict(application)
     st.session_state.active_intake_source = source
     st.session_state.loan_example_scenario = "Custom application"
@@ -286,6 +302,8 @@ def _rerun():
 
 @st.cache_data(show_spinner=False)
 def _asset_data_uri(relative_path):
+    # Login assets are embedded as data URIs so Streamlit can render the image
+    # without a separate static-file server.
     repo_root = Path(__file__).resolve().parents[2]
     relative_path = Path(str(relative_path))
     candidate_paths = [repo_root / relative_path]
@@ -306,6 +324,8 @@ def _asset_data_uri(relative_path):
 
 
 def _render_global_theme():
+    # Global CSS establishes the app's design tokens and common Streamlit widget
+    # styling. Individual pages add only page-specific CSS on top of these tokens.
     dark = _is_dark_mode()
     tokens = {
         "bg": "#0b1220" if dark else "#f8fafc",
@@ -484,6 +504,9 @@ def _render_global_theme():
 
 
 def _render_login_screen():
+    # The login screen is a demo gate. Password and fake SSO paths both move to
+    # the same 2FA stage so the presentation can show a realistic but local-only
+    # authentication flow.
     login_stage = st.session_state.get("login_stage", "credentials")
     hero_image = _asset_data_uri("data/assets/login-risk-hero.png")
     hero_image_html = (
@@ -719,6 +742,7 @@ def _render_login_screen():
                 submitted = st.form_submit_button("Continue", width="stretch")
             if submitted or sso_submitted:
                 if username.strip() and (password or sso_submitted):
+                    # Both password and fake SSO converge on the same 2FA step for a consistent demo flow.
                     st.session_state.remember_me = remember_me
                     st.session_state.pending_login_account_type = account_type
                     st.session_state.login_stage = "2fa"
@@ -728,6 +752,9 @@ def _render_login_screen():
 
 
 def _complete_login():
+    # Complete login after the demo 2FA step. This chooses the role profile and
+    # stores an optional destination so SME users start directly in the intake
+    # portal while lender users land on Home.
     account_type = st.session_state.get("pending_login_account_type", "sme")
     login_profile = SME_PROFILE if account_type == "sme" else PROFILE
     transition = st.empty()
@@ -750,6 +777,7 @@ def _complete_login():
     st.session_state.authenticated = True
     st.session_state.login_transition = True
     st.session_state.login_destination = (
+        # SME users land directly in the intake portal; lender users remain on Home.
         "pages/6_SME_Credit_Health.py" if account_type == "sme" else None
     )
     st.session_state.login_stage = "credentials"
@@ -760,6 +788,9 @@ def _complete_login():
 
 
 def _render_login_transition():
+    # Show a one-time welcome banner after authentication. It is stored in
+    # session state rather than query params so it disappears naturally after one
+    # rerun.
     if not st.session_state.get("login_transition"):
         return
     st.session_state.login_transition = False
@@ -806,6 +837,8 @@ def _render_login_transition():
 
 
 def _save_demo_prompt_choice(choice):
+    # Tutorial prompt choices can be remembered across restored demo sessions.
+    # Persisting here keeps the dialog from reappearing after a refresh.
     remember_choice = bool(st.session_state.get(DEMO_PROMPT_CHECKBOX_KEY, False))
     st.session_state[DEMO_PROMPT_CHOICE_KEY] = choice
     st.session_state[DEMO_PROMPT_REMEMBERED_KEY] = remember_choice
@@ -856,6 +889,7 @@ if hasattr(st, "dialog"):
 def _render_demo_prompt():
     if DEMO_PROMPT_CHECKBOX_KEY not in st.session_state:
         st.session_state[DEMO_PROMPT_CHECKBOX_KEY] = False
+    # Remembered tutorial choices suppress the welcome prompt on future restored sessions.
     if st.session_state.get(DEMO_PROMPT_REMEMBERED_KEY, False):
         return
     if st.session_state.get(DEMO_PROMPT_HANDLED_KEY, False):
@@ -870,6 +904,9 @@ def _render_demo_prompt():
 
 
 def _render_session_footer():
+    # The footer is sticky at the bottom of the sidebar so Sign Out and Clear
+    # Session are always reachable. Clear Session is protected because it deletes
+    # local uploads and resets the full demo workflow.
     with st.container(key="sidebar_session_footer"):
         st.markdown(
             '<div class="sidebar-section-label">Session</div>',
@@ -894,6 +931,7 @@ def _render_session_footer():
                 st.session_state.clear_demo_state_requested = True
                 _rerun()
         else:
+            # The destructive reset uses a two-step guard because it deletes session state and local files.
             st.warning(
                 "Are you sure you want to clear this session? This will remove saved uploads and sample evidence files, "
                 "and reset SME intakes, lender reviews, AI outputs, validation results, support tickets, and login state.",
@@ -921,6 +959,9 @@ def _render_session_footer():
 
 
 def render_sidebar(suppress_demo_prompt=False):
+    # Every page calls render_sidebar after bootstrap_state. This function owns
+    # authentication gating, one-time role redirects, tutorial prompt display,
+    # navigation links, profile card, and session controls.
     _render_global_theme()
     if not st.session_state.get("authenticated"):
         _render_login_screen()

@@ -1,3 +1,6 @@
+# Acronym and metric definitions used by role-aware help pages.
+# Keep lender and SME terms separate here so pages can switch role by calling a
+# helper instead of duplicating filtering logic in each view.
 LENDER_ACRONYM_ROWS = [
     {
         "Term": "DSCR",
@@ -119,6 +122,8 @@ SME_ACRONYM_ROWS = [
 ]
 
 LENDER_METRIC_ROWS = [
+    # Lender metrics may reference internal score, grade, validation, and model
+    # governance concepts because they are not shown to SME users.
     {
         "Metric": "Application risk score",
         "How to read it": "Model-estimated risk on a 0-100% scale. Higher means the file looks riskier relative to the synthetic portfolio; it is decision support, not an automatic rejection.",
@@ -152,6 +157,8 @@ LENDER_METRIC_ROWS = [
 ]
 
 SME_METRIC_ROWS = [
+    # SME metrics stay applicant-safe: they explain readiness, published rating,
+    # and what-if planning without exposing internal underwriting details.
     {
         "Metric": "Application readiness",
         "How to read it": "Shows whether the company profile, documents, and simulated connections are ready for lender review. It is not a lender decision.",
@@ -181,8 +188,14 @@ SME_METRIC_ROWS = [
 
 
 def acronym_rows(sme_mode=False):
+    # Role switching keeps applicant-facing help separate from internal lender terminology.
+    # Returning the raw list lets pages decide whether to render as dataframe,
+    # table, or custom cards.
     return SME_ACRONYM_ROWS if sme_mode else LENDER_ACRONYM_ROWS
 
 
 def metric_rows(sme_mode=False):
+    # Metric explanations follow the same role boundary as acronym definitions.
+    # This avoids exposing lender-only score/validation concepts in the SME
+    # portal while still sharing one source file.
     return SME_METRIC_ROWS if sme_mode else LENDER_METRIC_ROWS

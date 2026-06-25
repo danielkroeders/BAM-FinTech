@@ -1,3 +1,4 @@
+# Streamlit components for reviewing uploaded evidence and validation results.
 import streamlit as st
 
 from src.features.document_validation import (
@@ -8,14 +9,20 @@ from src.features.document_validation import (
 from src.utils.demo_persistence import persist_demo_state
 from src.utils.document_storage import list_documents
 
+# This module renders validation controls while src/features/document_validation.py
+# performs classification. Keeping UI and validation logic separate lets both
+# SME preview and lender verification reuse the same engine with different scopes.
 
 def _validation_store():
     if "document_validation_results" not in st.session_state:
+        # Store validation by application and scope so SME preview checks do not overwrite lender checks.
         st.session_state.document_validation_results = {}
     return st.session_state.document_validation_results
 
 
 def latest_document_validation_run(application_id, scope):
+    # Scope prevents an SME preview validation from overwriting the lender's
+    # formal verification run for the same application.
     return _validation_store().get(str(application_id), {}).get(scope)
 
 
@@ -25,10 +32,14 @@ def _store_document_validation_run(application_id, scope, run):
     application_runs = store.setdefault(application_key, {})
     application_runs[scope] = run
     st.session_state.document_validation_results = store
+    # Persist immediately because validation can be used later in the lender review lifecycle.
     persist_demo_state()
 
 
 def _provider_inputs(scope, application_id):
+    # Provider choice is namespaced by scope/application so repeated panels do not share widgets.
+    # This is especially important when a page renders both preview and formal
+    # validation panels during the same Streamlit session.
     provider = st.selectbox(
         "Validation mode",
         DOCUMENT_VALIDATION_PROVIDERS,
@@ -81,6 +92,8 @@ def _provider_inputs(scope, application_id):
 
 
 def _render_validation_run(run):
+    # Render both the summary and row-level findings from a stored validation
+    # run. This function is display-only; it never revalidates files.
     if not run:
         return
     summary = run.get("summary", {})
@@ -127,6 +140,8 @@ def render_document_validation_panel(
     description,
     button_label,
 ):
+    # Render a provider selector plus a run button for one application/scope. The
+    # caller decides whether this is an applicant preview or lender verification.
     documents = list_documents(session_id, application_id)
     st.markdown(f"**{title}**")
     st.caption(description)
@@ -151,6 +166,7 @@ def render_document_validation_panel(
     new_run = None
     if run_clicked:
         if provider == "Local server":
+            # Local validation uses session credentials only; saving profiles is handled on LLM Integration.
             st.session_state.local_llm_base_url = (local_base_url or "").strip()
             st.session_state.local_llm_model = (model or "").strip()
             st.session_state.local_llm_api_key = (local_api_key or "").strip()

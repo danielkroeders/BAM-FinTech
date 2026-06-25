@@ -1,4 +1,9 @@
+# Shared field definitions and help text for the SME intake and lender review UI.
+# This file is intentionally copy-heavy: it is the central vocabulary layer for
+# the app. Keeping explanations here prevents SME forms, lender tables, support
+# pages, tutorials, and glossary pages from drifting apart.
 FIELD_HELP = {
+    # These labels appear as hover help in SME intake forms and lender read-only views.
     "company_name": "Applicant company name used for the session case record and downloadable summary.",
     "industry": "Primary business sector. Sector patterns can affect fraud exposure and cash-flow volatility.",
     "region": "Applicant operating region. Regional context contributes to the risk profile.",
@@ -21,14 +26,15 @@ FIELD_HELP = {
     "late_payment_ratio": "Share of observed payments that were late in the transaction profile.",
     "suspicious_transfer_ratio": "Share of transfers flagged as unusual in the transaction profile.",
     "country_risk_score": "Jurisdictional risk score from 0 to 1.",
-    "forecast_revenue_cagr": "Expected average annual revenue growth over the next five years.",
-    "forecast_revenue_year5": "Projected annual revenue in year five of the plan.",
-    "forecast_employee_cagr": "Expected average annual employee growth over the next five years.",
-    "forecast_employees_year5": "Projected employee count in year five of the plan.",
-    "forecast_fcf_margin_year5": "Target free-cash-flow margin by year five.",
-    "forecast_fcf_year5": "Projected free cash flow in year five of the plan.",
-    "planned_debt_reduction_pct": "Planned reduction in existing debt over the five-year forecast horizon.",
-    "planned_debt_reduction_amount": "Amount of existing business debt the company plans to repay over the forecast horizon.",
+    "forecast_plan_rows": "Submitted annual five-year plan. Enter projected revenue, employees, free cash flow, and remaining debt for each year.",
+    "forecast_revenue_cagr": "Model-facing average annual revenue growth derived from the submitted five-year plan.",
+    "forecast_revenue_year5": "Model-facing year-five revenue derived from the submitted five-year plan.",
+    "forecast_employee_cagr": "Model-facing average annual employee growth derived from the submitted five-year plan.",
+    "forecast_employees_year5": "Model-facing year-five employee count derived from the submitted five-year plan.",
+    "forecast_fcf_margin_year5": "Model-facing year-five free-cash-flow margin derived from the submitted five-year plan.",
+    "forecast_fcf_year5": "Model-facing year-five free cash flow derived from the submitted five-year plan.",
+    "planned_debt_reduction_pct": "Model-facing planned reduction in existing debt derived from the submitted five-year plan.",
+    "planned_debt_reduction_amount": "Model-facing amount of existing business debt repaid by year five of the submitted plan.",
     "current_assets": "Short-term assets such as cash, receivables, and inventory.",
     "current_liabilities": "Short-term obligations due within the next 12 months.",
     "liquid_assets": "Cash and near-cash assets available without relying on inventory sales.",
@@ -54,6 +60,7 @@ FIELD_HELP = {
 }
 
 WORKSPACE_HELP = {
+    # Workspace help text explains operational metrics without implying an automatic credit decision.
     "assigned_cases": "Applications currently assigned to Ms. Cooper in the demo work queue. This is a workload indicator, not a risk signal.",
     "same_day_sla": "Assigned applications marked for same-day review. A higher count means the analyst should triage time-sensitive files first.",
     "due_this_week": "Assigned applications due this week after same-day items. This helps separate operational urgency from credit risk.",
@@ -69,6 +76,7 @@ WORKSPACE_HELP = {
 }
 
 METRIC_EXPLANATIONS = {
+    # Metric explanations are written for table interpretation columns in Personal Workspace.
     "Interest rate": "Annual pricing used to estimate interest expense and debt-service burden. A higher rate can make an otherwise acceptable borrower look stressed because payments become harder to cover.",
     "Annual interest": "Estimated yearly interest cost on the requested facility. Read it together with free cash flow: if interest consumes too much cash generation, repayment resilience weakens.",
     "Annual debt service": "Estimated total yearly principal and interest payments. This is the denominator used in DSCR-style repayment-capacity checks.",
@@ -98,6 +106,9 @@ METRIC_EXPLANATIONS = {
 }
 
 SIGNAL_INTERPRETATIONS = {
+    # These interpretations are shown beside model/feature tables in the lender
+    # workspace. They explain how to read the value without claiming that any
+    # single signal proves fraud or creditworthiness.
     "Debt / revenue": "Lower is generally easier to support. A high ratio means existing obligations are large relative to the company’s operating scale, so new lending may need tighter covenants or a lower amount.",
     "Request / revenue": "This compares the requested exposure with annual revenue. A high value does not automatically reject a case, but it means the loan is material enough to require stronger evidence and repayment rationale.",
     "Loan velocity": "Higher values indicate many recent loans or borrowing events. That can be normal for some firms, but it can also signal credit stacking or funding stress.",
@@ -126,6 +137,7 @@ SIGNAL_INTERPRETATIONS = {
 }
 
 METRIC_CATALOG = {
+    # Human labels map to stored metric keys returned by the model bundle.
     "Accuracy": "accuracy",
     "Balanced Accuracy": "balanced_accuracy",
     "Precision": "precision",
@@ -170,11 +182,15 @@ METRIC_HELP = {
 PROVIDERS = ["Deterministic", "OpenAI API", "Local server"]
 
 MODEL_DESCRIPTIONS = {
+    # Description text is shown beside the deterministic baseline in LLM Integration.
     "random_forest": "Tree-based ensemble used to produce the baseline application risk score.",
 }
 
 ALLOWED_DOCUMENT_TYPES = ["pdf", "csv", "xlsx", "xls", "docx", "png", "jpg", "jpeg"]
 
+# Profile and integration constants drive the simulated workspace experience.
+# They are not authentication or authorization controls; login/profile state in
+# src/ui/components.py decides which role-specific pages are visible.
 PROFILE_TYPES = [
     "Team Member",
     "Team Manager",
@@ -197,6 +213,9 @@ CHANNELS = ["Slack", "Teams", "Email"]
 EMAIL_APPS = ["Outlook", "Gmail"]
 
 INTEGRATION_CATALOG = [
+    # These integrations are demo switches. They let pages change labels and
+    # preferred-channel validation without connecting to Slack, Teams, Drive, or
+    # any real third-party service.
     {
         "key": "slack",
         "name": "Slack",
@@ -256,6 +275,9 @@ INTEGRATION_CATALOG = [
 ]
 
 DIMENSIONS = [
+    # DIMENSIONS describes applicant-provided or seed-provided fields. About and
+    # tutorial pages use this table to explain what enters the model before any
+    # derived risk signals are calculated.
     {
         "Dimension": "Industry",
         "Definition": "The applicant company's primary business sector.",
@@ -404,6 +426,9 @@ DIMENSIONS = [
 ]
 
 DERIVED_DIMENSIONS = [
+    # Derived dimensions are calculated inside src/core/data_pipeline.py. They
+    # should stay aligned with DERIVED_NUMERIC_COLUMNS so documentation and code
+    # describe the same signal set.
     {
         "Signal": "Debt-to-revenue ratio",
         "Definition": "Existing debt divided by annual revenue.",

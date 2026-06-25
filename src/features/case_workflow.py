@@ -1,3 +1,4 @@
+# Review, memo, publication, and audit helpers for the analyst workflow.
 from datetime import datetime
 
 import numpy as np
@@ -16,7 +17,14 @@ from src.utils.formatting import (
 )
 from src.core.modeling import decision_from_grade, grade_from_probability
 
+# Case workflow contains reusable review artifacts: seeded demo scenarios,
+# analyst action options, downloadable/memo summaries, and similar-case lookup.
+# It does not own Streamlit session state; pages decide when to persist outputs.
+
 DEMO_SCENARIOS = {
+    # Scenario dictionaries are intentionally complete enough to exercise the
+    # detailed SME intake form, derived model features, sample documents, and
+    # publication workflow without external data.
     "Custom application": None,
     "A2M Logistics Loan": {
         "industry": "Logistics",
@@ -295,6 +303,9 @@ def _yes_no(value):
 
 
 def case_summary(application, prediction, explanation, review=None):
+    # Build a plain-text credit memo from the same state shown on screen. Keeping
+    # this as text makes it easy to download, paste into docs, or compare during
+    # tests without relying on UI rendering.
     derived = add_derived_features(pd.DataFrame([application])).iloc[0]
     flags = prediction.get("flags") or []
     flag_lines = (
@@ -351,6 +362,7 @@ def case_summary(application, prediction, explanation, review=None):
         "Explanation:",
         explanation,
     ]
+    # Keep applicant narrative and executive notes separate so reviewers can distinguish source context.
     applicant_context_lines = [
         ("Loan purpose", application.get("loan_purpose_context", "")),
         ("Current business context", application.get("current_business_context", "")),
@@ -389,6 +401,9 @@ def case_summary(application, prediction, explanation, review=None):
 def similar_applications(
     model_bundle, applications, application, limit=5, model_key=None
 ):
+    # Similar-case search is local and explanatory. It scores the synthetic
+    # portfolio, then ranks rows by standardized feature distance plus simple
+    # categorical mismatches so analysts can compare like with like.
     selected_key = model_bundle._key(model_key)
     pipeline = model_bundle.pipeline_for(selected_key)
     portfolio = add_derived_features(applications)
@@ -410,10 +425,12 @@ def similar_applications(
         }
     )
     scale = numeric.std().replace(0, 1)
+    # Standardize numeric distance so high-value amounts do not overwhelm ratios and risk scores.
     numeric_distance = (((numeric - center) / scale) ** 2).sum(axis=1) ** 0.5
 
     category_distance = np.zeros(len(portfolio))
     for column in CATEGORICAL_COLUMNS:
+        # Categorical mismatches act as a simple penalty beside numeric similarity.
         category_distance += (portfolio[column] != application.get(column)).astype(
             float
         )

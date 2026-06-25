@@ -1,3 +1,4 @@
+# Derived workbench tables, queues, scenarios, and analyst decision artifacts.
 from datetime import datetime
 
 import pandas as pd
@@ -25,6 +26,9 @@ ALICE_SAME_DAY_TASKS = 2
 ALICE_THIS_WEEK_TASKS = 5
 BANK_BASE_INTEREST_RATE = 0.065
 
+# Workbench helpers turn raw model outputs into lender-operational artifacts:
+# queues, suggested terms, monitoring signals, driver groups, timelines, and
+# memo text. They should not mutate application intake data.
 
 def _number(value, default=0.0):
     try:
@@ -34,12 +38,16 @@ def _number(value, default=0.0):
 
 
 def missing_documents(application):
+    # Return human labels, not field names, because this is shown directly in
+    # queue status and review condition copy.
     return [
         label for key, label in DOCUMENT_FIELDS if _number(application.get(key)) < 0.5
     ]
 
 
 def queue_status(row):
+    # Queue status combines model grade and evidence readiness into operational
+    # work categories. It is not the final credit decision.
     grade = row.get("grade", "")
     if grade in {"E", "F"}:
         return "Compliance review"
@@ -57,6 +65,9 @@ def _take_indexes(frame, count, used_indexes=None):
 
 
 def _assign_alice_workload(queue):
+    # The demo needs a stable analyst workload for Ms. Cooper. This function
+    # deliberately assigns a mix of same-day, this-week, and next-week work so
+    # Home and Operations Desk always have something realistic to show.
     used_indexes = set()
     same_day_indexes = _take_indexes(
         queue[queue["sla"].eq("Same day")], ALICE_SAME_DAY_TASKS, used_indexes
@@ -146,6 +157,7 @@ def _model_cache_key(model_bundle):
 
 @st.cache_data(show_spinner=False)
 def _cached_scored_portfolio(_model_bundle, applications, model_key, model_cache_key):
+    # Queue construction reuses portfolio scores because several pages need the same ranked workboard.
     return score_portfolio(_model_bundle, applications, model_key=model_key)
 
 
@@ -157,6 +169,7 @@ def build_application_queue(model_bundle, applications, limit=None, model_key=No
         _model_cache_key(model_bundle),
     ).copy()
     queue["queue_status"] = queue.apply(queue_status, axis=1)
+    # SLA and priority are operational overlays on top of the risk model, not extra model outputs.
     queue["missing_documents"] = queue.apply(
         lambda row: len(missing_documents(row)), axis=1
     )
@@ -193,6 +206,9 @@ def build_application_queue(model_bundle, applications, limit=None, model_key=No
 
 
 def recommended_loan_terms(application, prediction, signals):
+    # Recommended terms are lender-side suggestions. They use model grade and
+    # repayment capacity to propose pricing/structure, but the analyst remains
+    # responsible for the final offer or rejection.
     grade = prediction.get("grade", "C")
     requested_amount = _number(application.get("requested_amount"))
     current_term = int(_number(application.get("term_months"), 36))
@@ -202,6 +218,7 @@ def recommended_loan_terms(application, prediction, signals):
     amount_factor = {"A": 1.0, "B": 0.95, "C": 0.8, "D": 0.6, "E": 0.0, "F": 0.0}.get(
         grade, 0.75
     )
+    # DSCR can cap the amount recommendation even when the model grade is otherwise acceptable.
     if dscr < 1.0:
         amount_factor = min(amount_factor, max(0.25, dscr / 1.4))
     proposed_amount = round(requested_amount * amount_factor / 1000) * 1000
@@ -279,6 +296,9 @@ def recommended_loan_terms(application, prediction, signals):
 
 
 def portfolio_monitoring_preview(application, prediction, signals):
+    # Monitoring preview is a directional post-origination view. It does not
+    # change the score; it translates today's signals into a plausible review
+    # cadence if the loan were approved.
     probability = _number(prediction.get("fraud_probability"))
     cash_pressure = _number(signals.get("cash_flow_pressure_score"))
     debt_stress = _number(signals.get("debt_service_stress_score"))
@@ -339,6 +359,9 @@ def portfolio_monitoring_preview(application, prediction, signals):
 
 
 def grouped_risk_drivers(application, signals):
+    # Group low-level derived features into analyst-friendly themes. These rows
+    # power the Risk Analysis tab and are easier to understand than dozens of
+    # individual model feature names.
     return [
         {
             "Driver group": "Cash flow",
@@ -410,6 +433,8 @@ def grouped_risk_drivers(application, signals):
 
 
 def data_source_badges(application, signals):
+    # Badges are short visual status chips for the active file. They summarize
+    # evidence coverage without replacing the detailed data-source table.
     statuses = [
         (
             "PSD2/Open Banking",
@@ -468,6 +493,8 @@ def data_source_badges(application, signals):
 
 
 def decision_timeline(application, prediction, review=None):
+    # Timeline rows make the case lifecycle explicit in the credit memo and
+    # decision package: intake, data readiness, model score, analyst review.
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     rows = [
         {
@@ -512,6 +539,7 @@ def decision_timeline(application, prediction, review=None):
 
 def model_confidence_rows(metrics, prediction, signals):
     probability = _number(prediction.get("fraud_probability"))
+    # Scores close to an A-F boundary receive less confidence because small evidence changes can move the grade.
     nearest_boundary = min(
         abs(probability - 0.15),
         abs(probability - 0.28),
@@ -557,6 +585,9 @@ def model_confidence_rows(metrics, prediction, signals):
 def credit_memo(
     application, prediction, explanation, review, terms, monitoring, timeline
 ):
+    # The memo is a Markdown artifact assembled from already-reviewed state.
+    # Keeping it plain text makes it easy to download, inspect in tests, and
+    # paste into the pitch/demo narrative.
     lines = [
         "# CredRisk.AI Credit Memo",
         f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}",

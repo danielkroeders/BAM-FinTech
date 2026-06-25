@@ -627,28 +627,28 @@
     <section class="deck" id="deck">
       <article class="slide hero active">
         <div>
-          <p class="eyebrow">Pre-demo investor pitch</p>
+          <p class="eyebrow">Investor pitch and live demo bridge</p>
           <h1>CredRisk.AI</h1>
-          <p class="subtitle">An underwriter workbench that helps SME lenders move from scattered review to explainable, human-controlled credit decisions.</p>
+          <p class="subtitle">A Loan Intake Portal and underwriter workbench for the full SME to analyst to SME credit journey.</p>
           <div class="tag-list" aria-label="Product themes">
-            <span class="tag">SME lending</span>
-            <span class="tag">Risk scoring</span>
-            <span class="tag">AI second review</span>
-            <span class="tag">Audit trail</span>
+            <span class="tag">SME-owned intake</span>
+            <span class="tag">Random Forest scoring</span>
+            <span class="tag">AI output gate</span>
+            <span class="tag">Published SME outcome</span>
           </div>
         </div>
         <aside class="hero-panel" aria-label="Deck highlights">
           <div class="hero-stat">
+            <strong>SME</strong>
+            <span>Detailed application, five-year plan, and evidence upload start on the applicant side.</span>
+          </div>
+          <div class="hero-stat">
+            <strong>RF</strong>
+            <span>One governed Random Forest baseline produces the 0-1 application risk score.</span>
+          </div>
+          <div class="hero-stat">
             <strong>A-F</strong>
-            <span>Clear risk grades mapped to model recommendations.</span>
-          </div>
-          <div class="hero-stat">
-            <strong>ML</strong>
-            <span>Random Forest or Logistic Regression scoring.</span>
-          </div>
-          <div class="hero-stat">
-            <strong>LLM</strong>
-            <span>Optional second reviewer, not an automatic final decision.</span>
+            <span>Analysts publish a reviewed rating and applicant-safe report back to the SME.</span>
           </div>
         </aside>
         <footer>
@@ -660,25 +660,25 @@
       <article class="slide">
         <header>
           <p class="eyebrow">The problem</p>
-          <h2>SME underwriting is too manual for the risk hiding inside the file.</h2>
+          <h2>SME underwriting breaks when intake, evidence, scoring, and publication sit in separate tools.</h2>
         </header>
         <div class="content two-col">
           <div class="big-callout">
-            <strong>Analysts spend time collecting context before they can judge risk.</strong>
-            <span>Documents, financial ratios, fraud signals, portfolio exposure, and final decisions often live in separate tools.</span>
+            <strong>The bank needs speed, but cannot lose traceability.</strong>
+            <span>Applicant inputs, uploaded evidence, fraud signals, AI output, model grades, and human decisions must remain connected without letting automation make the final call.</span>
           </div>
           <div class="three-col" style="grid-template-columns: 1fr;">
             <div class="card">
-              <h3>Slow triage</h3>
-              <p>High-risk cases wait in the same queue as clean applications.</p>
+              <h3>Incomplete intake</h3>
+              <p>SMEs need one place to enter company context, financials, loan purpose, and the five-year plan.</p>
             </div>
             <div class="card">
-              <h3>Low transparency</h3>
-              <p>Analysts need to explain why a score moved, not just see a number.</p>
+              <h3>Evidence friction</h3>
+              <p>Missing, ambiguous, risky, clean, and fraudulent document cases should be visible before review.</p>
             </div>
             <div class="card">
-              <h3>Weak governance</h3>
-              <p>Model output, AI advice, and human final decisions must stay separate.</p>
+              <h3>Governance risk</h3>
+              <p>Model score, AI advice, analyst rating, and SME-facing publication need separate controls.</p>
             </div>
           </div>
         </div>
@@ -691,29 +691,29 @@
       <article class="slide">
         <header>
           <p class="eyebrow">The solution</p>
-          <h2>One workbench for scoring, explaining, reviewing, and monitoring SME loan applications.</h2>
+          <h2>CredRisk.AI turns the loan file into a controlled end-to-end workflow.</h2>
         </header>
         <div class="content">
           <div class="metric-grid">
             <div class="metric">
               <b>1</b>
-              <h3>Score</h3>
-              <p>SME-provided application data is scored by Random Forest or Logistic Regression as a 0-1 risk score.</p>
+              <h3>Intake</h3>
+              <p>The SME logs in with DemoUser, uses SME SSO, fills the detailed Loan Intake Portal, and submits evidence.</p>
             </div>
             <div class="metric">
               <b>2</b>
-              <h3>Explain</h3>
-              <p>Deterministic rationale and SHAP-style drivers make the score readable.</p>
+              <h3>Score</h3>
+              <p>The lender opens a frozen snapshot and applies the single Random Forest risk model.</p>
             </div>
             <div class="metric">
               <b>3</b>
               <h3>Review</h3>
-              <p>The analyst records a final decision separately from the model.</p>
+              <p>Case Review is gated behind AI Output, so the analyst sees the generated package first.</p>
             </div>
             <div class="metric">
               <b>4</b>
-              <h3>Monitor</h3>
-              <p>Queues, portfolio risk, and audit history keep operations visible.</p>
+              <h3>Publish</h3>
+              <p>The SME receives only the lender-approved rating, message, and applicant-safe report.</p>
             </div>
           </div>
           <div class="grade-strip" aria-label="A-F risk grade policy">
@@ -734,32 +734,32 @@
       <article class="slide">
         <header>
           <p class="eyebrow">Why this wins</p>
-          <h2>CredRisk.AI gives lenders speed without losing control.</h2>
+          <h2>CredRisk.AI gives lenders faster decisions without hiding who decided what.</h2>
         </header>
         <div class="content three-col">
           <div class="card">
-            <h3>Operational speed</h3>
-            <p>Assigned tasks, workboard filters, bulk rejection, and case handoff reduce review friction.</p>
+            <h3>Better intake</h3>
+            <p>SMEs can load sample cases or start blank, with help pop-ups explaining unfamiliar fields.</p>
           </div>
           <div class="card">
-            <h3>Explainable confidence</h3>
-            <p>Risk drivers translate raw model signals into analyst-readable rationale.</p>
+            <h3>Evidence trust</h3>
+            <p>Sample document packs cover clean, neutral, risky, fraudulent, and ambiguous scenarios.</p>
+          </div>
+          <div class="card">
+            <h3>Explainable score</h3>
+            <p>Risk drivers, ratios, and interpretation columns translate model signals into review language.</p>
           </div>
           <div class="card">
             <h3>Human accountability</h3>
-            <p>The tool recommends; Ms. Cooper records the final analyst action separately.</p>
+            <p>Ms. Cooper records the analyst action and rating separately from the Random Forest grade.</p>
           </div>
           <div class="card">
             <h3>AI where useful</h3>
-            <p>Hosted or local LLMs can challenge the baseline with a qualitative second review.</p>
+            <p>The AI package creates a private lender report and applicant-safe SME draft before review.</p>
           </div>
           <div class="card">
-            <h3>Bank-grade audit</h3>
-            <p>Session decisions, memo generation, and audit history support governance.</p>
-          </div>
-          <div class="card">
-            <h3>Scalable foundation</h3>
-            <p>The MVP can connect to PSD2, accounting, registry, KYB, and document pipelines.</p>
+            <h3>Clean operations</h3>
+            <p>Submitted SME cases stay in Home and Personal Workspace; synthetic queue work stays in Operations Desk.</p>
           </div>
         </div>
         <footer>
@@ -771,33 +771,33 @@
       <article class="slide">
         <header>
           <p class="eyebrow">Architecture</p>
-          <h2>A compact MVP that maps the business plan into working software.</h2>
+          <h2>The MVP maps the business plan into working software, not a mockup.</h2>
         </header>
         <div class="content architecture">
           <div class="flow-step">
             <span class="number">1</span>
-            <h3>Streamlit UI</h3>
-            <p>Home, workspace, operations desk, dashboards, settings, and support.</p>
+            <h3>Role-aware Streamlit UI</h3>
+            <p>SME Loan Intake Portal, lender Home, Personal Workspace, Operations Desk, dashboards, settings, tutorials, and support.</p>
           </div>
           <div class="flow-step">
             <span class="number">2</span>
-            <h3>Data pipeline</h3>
-            <p>Synthetic SME portfolio, derived cash-flow, document, KYB, and anomaly signals.</p>
+            <h3>Data and evidence pipeline</h3>
+            <p>Synthetic SME portfolio, realistic sample companies, local document vault, hashes, and generated sample evidence.</p>
           </div>
           <div class="flow-step">
             <span class="number">3</span>
-            <h3>ML models</h3>
-            <p>Scikit-learn preprocessing with Random Forest and Logistic Regression options, A-F grading, and metrics.</p>
+            <h3>Random Forest risk engine</h3>
+            <p>Scikit-learn preprocessing, derived credit and fraud signals, 0-1 risk score, A-F grading, and model metrics.</p>
           </div>
           <div class="flow-step">
             <span class="number">4</span>
-            <h3>Explainability</h3>
-            <p>Deterministic rationale first, plus optional OpenAI or local LLM second review.</p>
+            <h3>AI report layer</h3>
+            <p>Deterministic fallback plus OpenAI or local LLM path for internal and applicant-safe report generation.</p>
           </div>
           <div class="flow-step">
             <span class="number">5</span>
-            <h3>Runtime state</h3>
-            <p>Latest case, reviews, bulk actions, portfolio history, and audit trail in session.</p>
+            <h3>Runtime state and audit trail</h3>
+            <p>Submitted snapshots, reviews, AI outputs, validation results, publications, and demo persistence stay traceable.</p>
           </div>
         </div>
         <footer>
@@ -809,49 +809,49 @@
       <article class="slide">
         <header>
           <p class="eyebrow">Demo path</p>
-          <h2>What to watch when the product demo starts.</h2>
+          <h2>The live demo follows the pitch script: SME to analyst to SME.</h2>
         </header>
         <div class="content demo-path">
           <div class="demo-row">
             <b>1</b>
             <div>
-              <h3>Home</h3>
-              <p>Ms. Cooper starts from tasks, Slack updates, and today&apos;s calendar.</p>
+              <h3>SME login</h3>
+              <p>Choose SME company, use DemoUser and SME SSO, then open the Loan Intake Portal.</p>
             </div>
           </div>
           <div class="demo-row">
             <b>2</b>
             <div>
-              <h3>Personal Workspace</h3>
-              <p>Score an assigned SME case and read the deterministic decision rationale.</p>
+              <h3>Loan Intake Portal</h3>
+              <p>Load a sample evidence case or blank intake, complete the detailed form, attach documents, and submit.</p>
             </div>
           </div>
           <div class="demo-row">
             <b>3</b>
             <div>
-              <h3>Case Review</h3>
-              <p>Save a final analyst decision, separate from the selected ML recommendation.</p>
+              <h3>Lender handoff</h3>
+              <p>Log in with YourBank SSO; Home shows Suggested Actions and the SME Portal Intake snapshot.</p>
             </div>
           </div>
           <div class="demo-row">
             <b>4</b>
             <div>
-              <h3>Operations Desk</h3>
-              <p>Filter the team workboard and apply bulk action where appropriate.</p>
+              <h3>Personal Workspace</h3>
+              <p>Open the locked intake, inspect evidence, view the Random Forest score, and run Risk Analysis.</p>
             </div>
           </div>
           <div class="demo-row">
             <b>5</b>
             <div>
-              <h3>Risk Dashboard</h3>
-              <p>Monitor exposure, manual reviews, compliance queue, and audit history.</p>
+              <h3>AI Output and Case Review</h3>
+              <p>Generate the internal and SME reports, then record the analyst decision and publish the approved copy.</p>
             </div>
           </div>
           <div class="demo-row">
             <b>6</b>
             <div>
-              <h3>AI Explainability</h3>
-              <p>Run an optional LLM second review and compare it against the selected ML baseline.</p>
+              <h3>SME outcome</h3>
+              <p>Return as the SME to see the published rating, lender message, and downloadable evaluation report.</p>
             </div>
           </div>
         </div>
@@ -864,12 +864,12 @@
       <article class="slide">
         <header>
           <p class="eyebrow">Scale and risk</p>
-          <h2>The MVP is intentionally focused; the next layer is real data integration and governance hardening.</h2>
+          <h2>The MVP is focused; production needs integrations, controls, and monitoring.</h2>
         </header>
         <div class="content two-col">
           <div class="card">
             <h3>Scale prerequisites</h3>
-            <p>Production data connectors, model monitoring, role-based access, document ingestion, secure secrets, and deployment controls.</p>
+            <p>PSD2, accounting, registry/KYB, document ingestion, role-based access, secure secrets, deployment controls, and model monitoring.</p>
             <div class="tag-list">
               <span class="tag">PSD2</span>
               <span class="tag">Accounting APIs</span>
@@ -879,10 +879,10 @@
           </div>
           <div class="card">
             <h3>Managed risks</h3>
-            <p>False positives, AI hallucination, data leakage, model drift, and over-reliance on automation are controlled through human review and auditability.</p>
+            <p>False positives, fraud misses, AI hallucination, data leakage, model drift, and over-reliance on automation are handled through review gates and auditability.</p>
             <div class="tag-list">
               <span class="tag">Human final decision</span>
-              <span class="tag">LLM fallback</span>
+              <span class="tag">AI review gate</span>
               <span class="tag">Validation metrics</span>
               <span class="tag">Audit trail</span>
             </div>
@@ -897,24 +897,24 @@
       <article class="slide">
         <header>
           <p class="eyebrow">Execution proof</p>
-          <h2>Built as a working MVP with a clear path to lender deployment.</h2>
+          <h2>The repository is built for the FinTech assignment deliverables.</h2>
         </header>
         <div class="content three-col">
           <div class="card">
-            <h3>Product works</h3>
-            <p>The app implements the core value loop: scoring, explainability, analyst workflow, bulk operations, and monitoring.</p>
+            <h3>Working MVP</h3>
+            <p>The app demonstrates the full value loop: intake, evidence, scoring, AI package, review, publication, and monitoring.</p>
           </div>
           <div class="card">
-            <h3>Easy to run</h3>
-            <p>The workspace includes setup docs, a demo guide, requirements, and a Windows launcher for fast handoff.</p>
+            <h3>Clean repository</h3>
+            <p>README, demo script, requirements, Windows launcher, commented Python files, and research notes support handoff.</p>
           </div>
           <div class="card">
-            <h3>AI governed</h3>
-            <p>Agent instructions and acceptance checks keep the build aligned with risk policy, page structure, and user workflow.</p>
+            <h3>Agent orchestration</h3>
+            <p>`.codex/CODEX.md` documents page structure, workflows, acceptance checks, and agent guidance for repo-aware changes.</p>
           </div>
         </div>
         <footer>
-          <span>Investor readiness</span>
+          <span>Assignment readiness</span>
           <span>08</span>
         </footer>
       </article>
@@ -922,8 +922,8 @@
       <article class="slide">
         <div class="closing">
           <p class="eyebrow">Now the demo</p>
-          <h2>CredRisk.AI turns SME underwriting from a file chase into an explainable decision workflow.</h2>
-          <p class="subtitle">The demo will show the product live: score a case, explain the score, record the human decision, review the portfolio, and run an AI second opinion.</p>
+          <h2>CredRisk.AI turns SME lending from a file chase into an explainable decision workflow.</h2>
+          <p class="subtitle">The live walkthrough shows Loan Intake Portal, frozen lender review, Random Forest scoring, AI Output, human publication, and the SME-facing result.</p>
         </div>
         <footer>
           <span>CredRisk.AI Underwriter Workbench</span>

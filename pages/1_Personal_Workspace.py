@@ -1,3 +1,4 @@
+# Lender workspace for reviewing locked SME submissions and publishing outcomes.
 from datetime import datetime
 from html import escape
 
@@ -16,7 +17,11 @@ from src.features.case_workflow import (
     case_summary,
     similar_applications,
 )
-from src.core.data_pipeline import add_derived_features, build_forecast_table
+from src.core.data_pipeline import (
+    add_derived_features,
+    build_forecast_table,
+    validate_forecast_plan_rows,
+)
 from src.utils.demo_persistence import ensure_demo_session, persist_demo_state
 from src.utils.document_storage import list_documents, read_document
 from src.utils.workflow_transfer import (
@@ -39,7 +44,6 @@ from src.utils.formatting import (
 from src.core.runtime import bootstrap_state
 from src.ui.components import render_sidebar, safe_page_link
 from src.features.workbench_features import (
-    build_application_queue,
     credit_memo,
     data_source_badges,
     decision_timeline,
@@ -54,6 +58,10 @@ bootstrap_state()
 render_sidebar(suppress_demo_prompt=True)
 demo_session_id = ensure_demo_session()
 
+# Personal Workspace is the lender's active case file. It can load either a
+# synthetic queue row or an SME-submitted snapshot, but it never edits the live
+# SME draft. All scoring, document verification, AI review, analyst review, and
+# publication state is written to session history for auditability.
 st.markdown(
     """
     <style>
@@ -313,8 +321,13 @@ st.markdown(
 applications = st.session_state.seed_data["applications"]
 selected_model_key = st.session_state.model_bundle.default_model_key
 
+# All loaded cases are treated as immutable review inputs. The helper functions
+# below clear score/review state whenever a different intake is activated so an
+# analyst cannot accidentally carry evidence or AI output from one case to the
+# next.
 
 def _clear_scored_case():
+    # Loading a different intake invalidates prior score, explanation, review, and publication prompts.
     st.session_state.last_application = None
     st.session_state.last_prediction = None
     st.session_state.last_explanation = None
@@ -324,6 +337,7 @@ def _clear_scored_case():
 
 
 def _activate_intake_case(application, source):
+    # Store a snapshot copy so later SME edits cannot mutate the lender's working file in place.
     st.session_state.active_queue_application = dict(application)
     st.session_state.active_intake_source = source
     st.session_state.loan_example_scenario = "Custom application"
@@ -345,6 +359,9 @@ def _clear_active_intake_case():
 
 
 READ_ONLY_INTAKE_SECTIONS = [
+    # This list defines the lender's locked intake tabs. It intentionally shows
+    # applicant-entered amounts and derived values together, but as read-only
+    # submitted facts rather than editable lender inputs.
     (
         "Company Profile",
         [
@@ -440,6 +457,8 @@ READ_ONLY_DOCUMENT_FIELDS = {
 
 
 def _present(value):
+    # pandas/numpy missing values behave differently from plain None, so keep
+    # this small wrapper before applying display formatting.
     if value is None:
         return False
     try:
@@ -452,6 +471,7 @@ def _read_only_value(application, field_name):
     value = application.get(field_name)
     if not _present(value):
         return "N/A"
+    # Render locked SME fields with lender-friendly formatting while keeping raw data unchanged.
     if field_name in READ_ONLY_CURRENCY_FIELDS:
         return format_currency(value)
     if field_name in READ_ONLY_PERCENT_FIELDS:
@@ -474,15 +494,73 @@ def _read_only_rows(application, fields):
     ]
 
 
+def _has_submitted_forecast_plan(application):
+    rows, errors = validate_forecast_plan_rows(application.get("forecast_plan_rows"))
+    return bool(rows) and not errors
+
+
+def _forecast_plan_display(application):
+    # Lender views should show the SME-submitted annual rows when present. Older
+    # demo sessions without forecast_plan_rows still render through the legacy
+    # generated fallback inside build_forecast_table().
+    forecast = build_forecast_table(pd.DataFrame([application]))
+    if forecast.empty:
+        return pd.DataFrame(
+            columns=[
+                "Year",
+                "Projected revenue",
+                "Projected employees",
+                "Projected FCF",
+                "Projected debt",
+            ]
+        )
+    display = forecast.rename(
+        columns={
+            "forecast_year": "Year",
+            "projected_revenue": "Projected revenue",
+            "projected_employees": "Projected employees",
+            "projected_free_cash_flow": "Projected FCF",
+            "projected_debt": "Projected debt",
+        }
+    )[
+        [
+            "Year",
+            "Projected revenue",
+            "Projected employees",
+            "Projected FCF",
+            "Projected debt",
+        ]
+    ].copy()
+    for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
+        display[column] = display[column].apply(format_currency)
+    display["Projected employees"] = display["Projected employees"].apply(
+        format_integer
+    )
+    return display
+
+
 def _render_read_only_intake(application):
     # The SME Portal owns application intake. The lender sees a frozen copy for scoring and review.
+    # If a lender notices an incorrect value, the fix is to ask the SME to edit
+    # and resubmit from the Loan Intake Portal instead of changing it here.
     st.subheader("Loaded Intake Snapshot")
     st.caption(
-        "Read-only lender view. Change applicant data from the SME Company Portal and resubmit the application."
+        "Read-only lender view. Change applicant data from the Loan Intake Portal and resubmit the application."
     )
     tabs = st.tabs([section[0] for section in READ_ONLY_INTAKE_SECTIONS] + ["Narrative"])
     for tab, (section_title, fields) in zip(tabs, READ_ONLY_INTAKE_SECTIONS):
         with tab:
+            if section_title == "Five-Year Plan":
+                st.dataframe(
+                    _forecast_plan_display(application),
+                    width="stretch",
+                    hide_index=True,
+                )
+                if not _has_submitted_forecast_plan(application):
+                    st.caption(
+                        "Legacy intake: annual rows are generated from saved year-5 assumptions because no submitted plan rows exist."
+                    )
+                st.caption("Model-derived summary")
             st.dataframe(
                 pd.DataFrame(_read_only_rows(application, fields)),
                 width="stretch",
@@ -501,7 +579,11 @@ def _render_read_only_intake(application):
 
 
 def _score_loaded_intake(application, model_key):
+    # Scoring normalizes a few fields that may be absent on blank/manual intakes,
+    # then hands the application to the model bundle. The original loaded
+    # snapshot remains untouched; only scored_application is enriched for audit.
     scored_application = dict(application)
+    # Manual or blank intakes may not have an ID yet; scoring still needs a stable audit key.
     scored_application["application_id"] = scored_application.get(
         "application_id"
     ) or f"INTAKE-{len(st.session_state.portfolio_history) + 1:03d}"
@@ -599,6 +681,9 @@ def _readiness_status(score):
 
 
 def _data_readiness_rows(application, signals):
+    # Readiness rows translate low-level binary/document/narrative indicators
+    # into source-oriented review guidance. This is the analyst's explanation of
+    # which evidence source supports which decision use.
     missing_documents = _missing_documents(application)
     document_score = float(signals.get("document_completeness_score", 0) or 0)
     context_status = _context_completeness(application)
@@ -699,6 +784,8 @@ def _data_readiness_rows(application, signals):
 
 
 def _decision_conditions(application, prediction, signals):
+    # Conditions are generated from the model score, evidence status, and major
+    # rule flags. They become suggested review conditions, not binding policy.
     conditions = []
     missing_documents = _missing_documents(application)
     if missing_documents:
@@ -763,6 +850,9 @@ def _risk_score_interpretation(probability):
 
 
 def _render_workspace_metric_guide(application, prediction, signals):
+    # The sidebar score guide follows the active case. It gives a cold reader a
+    # quick interpretation of the most important risk and repayment-capacity
+    # numbers while keeping detailed definitions in the Acronym Guide.
     with st.sidebar:
         st.divider()
         guide_rows = [
@@ -814,6 +904,9 @@ def _render_workspace_metric_guide(application, prediction, signals):
 
 
 def _summary_table(rows):
+    # Most tables on this page use the same "Metric / Value / How to read it"
+    # pattern. The helper adds default explanations so new metrics remain
+    # understandable even if a page author omits custom copy.
     normalized_rows = []
     for row in rows:
         metric = row[0]
@@ -866,6 +959,9 @@ def _rerun_after_review():
 
 
 def _upsert_portfolio_history(application_id, values):
+    # Portfolio history is a session-level current-state table for dashboards.
+    # Updating the latest row avoids counting the same case multiple times when
+    # the analyst scores, reviews, and publishes it in one demo run.
     for row in reversed(st.session_state.portfolio_history):
         if row.get("application_id") == application_id:
             row.update(values)
@@ -881,6 +977,7 @@ def _evaluation_package_for(application, prediction):
     package = st.session_state.llm_evaluation_packages.get(
         application.get("application_id")
     )
+    # The signature prevents stale AI output from being reused after a case or score changes.
     if not package or package.get("signature") != evaluation_signature(
         application, prediction
     ):
@@ -891,6 +988,7 @@ def _evaluation_package_for(application, prediction):
 def _render_ai_output(application, prediction):
     package = _evaluation_package_for(application, prediction)
     if not package:
+        # Case Review is intentionally gated behind AI output for the assignment demo flow.
         st.warning(
             "Please use the AI before continuing. Open LLM Integration and generate the Internal + SME Reports package for this scored case."
         )
@@ -932,6 +1030,7 @@ def _update_lifecycle(application_id, **values):
 
 
 def _update_sme_submission_status(application_id, status, **values):
+    # Walk backward so the latest resubmission wins if an SME sends the same case more than once.
     for submission in reversed(st.session_state.sme_submission_history):
         if submission.get("application_id") == application_id:
             submission.update({"status": status, **values})
@@ -947,6 +1046,9 @@ def _render_review_publication(
     prediction_model_label,
     decision_conditions,
 ):
+    # This section sits after scoring and review. It summarizes the human
+    # decision state, exposes the attached AI package for audit, and opens the
+    # publication form only after a lender review exists.
     review_cols = st.columns(4)
     review_cols[0].metric(
         "Final decision", final_decision, help=WORKSPACE_HELP["final_decision"]
@@ -1015,6 +1117,9 @@ def _render_review_publication(
 
 
 def _render_score_history(application):
+    # Score and review events are append-only histories. Showing them side by
+    # side helps a reader see that model output and analyst action are separate
+    # records even when they happen in one demo session.
     score_events = [
         row
         for row in st.session_state.score_history
@@ -1035,8 +1140,12 @@ def _render_score_history(application):
 
 
 def _render_lender_document_validation(application):
+    # Lender verification is a second-pass check on the SME-uploaded evidence.
+    # The original files remain unchanged; validation writes only result
+    # metadata into lifecycle/session state.
     st.markdown("**Saved SME-uploaded files**")
     _render_saved_application_files(application["application_id"])
+    # Validation results update lifecycle state, but do not alter the original SME-uploaded evidence.
     _, new_validation_run = render_document_validation_panel(
         demo_session_id,
         application["application_id"],
@@ -1060,6 +1169,9 @@ def _render_lender_document_validation(application):
 
 
 def _render_saved_application_files(application_id):
+    # The lender can inspect and download files saved by the SME portal. The
+    # table uses hashes and metadata to make sample/fraudulent packs traceable
+    # without exposing the local storage path in the UI.
     documents = list_documents(demo_session_id, application_id)
     if not documents:
         st.info("No saved SME-uploaded files are attached to this application.")
@@ -1104,6 +1216,7 @@ def _render_saved_application_files(application_id):
 
 
 def _store_prediction(application, prediction, explanation):
+    # A score event is append-only for audit history; the latest prediction fields drive the live UI.
     st.session_state.last_application = application
     st.session_state.last_prediction = prediction
     st.session_state.last_explanation = explanation
@@ -1155,6 +1268,9 @@ def _last_prediction_matches(application_id, model_key):
 
 
 def _auto_score_submitted_intake(application, model_key):
+    # Submitted SME cases auto-score once when first opened by the lender. This
+    # keeps the demo flow smooth while still allowing manual "Score Loaded
+    # Intake" for synthetic queue cases or rescoring after a reset.
     application_id = application.get("application_id")
     if (
         not application_id
@@ -1164,6 +1280,7 @@ def _auto_score_submitted_intake(application, model_key):
     if _last_prediction_matches(application_id, model_key):
         return False
 
+    # Only auto-score fresh lender-submitted files, not already published or closed lifecycle states.
     lifecycle = _lifecycle_for(application_id)
     if lifecycle.get("status") not in {
         "Submitted to lender review",
@@ -1339,6 +1456,7 @@ def _rating_publication_form(application, prediction, review):
     lifecycle = _lifecycle_for(application_id)
     evaluation_package = _evaluation_package_for(application, prediction)
     already_published = lifecycle.get("status") == "Rating published"
+    # Publication defaults to the latest approved SME draft, while allowing the analyst to edit the exact copy.
     default_message = lifecycle.get("published_message") or (
         f"Your application has been reviewed. The lender rating is {review['analyst_grade']} "
         f"and the current lender decision is {review['final_decision']}."
@@ -1442,49 +1560,17 @@ if hasattr(st, "dialog"):
 
     @st.dialog("Case Review")
     def _review_dialog():
+        # Newer Streamlit builds support modal review. Older builds fall back to
+        # the inline form below, so the review body remains a separate helper.
         _review_form_body()
 
 
 st.title("Personal Workspace")
-st.caption("Live analyst workspace for Ms. Cooper's current SME lending tasks.")
+st.caption("Analyst review surface for SME-submitted loan intake snapshots.")
 
-st.subheader("Current Tasks")
-queue = build_application_queue(
-    st.session_state.model_bundle, applications, model_key=selected_model_key
-)
-queue_mine = queue[queue["assigned_analyst"].eq("Ms. Cooper")].copy()
-if queue_mine.empty:
-    queue_mine = queue.head(12).copy()
-
-queue_metrics = st.columns(5)
-queue_metrics[0].metric(
-    "Assigned to Ms. Cooper",
-    format_integer(len(queue_mine)),
-    help=WORKSPACE_HELP["assigned_cases"],
-)
-queue_metrics[1].metric(
-    "Same-day SLA",
-    format_integer((queue_mine["sla"] == "Same day").sum()),
-    help=WORKSPACE_HELP["same_day_sla"],
-)
-queue_metrics[2].metric(
-    "Due This Week",
-    format_integer((queue_mine["sla"] == "This week").sum()),
-    help=WORKSPACE_HELP["due_this_week"],
-)
-queue_metrics[3].metric(
-    "Manual / Compliance",
-    format_integer(
-        queue_mine["queue_status"].isin(["Manual review", "Compliance review"]).sum()
-    ),
-    help=WORKSPACE_HELP["manual_or_compliance"],
-)
-queue_metrics[4].metric(
-    "Missing Docs",
-    format_integer((queue_mine["missing_documents"] > 0).sum()),
-    help=WORKSPACE_HELP["missing_documents"],
-)
-
+# Submitted rows are lightweight queue cards built from immutable SME snapshots
+# plus lifecycle status. Opening one activates the exact snapshot that was
+# stored at submission time.
 submitted_rows = submitted_intake_rows(
     st.session_state.sme_submission_history,
     st.session_state.application_lifecycle,
@@ -1523,72 +1609,36 @@ if submitted_rows:
                 _activate_intake_case(submitted_application, SME_SUBMISSION_SOURCE)
             else:
                 st.error("The submitted application snapshot could not be found.")
-
-queue_display = (
-    queue_mine[
-        [
-            "application_id",
-            "company_name",
-            "requested_amount",
-            "fraud_probability",
-            "grade",
-            "queue_status",
-            "missing_documents",
-            "sla",
-        ]
-    ]
-    .head(8)
-    .copy()
-)
-queue_display["requested_amount"] = queue_display["requested_amount"].apply(_money)
-queue_display["fraud_probability"] = queue_display["fraud_probability"].apply(_ratio)
-queue_display = queue_display.rename(
-    columns={
-        "application_id": "Application ID",
-        "company_name": "Company",
-        "requested_amount": "Requested amount",
-        "fraud_probability": "Application risk score",
-        "grade": "Grade",
-        "queue_status": "Task status",
-        "missing_documents": "Missing docs",
-        "sla": "SLA",
-    }
-)
-
-with st.container():
-    st.markdown(
-        """
-            <div class="queue-panel">
-            <div class="queue-panel-title">Start Work From Current Tasks</div>
-            <div class="queue-panel-copy">Select an assigned case, start the review, and the working file below loads with the applicant data already present.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+else:
+    st.info(
+        "No SME-submitted intake is loaded yet. Submit one from the Loan Intake Portal, "
+        "or use Operations Desk for the generic synthetic work queue."
     )
-    st.dataframe(queue_display, width="stretch", hide_index=True)
-    queue_labels = [
-        f"{row.application_id} - {row.company_name} | Grade {row.grade} | {row.queue_status}"
-        for row in queue_mine.head(20).itertuples()
-    ]
-    queue_pick = st.selectbox("Next application", queue_labels)
-    selected_application_id = queue_pick.split(" - ", 1)[0]
-    selected_queue_row = (
-        queue_mine[queue_mine["application_id"] == selected_application_id]
-        .iloc[0]
-        .to_dict()
-    )
-    queue_actions = st.columns([1, 3])
-    if queue_actions[0].button("Start Selected Case", width="stretch"):
-        _activate_intake_case(selected_queue_row, "Current tasks")
+    empty_cols = st.columns([1, 1, 2])
+    with empty_cols[0]:
+        safe_page_link(
+            "pages/6_SME_Credit_Health.py",
+            "Open Loan Intake Portal",
+            ":material/domain:",
+        )
+    with empty_cols[1]:
+        safe_page_link(
+            "pages/2_Operations_Desk.py",
+            "Open Operations Desk",
+            ":material/view_list:",
+        )
 
 active_case = st.session_state.get("active_queue_application")
 if active_case:
+    # active_queue_application is the current lender working file. It may come
+    # from the SME portal or a synthetic dashboard/operations row, so the source
+    # label is shown to avoid confusion during demos.
     active_lifecycle = _lifecycle_for(active_case.get("application_id"))
     st.markdown(
         f"""
         <div class="active-case-card">
             <div class="active-case-title">Active intake: {escape(str(active_case.get("application_id", "Session")))} - {escape(str(active_case.get("company_name", "Applicant")))}</div>
-            <div class="active-case-copy">Source: {escape(st.session_state.get("active_intake_source", "Loaded snapshot"))}. Applicant data is locked in the lender workspace; use the SME Company Portal to change and resubmit intake data.</div>
+            <div class="active-case-copy">Source: {escape(st.session_state.get("active_intake_source", "Loaded snapshot"))}. Applicant data is locked in the lender workspace; use the Loan Intake Portal to change and resubmit intake data.</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1626,10 +1676,13 @@ if active_case:
         st.caption("This loaded intake has already been scored with the current Random Forest model.")
 else:
     st.info(
-        "No active intake loaded. Start an assigned task above, or sign in as the SME company account to create, load, and submit sample intake cases from the SME Company Portal."
+        "No active intake loaded. Open a submitted SME application above, or use Operations Desk for generic queue work."
     )
 
 if st.session_state.last_prediction:
+    # The rest of the page is visible only after a score exists. From here the
+    # workflow is: inspect risk/evidence, generate AI output, save review, and
+    # publish an SME-safe result if appropriate.
     application = st.session_state.last_application
     prediction = st.session_state.last_prediction
     explanation = st.session_state.last_explanation
@@ -1688,6 +1741,9 @@ if st.session_state.last_prediction:
         ]
     )
     with detail_tabs[0]:
+        # Decision Package is the analyst's main working tab: model output,
+        # recommended terms, monitoring view, confidence checks, and the final
+        # human review form all live here.
         st.subheader("Score Output")
         risk_score_label = _tip_label(
             "Application risk score", WORKSPACE_HELP["application_risk_score"]
@@ -1770,6 +1826,9 @@ if st.session_state.last_prediction:
         )
 
     with detail_tabs[1]:
+        # Risk Analysis is evidence-heavy. It connects source readiness,
+        # document validation, what-if scenarios, peer context, and feature
+        # drivers before a review decision is saved.
         st.subheader("Data Readiness")
         source_badges = data_source_badges(application, signals)
         badge_html = "".join(
@@ -1958,31 +2017,15 @@ if st.session_state.last_prediction:
                 hide_index=True,
             )
 
-        forecast = build_forecast_table(pd.DataFrame([application]))
-        display_forecast = forecast.rename(
-            columns={
-                "forecast_year": "Year",
-                "projected_revenue": "Projected revenue",
-                "projected_employees": "Projected employees",
-                "projected_free_cash_flow": "Projected FCF",
-                "projected_debt": "Projected debt",
-            }
-        )[
-            [
-                "Year",
-                "Projected revenue",
-                "Projected employees",
-                "Projected FCF",
-                "Projected debt",
-            ]
-        ].copy()
-        for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
-            display_forecast[column] = display_forecast[column].apply(_money)
-        display_forecast["Projected employees"] = display_forecast[
-            "Projected employees"
-        ].apply(format_integer)
-        with st.expander("Generated Five-Year Forecast", expanded=False):
-            st.dataframe(display_forecast, width="stretch", hide_index=True)
+        forecast_label = (
+            "Submitted Five-Year Plan"
+            if _has_submitted_forecast_plan(application)
+            else "Generated Five-Year Forecast"
+        )
+        with st.expander(forecast_label, expanded=False):
+            st.dataframe(
+                _forecast_plan_display(application), width="stretch", hide_index=True
+            )
 
         executive_rows = [
             {"Executive": "CEO", "Context": application.get("ceo_context", "")},

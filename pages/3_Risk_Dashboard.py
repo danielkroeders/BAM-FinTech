@@ -1,3 +1,4 @@
+# Portfolio dashboard for monitoring risk grades, exposure, and review history.
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -12,6 +13,9 @@ st.set_page_config(page_title="Risk Dashboard", layout="wide")
 bootstrap_state()
 render_sidebar()
 
+# Page-local CSS keeps this dashboard denser than a landing page. It relies on
+# theme variables defined in src/ui/components.py so it follows Streamlit's
+# light/dark setting instead of maintaining a separate dark-mode button.
 st.markdown(
     """
     <style>
@@ -58,6 +62,9 @@ st.markdown(
 )
 
 selected_model_key = st.session_state.model_bundle.default_model_key
+# The dashboard scores the full synthetic portfolio each render. The expensive
+# model training is cached in runtime bootstrap; this call only applies the
+# already-loaded Random Forest model and adds grade/decision columns.
 portfolio = score_portfolio(
     st.session_state.model_bundle,
     st.session_state.seed_data["applications"],
@@ -66,6 +73,8 @@ portfolio = score_portfolio(
 
 
 def _bordered_container():
+    # Older Streamlit versions do not support border=True. This wrapper keeps
+    # the page usable in both local and hosted environments used for grading.
     try:
         return st.container(border=True)
     except TypeError:
@@ -77,6 +86,7 @@ def _display_table(frame, columns):
 
 
 def _chart_style(chart):
+    # Altair charts need explicit theme colors because the page can switch between light and dark mode.
     dark = is_dark_mode()
     text = "#cbd5e1" if dark else "#475569"
     grid = "rgba(148, 163, 184, 0.24)" if dark else "rgba(148, 163, 184, 0.28)"
@@ -154,6 +164,9 @@ def _decision_chart(frame):
 
 
 def _activity_table(history):
+    # Different actions write slightly different audit columns. Pick the
+    # intersection with the known display order so the table does not crash
+    # when only scores, only reviews, or only bulk actions exist.
     visible_columns = [
         "application_id",
         "industry",
@@ -219,6 +232,10 @@ filtered = portfolio[
     & portfolio["fraud_probability"].between(probability_range[0], probability_range[1])
 ].copy()
 
+# The headline metrics respond to every filter, so they describe the visible portfolio slice only.
+# This is why "Filtered Exposure" can differ from portfolio-wide exposure:
+# it is meant to answer "what am I currently looking at?" rather than "what is
+# the bank's full exposure?"
 total_exposure = filtered["requested_amount"].sum()
 high_risk = filtered[filtered["grade"].isin(["E", "F"])]
 manual_review = filtered[filtered["grade"].isin(["C", "D"])]
@@ -259,6 +276,7 @@ with chart_cols[1]:
 if filtered.empty:
     st.info("No applications match the selected filters.")
 else:
+    # Opening from the dashboard hands a synthetic portfolio row into the same workspace review surface.
     action_cols = st.columns([2, 1], vertical_alignment="bottom")
     open_options = [
         f"{row.application_id} - {row.company_name} | Grade {row.grade} | {format_percent(row.fraud_probability)}"
@@ -280,6 +298,9 @@ review_tab, highest_tab, activity_tab = st.tabs(
     ["Review Queues", "Highest Risk", "Session Activity"]
 )
 
+# Tabs split three analyst questions: what needs review by policy, which visible
+# cases are highest risk, and what decisions have been made during this demo
+# session. They all reuse the same filtered/scored portfolio data above.
 table_columns = [
     "application_id",
     "company_name",
@@ -335,6 +356,7 @@ with activity_tab:
     with activity_cols[0]:
         st.subheader("Live Session Decisions")
         if st.session_state.portfolio_history:
+            # Session history combines scored cases, reviews, and bulk operations captured during the demo.
             history = pd.DataFrame(st.session_state.portfolio_history)
             st.dataframe(_activity_table(history), width="stretch", hide_index=True)
         else:

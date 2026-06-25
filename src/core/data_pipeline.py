@@ -1,3 +1,5 @@
+# Data loading and feature engineering for the synthetic SME lending portfolio.
+import json
 from pathlib import Path
 
 import numpy as np
@@ -5,7 +7,11 @@ import pandas as pd
 
 SEED_DIR = Path(__file__).resolve().parents[2] / "data" / "seed"
 
+# Column groups define the model contract. BASE_* fields can be supplied by the
+# seed generator or SME intake; DERIVED_* fields are recalculated locally so the
+# app can explain ratios and risk signals consistently on every page.
 BASE_NUMERIC_COLUMNS = [
+    # Applicant- or seed-provided fields; derived lender-side risk ratios are added later.
     "requested_amount",
     "term_months",
     "interest_rate",
@@ -51,6 +57,7 @@ BASE_NUMERIC_COLUMNS = [
 ]
 
 DERIVED_NUMERIC_COLUMNS = [
+    # Lender-side signals calculated from intake, document, KYB, and cash-flow inputs.
     "debt_to_revenue_ratio",
     "request_to_revenue_ratio",
     "loan_velocity_score",
@@ -92,6 +99,13 @@ CATEGORICAL_COLUMNS = ["industry", "region", "company_type"]
 TARGET_COLUMN = "is_fraud"
 FORECAST_YEARS = range(1, 6)
 DEPRECATED_COLUMNS = ["forecast_plan_confidence_score"]
+FORECAST_PLAN_FIELDS = [
+    "forecast_year",
+    "projected_revenue",
+    "projected_employees",
+    "projected_free_cash_flow",
+    "projected_debt",
+]
 
 NAME_PREFIXES = [
     "Alder",
@@ -170,9 +184,170 @@ def _sigmoid(value):
 
 
 def _numeric(frame, column, default=0):
+    # Manual SME intakes and older cached CSVs can miss columns. Returning a
+    # default Series keeps feature engineering vectorized and avoids page-level
+    # special cases for partially completed applications.
     if column in frame:
         return pd.to_numeric(frame[column], errors="coerce").fillna(default)
     return pd.Series(default, index=frame.index, dtype="float64")
+
+
+def _missing_value(value):
+    try:
+        return pd.isna(value)
+    except (TypeError, ValueError):
+        return value is None
+
+
+def _forecast_records(value):
+    if isinstance(value, pd.DataFrame):
+        return value.to_dict("records")
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return None
+        return parsed if isinstance(parsed, list) else None
+    if isinstance(value, list):
+        return value
+    return None
+
+
+def validate_forecast_plan_rows(value):
+    """Return normalized five-year plan rows and validation errors."""
+    records = _forecast_records(value)
+    if records is None:
+        return [], ["Enter a five-year plan with one row for each year 1 through 5."]
+    if len(records) != 5:
+        return [], ["Enter exactly five forecast rows, covering years 1 through 5."]
+
+    rows = []
+    errors = []
+    seen_years = set()
+    for index, record in enumerate(records, start=1):
+        if not isinstance(record, dict):
+            errors.append(f"Forecast row {index} is not a valid row.")
+            continue
+        try:
+            year_value = record.get("forecast_year")
+            if _missing_value(year_value):
+                raise ValueError
+            year_number = float(year_value)
+            if not year_number.is_integer():
+                raise ValueError
+            forecast_year = int(year_number)
+        except (TypeError, ValueError):
+            errors.append(f"Forecast row {index} needs a forecast year.")
+            continue
+
+        row_errors = []
+        try:
+            revenue = float(record.get("projected_revenue"))
+        except (TypeError, ValueError):
+            revenue = None
+        try:
+            employees = int(float(record.get("projected_employees")))
+        except (TypeError, ValueError):
+            employees = None
+        try:
+            free_cash_flow = float(record.get("projected_free_cash_flow"))
+        except (TypeError, ValueError):
+            free_cash_flow = None
+        try:
+            projected_debt = float(record.get("projected_debt"))
+        except (TypeError, ValueError):
+            projected_debt = None
+
+        if forecast_year < 1 or forecast_year > 5:
+            row_errors.append("year must be between 1 and 5")
+        if revenue is None or _missing_value(revenue) or revenue < 0:
+            row_errors.append("projected revenue must be 0 or higher")
+        if employees is None or _missing_value(employees) or employees < 1:
+            row_errors.append("projected employees must be at least 1")
+        if free_cash_flow is None or _missing_value(free_cash_flow):
+            row_errors.append("projected free cash flow is required")
+        if projected_debt is None or _missing_value(projected_debt) or projected_debt < 0:
+            row_errors.append("projected debt must be 0 or higher")
+
+        if row_errors:
+            errors.append(f"Year {forecast_year}: {', '.join(row_errors)}.")
+            continue
+
+        seen_years.add(forecast_year)
+        rows.append(
+            {
+                "forecast_year": forecast_year,
+                "projected_revenue": revenue,
+                "projected_employees": employees,
+                "projected_free_cash_flow": free_cash_flow,
+                "projected_debt": projected_debt,
+            }
+        )
+
+    if seen_years != set(FORECAST_YEARS):
+        errors.append("Forecast years must be exactly 1, 2, 3, 4, and 5.")
+    if errors:
+        return [], errors
+    return sorted(rows, key=lambda row: row["forecast_year"]), []
+
+
+def _cagr_from_values(base_value, target_value, years=5):
+    # CAGR is only meaningful when both endpoints are positive. Manual blank
+    # rows and legacy zero-revenue examples therefore collapse to zero growth
+    # instead of creating divide-by-zero or infinite model inputs.
+    base = max(float(base_value or 0), 0.0)
+    target = max(float(target_value or 0), 0.0)
+    if base <= 0 or target <= 0:
+        return 0.0
+    return (target / base) ** (1 / years) - 1
+
+
+def forecast_metrics_from_plan_rows(
+    value, annual_revenue=0.0, employees=1, existing_debt=0.0
+):
+    """Derive model-facing forecast metrics from a submitted five-year plan.
+
+    The app stores the detailed SME-entered annual plan for review, but the
+    existing Random Forest model still expects compact year-5/CAGR fields. This
+    helper keeps that compatibility layer deterministic and testable.
+    """
+    rows, errors = validate_forecast_plan_rows(value)
+    if errors:
+        return {}, errors
+
+    year5 = next(row for row in rows if row["forecast_year"] == 5)
+    current_revenue = max(float(annual_revenue or 0), 0.0)
+    current_employees = max(float(employees or 0), 0.0)
+    current_debt = max(float(existing_debt or 0), 0.0)
+    year5_revenue = max(float(year5["projected_revenue"]), 0.0)
+    year5_employees = max(int(year5["projected_employees"]), 1)
+    year5_free_cash_flow = float(year5["projected_free_cash_flow"])
+    year5_debt = max(float(year5["projected_debt"]), 0.0)
+    planned_debt_reduction = max(current_debt - year5_debt, 0.0)
+
+    return (
+        {
+            "forecast_plan_rows": rows,
+            "forecast_revenue_year5": year5_revenue,
+            "forecast_employees_year5": year5_employees,
+            "forecast_fcf_year5": year5_free_cash_flow,
+            "planned_debt_reduction_amount": planned_debt_reduction,
+            "forecast_revenue_cagr": _cagr_from_values(
+                current_revenue, year5_revenue
+            ),
+            "forecast_employee_cagr": _cagr_from_values(
+                current_employees, year5_employees
+            ),
+            "forecast_fcf_margin_year5": year5_free_cash_flow
+            / max(year5_revenue, 1.0),
+            "planned_debt_reduction_pct": planned_debt_reduction
+            / max(current_debt, 1.0),
+        },
+        [],
+    )
 
 
 def _combined_text(frame, columns):
@@ -184,6 +359,9 @@ def _combined_text(frame, columns):
 
 
 def _company_names(industries):
+    # Company names are deterministic but real-like. They make sample cases and
+    # dashboards easier to demo than anonymous "Company 1" placeholders while
+    # avoiding real customer data.
     names = []
     for index, industry in enumerate(industries):
         prefix = NAME_PREFIXES[index % len(NAME_PREFIXES)]
@@ -200,6 +378,7 @@ def _company_names(industries):
 
 
 def _annual_debt_service(principal, annual_rate, term_months):
+    # Estimate only the first-year debt-service burden, because the UI compares it with annual FCF.
     months = term_months.clip(lower=1)
     monthly_rate = annual_rate.clip(lower=0) / 12
     payment_months = months.clip(upper=12)
@@ -216,12 +395,18 @@ def _annual_debt_service(principal, annual_rate, term_months):
 
 
 def add_derived_features(frame):
+    # This is the central feature engineering function. It accepts both the full
+    # synthetic portfolio and one-row SME/lender cases, then appends lender-side
+    # ratios, stress tests, document signals, identity signals, and narrative
+    # consistency scores used by the Random Forest and explanation pages.
     enriched = frame.copy()
     if enriched.empty:
         for column in DERIVED_NUMERIC_COLUMNS:
             enriched[column] = []
         return enriched
 
+    # Normalize raw inputs first. Clipping prevents impossible values and keeps
+    # ratios finite when the SME has not completed every field yet.
     revenue = _numeric(enriched, "annual_revenue", 1).clip(lower=1)
     requested_amount = _numeric(enriched, "requested_amount", 0).clip(lower=0)
     term_months = _numeric(enriched, "term_months", 36).clip(lower=1)
@@ -314,11 +499,15 @@ def add_derived_features(frame):
         ],
     )
     narrative_present = narrative_text.str.strip().ne("").astype(float)
+    # Narrative and forecast evidence strengthen a plan only when both content and support exist.
     plan_evidence_strength = (
         0.55 * forecast_support_uploaded + 0.45 * narrative_present
     ).clip(0, 1)
 
     debt_to_revenue = (existing_debt / revenue).clip(0, 3)
+    # Financial pressure features translate applicant scale, debt, collateral,
+    # and borrowing behavior into bounded risk signals. Bounded 0-1 style
+    # outputs make feature explanations readable and comparable.
     request_to_revenue = (requested_amount / revenue).clip(0, 2)
     short_history = ((3 - years_in_business).clip(lower=0) / 3).clip(0, 1)
     collateral_gap = (1 - collateral_ratio).clip(0, 1)
@@ -344,6 +533,7 @@ def add_derived_features(frame):
         + 0.10 * loan_velocity
     ).clip(0, 1)
 
+    # Scale mismatch catches cases where exposure is large relative to the operating footprint.
     expected_employees = (revenue / 150_000).clip(lower=1)
     staff_capacity_gap = (1 - (employees / expected_employees)).clip(0, 1)
     request_per_employee = requested_amount / employees
@@ -376,6 +566,8 @@ def add_derived_features(frame):
         + 0.15 * country_risk_score
     ).clip(0, 1)
 
+    # Cash-flow and runway signals focus on repayment capacity. The app uses
+    # them both for model scoring and for analyst-facing DSCR/FCF explanations.
     burn_to_revenue = ((monthly_burn_rate * 12) / revenue).clip(0, 2)
     negative_cash_flow_pressure = (-cash_flow_to_revenue).clip(0, 1)
     cash_flow_pressure = (
@@ -415,6 +607,9 @@ def add_derived_features(frame):
         + 0.20 * (1 - plan_evidence_strength)
     ).clip(0, 1)
 
+    # Debt-service estimates are lender-side calculations. The SME supplies
+    # amount/term/financials, while the app derives interest burden, DSCR, and
+    # a +2 percentage-point stress used in review guidance.
     annual_interest_expense = (
         requested_amount * interest_rate * (term_months.clip(upper=12) / 12)
     ).clip(lower=0)
@@ -453,6 +648,9 @@ def add_derived_features(frame):
         + ownership_docs_uploaded
         + forecast_support_uploaded
     ) / 5
+    # Document and process features capture whether the evidence package is
+    # complete and stable. Completeness improves readiness, while repeated edits
+    # or late-stage changes increase validation pressure.
     document_missing_risk = (1 - document_completeness).clip(0, 1)
     document_edit_risk = (document_edit_count / 8).clip(0, 1)
     late_stage_change_risk = (late_stage_change_count / 5).clip(0, 1)
@@ -481,6 +679,9 @@ def add_derived_features(frame):
         + 0.10 * duplicate_contact_score
     ).clip(0, 1)
 
+    # Working-capital signals use raw applicant amounts/ratios from the SME form.
+    # The model sees normalized pressure scores; the UI can still show current
+    # and quick ratios in applicant/lender-friendly language.
     current_ratio_risk = ((1.20 - current_ratio).clip(lower=0) / 1.20).clip(0, 1)
     quick_ratio_risk = ((1.00 - quick_ratio).clip(lower=0) / 1.00).clip(0, 1)
     ccc_risk = ((cash_conversion_cycle - 60).clip(lower=0) / 120).clip(0, 1)
@@ -522,6 +723,9 @@ def add_derived_features(frame):
     documentation_claim = narrative_text.str.contains(
         "complete documentation|documentation complete|fully documented", regex=True
     )
+    # Narrative consistency compares what management says with what the numeric
+    # and document signals support. It is a review prompt, not a language model
+    # fact-checker or legal finding.
     text_contradiction = (
         0.30 * (cash_strength_claim & (cash_flow_to_revenue < 0)).astype(float)
         + 0.25 * (flat_staff_claim & (forecast_revenue_cagr > 0.20)).astype(float)
@@ -544,6 +748,7 @@ def add_derived_features(frame):
         .clip(0, 1)
     )
 
+    # Round derived values before display/storage so tables stay readable and deterministic.
     enriched["forecast_revenue_cagr"] = forecast_revenue_cagr.round(4)
     enriched["interest_rate"] = interest_rate.round(4)
     enriched["forecast_employee_cagr"] = forecast_employee_cagr.round(4)
@@ -613,9 +818,27 @@ def add_derived_features(frame):
 
 
 def build_forecast_table(applications):
+    # Forecast rows are presentation data for the SME portal and lender review.
+    # They use the same engineered inputs as the model but do not feed back into
+    # the application record unless the SME edits and saves the form.
     enriched = add_derived_features(applications)
     rows = []
     for _, row in enriched.iterrows():
+        submitted_rows, submitted_errors = validate_forecast_plan_rows(
+            row.get("forecast_plan_rows")
+        )
+        if submitted_rows and not submitted_errors:
+            for plan_row in submitted_rows:
+                rows.append(
+                    {
+                        "application_id": row.get("application_id", ""),
+                        "company_id": row.get("company_id", ""),
+                        **plan_row,
+                    }
+                )
+            continue
+
+        # The five-year plan linearly moves today's margin/debt toward the applicant's target assumptions.
         current_margin = float(row["cash_flow_to_revenue_ratio"])
         target_margin = float(row["forecast_fcf_margin_year5"])
         annual_revenue = float(row["annual_revenue"])
@@ -650,9 +873,13 @@ def build_forecast_table(applications):
 
 
 def generate_seed_data(rows=1200, seed=42):
+    # Synthetic seed generation creates a plausible lending portfolio for demos,
+    # validation metrics, and queue screens. It deliberately writes local CSVs so
+    # the app can run offline with no customer data or network dependency.
     rng = np.random.default_rng(seed)
     SEED_DIR.mkdir(parents=True, exist_ok=True)
 
+    # The synthetic portfolio is deterministic so demo scoring is reproducible across machines.
     industries = np.array(
         [
             "Construction",
@@ -678,6 +905,8 @@ def generate_seed_data(rows=1200, seed=42):
         ["LLC", "Corporation", "Partnership", "Sole Proprietorship"]
     )
 
+    # Applicant fundamentals are sampled first. Later blocks derive documents,
+    # identity, process, and target labels from these core business conditions.
     annual_revenue = rng.lognormal(mean=14.6, sigma=1.0, size=rows).clip(
         80_000, 80_000_000
     )
@@ -833,6 +1062,9 @@ def generate_seed_data(rows=1200, seed=42):
     ).clip(0, 200)
 
     short_history_signal = (years_in_business < 2).astype(float)
+    # Evidence completeness is correlated with business maturity and risk. This
+    # keeps sample files realistic: weaker cases are more likely to have missing
+    # or unstable evidence, but the relationship is not deterministic.
     document_probability = (
         0.74
         + 0.14 * (years_in_business >= 5)
@@ -994,6 +1226,9 @@ def generate_seed_data(rows=1200, seed=42):
             "narrative_contradiction_score": narrative_contradiction_score.round(4),
         }
     )
+    # Run the same feature engineering used by live intakes before generating
+    # labels, ensuring the training target is based on the fields the model will
+    # actually see.
     applications = add_derived_features(applications)
 
     region_risk = np.isin(
@@ -1002,6 +1237,9 @@ def generate_seed_data(rows=1200, seed=42):
     industry_risk = np.isin(
         industry, ["Construction", "Wholesale", "Logistics"]
     ).astype(float)
+    # The historical target is simulated from a weighted risk recipe plus noise.
+    # This gives the Random Forest a learnable but imperfect supervised problem,
+    # closer to real model validation than a perfectly deterministic label.
     risk_score = (
         -6.75
         + 1.15 * applications["debt_to_revenue_ratio"]
@@ -1092,6 +1330,8 @@ def generate_seed_data(rows=1200, seed=42):
         decisions["is_fraud"] == 1, "Fraud confirmed", "No fraud found"
     )
 
+    # Save normalized table slices used by different pages. Applications is the
+    # model table; the smaller tables support dashboard/profile-style views.
     applications.to_csv(SEED_DIR / "applications.csv", index=False)
     company_profiles.to_csv(SEED_DIR / "company_profiles.csv", index=False)
     cash_flows.to_csv(SEED_DIR / "cash_flows.csv", index=False)
@@ -1101,6 +1341,9 @@ def generate_seed_data(rows=1200, seed=42):
 
 
 def load_seed_data():
+    # Loading is defensive because seed CSVs may have been created by an older
+    # version of the app. Missing derived columns are regenerated rather than
+    # requiring the user to delete local data manually.
     applications = pd.read_csv(SEED_DIR / "applications.csv").drop(
         columns=DEPRECATED_COLUMNS, errors="ignore"
     )
@@ -1149,6 +1392,9 @@ def load_seed_data():
 
 
 def ensure_seed_data():
+    # Startup checks regenerate the local synthetic portfolio when files are
+    # missing, schemas are stale, or old placeholder company names are detected.
+    # This keeps Streamlit caches smooth while still allowing code/schema changes.
     required = [
         "applications.csv",
         "company_profiles.csv",

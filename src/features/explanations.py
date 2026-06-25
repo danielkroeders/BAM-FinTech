@@ -1,3 +1,4 @@
+# Deterministic and LLM-backed explanation builders for lender and SME outputs.
 import os
 import json
 
@@ -7,6 +8,10 @@ import streamlit as st
 from src.core.data_pipeline import add_derived_features
 from src.utils.formatting import format_currency, format_percent
 
+# Explanation helpers build two different audiences from the same score:
+# internal lender decision support and an applicant-safe SME report. The
+# deterministic branch is always available so the workflow does not depend on
+# network access or API credentials.
 
 def _api_key():
     try:
@@ -45,6 +50,9 @@ def _set_explanation_error(message):
 
 
 def deterministic_explanation(application, prediction):
+    # The deterministic explanation is a rule-based memo. It uses model flags,
+    # derived ratios, and common mitigants so demos/tests can run fully offline
+    # while still producing useful analyst copy.
     probability = prediction["fraud_probability"]
     derived = add_derived_features(pd.DataFrame([application])).iloc[0]
     flags = prediction.get("flags", [])
@@ -105,6 +113,8 @@ def deterministic_explanation(application, prediction):
 
 
 def evaluation_signature(application, prediction):
+    # A compact signature ties generated AI output to the exact case and score.
+    # Personal Workspace uses it to block stale AI packages after rescoring.
     return (
         f"{application.get('application_id', '')}:"
         f"{prediction.get('fraud_probability', 0):.6f}:"
@@ -114,6 +124,9 @@ def evaluation_signature(application, prediction):
 
 
 def deterministic_sme_report(application, prediction):
+    # SME reports avoid internal model probabilities unless the lender later
+    # chooses to publish them. The language focuses on practical evidence gaps
+    # and next steps the applicant can understand.
     derived = add_derived_features(pd.DataFrame([application])).iloc[0]
     strengths = []
     improvements = []
@@ -192,6 +205,9 @@ def deterministic_sme_report(application, prediction):
 def _llm_messages(
     application, prediction, detail_level="Detailed analyst memo", model_metrics=None
 ):
+    # The internal prompt can include model metrics and detailed risk factors
+    # because it is only for lender users. The response format is constrained so
+    # score/grade extraction on the LLM Integration page remains possible.
     metrics = model_metrics or {}
     model_label = prediction.get("model_label", "ML model")
     model_context = {
@@ -260,6 +276,8 @@ def _llm_messages(
 
 
 def _sme_report_messages(application, prediction, internal_report):
+    # The SME prompt receives the internal report as source material but is asked
+    # to remove private lender-only reasoning and write applicant-safe guidance.
     payload = {
         "application": application,
         "prediction_context": {
@@ -289,6 +307,8 @@ def _sme_report_messages(application, prediction, internal_report):
 
 
 def _sanitize_sme_report(report):
+    # As a final guard, strip the most obvious internal-only phrasing from
+    # generated SME reports before publication can use the draft.
     restricted_phrases = (
         "ai review score",
         "ai suggested grade",
@@ -444,6 +464,8 @@ def llm_explanation(
     detail_level="Detailed analyst memo",
     model_metrics=None,
 ):
+    # Return a single internal explanation from the selected provider. Provider
+    # errors are captured in session state and handled by the caller.
     if provider == "Local server":
         return _local_explanation(
             application,
@@ -469,8 +491,12 @@ def generate_evaluation_package(
     detail_level="Detailed analyst memo",
     model_metrics=None,
 ):
+    # Generate both reports in one call so the internal memo and SME draft share
+    # the same case, score, provider, and timestamp. This avoids publishing an
+    # SME report from a different model run.
     errors = []
     if provider == "Deterministic":
+        # Deterministic mode supports fully offline demos and remains the fallback for failed LLM calls.
         internal_report = deterministic_explanation(application, prediction)
         sme_report = deterministic_sme_report(application, prediction)
         return {
@@ -493,6 +519,7 @@ def generate_evaluation_package(
     )
     internal_error = st.session_state.get("last_explanation_error")
     if not internal_report:
+        # Never block the analyst workflow on an unavailable hosted or local model.
         internal_report = deterministic_explanation(application, prediction)
         internal_source = "Deterministic fallback"
         if internal_error:
@@ -513,6 +540,7 @@ def generate_evaluation_package(
         sme_report = _openai_sme_report(application, prediction, internal_report, model)
     sme_error = st.session_state.get("last_explanation_error")
     if not sme_report:
+        # The applicant-facing report has its own fallback so internal text is never exposed by accident.
         sme_report = deterministic_sme_report(application, prediction)
         sme_source = "Deterministic fallback"
         if sme_error and sme_error not in errors:
@@ -549,6 +577,9 @@ def explain_prediction(
     detail_level="Detailed analyst memo",
     model_metrics=None,
 ):
+    # Backward-compatible helper for pages that only need one explanation string.
+    # Personal Workspace uses deterministic text by default; LLM Integration
+    # creates the richer two-audience package.
     if use_llm:
         explanation = llm_explanation(
             application,

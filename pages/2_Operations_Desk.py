@@ -1,3 +1,4 @@
+# Operations queue page for synthetic task triage and bulk actions.
 from datetime import datetime
 
 import pandas as pd
@@ -9,11 +10,6 @@ from src.core.runtime import bootstrap_state
 from src.utils.table_views import application_table
 from src.ui.components import open_application_in_workspace, render_sidebar
 from src.features.workbench_features import build_application_queue
-from src.utils.workflow_transfer import (
-    SME_SUBMISSION_SOURCE,
-    find_submitted_application,
-    submitted_intake_rows,
-)
 
 st.set_page_config(page_title="Operations Desk", layout="wide")
 bootstrap_state()
@@ -25,6 +21,10 @@ queue = build_application_queue(
     st.session_state.model_bundle, applications, model_key=selected_model_key
 )
 final_decisions = st.session_state.bulk_final_decisions
+# Bulk actions are session-scoped decisions, so merge them onto the generated queue for display.
+# The generated queue is recalculated from the model, but human bulk actions
+# are stored separately in session state. This merge keeps the table current
+# without mutating the underlying synthetic portfolio.
 queue["final_decision"] = queue["application_id"].apply(
     lambda application_id: final_decisions.get(application_id, {}).get(
         "final_decision", "Pending"
@@ -33,6 +33,7 @@ queue["final_decision"] = queue["application_id"].apply(
 
 
 def _upsert_portfolio_history(application_id, values):
+    # Keep one current portfolio row per application so dashboards do not double-count repeat actions.
     for row in reversed(st.session_state.portfolio_history):
         if row.get("application_id") == application_id:
             row.update(values)
@@ -42,16 +43,12 @@ def _upsert_portfolio_history(application_id, values):
 
 st.title("Operations Desk")
 st.caption(
-    "Team workboard for live SME lending tasks, evidence follow-up, and review routing."
+    "Team workboard for synthetic queue cases, evidence follow-up, and review routing."
 )
 
-submitted_rows = submitted_intake_rows(
-    st.session_state.sme_submission_history,
-    st.session_state.application_lifecycle,
-    active_application=st.session_state.get("active_queue_application"),
-    sme_application=st.session_state.get("sme_company_application"),
-)
-
+# These metrics describe the synthetic operations workboard only. SME-submitted
+# applications follow the dedicated Home/Personal Workspace path so presenters
+# can clearly separate demo intake review from portfolio triage.
 metric_cols = st.columns(4)
 metric_cols[0].metric("Open Work Items", len(queue))
 metric_cols[1].metric(
@@ -63,33 +60,14 @@ metric_cols[3].metric(
     "Rejected Today", int((queue["final_decision"] == "Reject").sum())
 )
 
-if submitted_rows:
-    st.subheader("SME Portal Intake")
-    st.caption(
-        "Company-submitted applications available for lender review in this demo session."
-    )
-    st.dataframe(submitted_rows, width="stretch", hide_index=True)
-    intake_options = [
-        f"{row['Application ID']} - {row['Company']} | {row['Status']}"
-        for row in submitted_rows
-    ]
-    intake_cols = st.columns([2, 1])
-    selected_intake_label = intake_cols[0].selectbox(
-        "Submitted SME application", intake_options
-    )
-    selected_intake_id = selected_intake_label.split(" - ", 1)[0]
-    if intake_cols[1].button("Open Submitted Application", width="stretch"):
-        submitted_application = find_submitted_application(
-            st.session_state.sme_submission_history,
-            selected_intake_id,
-            active_application=st.session_state.get("active_queue_application"),
-            sme_application=st.session_state.get("sme_company_application"),
-        )
-        if submitted_application:
-            open_application_in_workspace(submitted_application, SME_SUBMISSION_SOURCE)
-        else:
-            st.error("The submitted application snapshot could not be found.")
+st.info(
+    "SME-submitted applications are opened from Home or Personal Workspace. "
+    "Use this desk for generic queue triage and bulk actions."
+)
 
+# Operations Desk is intentionally queue-only; SME-submitted demo files stay in the lender review flow.
+# Filters operate before both the bulk action form and the single-case opener,
+# which means every downstream control works on the same visible queue slice.
 filter_cols = st.columns([1, 1, 1])
 status_filter = filter_cols[0].multiselect(
     "Status",
@@ -132,6 +110,9 @@ display = application_table(
 st.dataframe(display, width="stretch", hide_index=True)
 
 with st.expander("Bulk Actions", expanded=False):
+    # Bulk actions simulate a manager-style queue operation. The same audit
+    # structures as single-case review are updated so Risk Dashboard can show a
+    # coherent session activity trail.
     st.caption(
         "Select several visible work items and record one final decision for all of them."
     )
@@ -154,6 +135,7 @@ with st.expander("Bulk Actions", expanded=False):
         if not selected_ids:
             st.warning("Select at least one case before applying a bulk rejection.")
         else:
+            # Bulk rejection writes the same audit structures as single-case review history.
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
             created_count = 0
             skipped_count = 0
@@ -210,6 +192,9 @@ with st.expander("Bulk Actions", expanded=False):
                 rerun()
 
 if not filtered.empty:
+    # Single-case opening is still available from Operations Desk, but it sends
+    # a synthetic queue row to Personal Workspace rather than pretending it came
+    # from the SME portal.
     selected_label = st.selectbox(
         "Review application",
         [f"{row.application_id} - {row.company_name}" for row in filtered.itertuples()],

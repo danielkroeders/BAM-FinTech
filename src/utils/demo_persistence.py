@@ -1,3 +1,4 @@
+# Local demo-session persistence for refresh-safe walkthrough state.
 import json
 import math
 from datetime import datetime
@@ -11,7 +12,11 @@ SESSION_STATE_KEY = "demo_session_id"
 SESSION_LOADED_KEY = "demo_session_loaded"
 SESSION_DIR = Path(__file__).resolve().parents[2] / ".tmp" / "demo_sessions"
 
+# Persistence is deliberately local and demo-scoped. It keeps the app smooth
+# across Streamlit reruns/refreshes but is not a production database and does
+# not write API tokens or model cache objects.
 PERSISTED_KEYS = [
+    # Only demo workflow state is persisted; model caches and secrets remain outside this file.
     "authenticated",
     "remember_me",
     "login_stage",
@@ -56,6 +61,8 @@ PERSISTED_KEYS = [
 
 
 def _query_session_id():
+    # Query params let multiple browser tabs keep separate demo sessions without
+    # a backend account system.
     try:
         value = st.query_params.get(SESSION_QUERY_KEY)
     except Exception:
@@ -83,6 +90,7 @@ def _set_query_session_id(session_id):
 
 
 def _session_path(session_id):
+    # Sanitize the query-provided session ID before using it as a filename.
     safe_id = "".join(
         character
         for character in str(session_id)
@@ -101,6 +109,8 @@ def ensure_demo_session():
 
 
 def restore_demo_state():
+    # Restore once per Streamlit session. Re-reading on every rerun could
+    # overwrite fresh widget changes before they are persisted.
     session_id = ensure_demo_session()
     if st.session_state.get(SESSION_LOADED_KEY):
         return
@@ -122,6 +132,9 @@ def restore_demo_state():
 
 
 def _json_ready(value):
+    # Streamlit state may contain numpy scalars, pandas values, sets, or NaN.
+    # Convert everything into JSON-safe primitives before writing the session
+    # file.
     if value is None or isinstance(value, (bool, int, str)):
         return value
     if isinstance(value, float):
@@ -140,6 +153,9 @@ def _json_ready(value):
 
 
 def persist_demo_state():
+    # Persist only whitelisted keys. Large deterministic resources such as the
+    # seed dataset/model bundle are rebuilt or cached by runtime.py, not stored
+    # in the demo JSON file.
     session_id = ensure_demo_session()
     SESSION_DIR.mkdir(parents=True, exist_ok=True)
     state = {
@@ -154,15 +170,20 @@ def persist_demo_state():
     }
     path = _session_path(session_id)
     temp_path = path.with_suffix(".tmp")
+    # Atomic replace avoids corrupting the demo session if the app stops mid-write.
     temp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     temp_path.replace(path)
     return path
 
 
 def clear_demo_state():
+    # Clear keeps the same demo_session_id so the browser URL remains valid, but
+    # removes every other state key and all local uploaded evidence for a clean
+    # new walkthrough.
     session_id = ensure_demo_session()
     from src.utils.document_storage import clear_session_documents
 
+    # Clearing state also removes local SME uploads so the next demo starts clean.
     clear_session_documents(session_id)
     path = _session_path(session_id)
     if path.exists():

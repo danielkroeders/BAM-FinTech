@@ -1,3 +1,4 @@
+# Model governance page for Random Forest metrics, thresholds, and feature signals.
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -15,6 +16,9 @@ render_sidebar()
 bundle = st.session_state.model_bundle
 applications = add_derived_features(st.session_state.seed_data["applications"])
 
+# This page explains governance for the one active model. It still reads the
+# bundle abstraction because older sessions and tests use model keys, but the
+# visible product decision is intentionally RF-only.
 st.title("Model Insights")
 st.caption(
     "Supervised SME application-risk model performance, grading policy, and research-backed signal design."
@@ -26,6 +30,7 @@ st.info(
 )
 metrics = bundle.metrics_for(selected_model_key)
 
+# Keep this table extensible, even though the live workflow now exposes only Random Forest.
 model_comparison = pd.DataFrame(
     [
         {
@@ -84,6 +89,9 @@ metric_presets = {
     ],
     "All metrics": list(METRIC_CATALOG.keys()),
 }
+# Presets keep the page readable for different audiences. An executive can stay
+# on four headline metrics, while a validator can expose the full confusion,
+# ranking, and cost picture without changing model behavior.
 metric_preset = st.selectbox("Metric preset", list(metric_presets.keys()), index=1)
 selected_metric_labels = st.multiselect(
     "Visible metrics",
@@ -121,6 +129,9 @@ queue_rows = pd.DataFrame(
 st.dataframe(queue_rows, width="stretch", hide_index=True)
 
 st.subheader("Custom Portfolio Metric")
+# The custom metric builder is a teaching tool: users can combine any numeric
+# portfolio field into an average/median/sum/P90 view and see how derived ratios
+# behave without editing code or retraining the model.
 metric_left, metric_middle, metric_right, metric_extra = st.columns(4)
 numeric_options = [
     column for column in NUMERIC_COLUMNS if column in applications.columns
@@ -158,6 +169,7 @@ with metric_extra:
 metric_series = pd.to_numeric(applications[numerator_column], errors="coerce")
 
 if denominator_column != "None":
+    # Division by zero is converted to missing so one bad denominator does not break the page.
     denominator = pd.to_numeric(
         applications[denominator_column], errors="coerce"
     ).replace(0, pd.NA)
@@ -196,6 +208,7 @@ with left:
 
 with right:
     st.subheader("A-F Grading Thresholds")
+    # These thresholds define the policy layer shown to analysts and reused in the pitch deck.
     thresholds = pd.DataFrame(
         [
             {"Grade": "A", "Application risk score": "< 0.15", "Decision": "Approve"},
@@ -225,6 +238,9 @@ with right:
     st.dataframe(thresholds, width="stretch", hide_index=True)
 
 st.subheader("Governance Notes")
+# Governance rows are deliberately plain language because they often appear in
+# pitch/demo walkthroughs. They describe controls around the app workflow, not
+# formal production model-risk-management documentation.
 governance_rows = pd.DataFrame(
     [
         {
@@ -254,6 +270,8 @@ st.dataframe(governance_rows, width="stretch", hide_index=True)
 st.subheader("Top Feature Importances")
 importance_raw = bundle.feature_importance_for(selected_model_key).head(20).copy()
 
+# The chart uses raw numeric importances, while the table formats them for human
+# scanning. Keeping both versions avoids feeding formatted strings into Altair.
 importance_display = importance_raw.copy()
 
 importance_display["importance"] = importance_display["importance"].apply(
@@ -277,6 +295,9 @@ importance_chart = (
 )
 
 st.subheader("Research-Backed Derived Signals")
+# This table is the bridge between the assignment research narrative and the
+# implementation. The same signal names are calculated in data_pipeline.py and
+# used by the model, workbench, and explanation pages.
 derived_signals = pd.DataFrame(
     [
         {

@@ -1,3 +1,4 @@
+# Document validation logic for lender-side evidence classification and red flags.
 import json
 import os
 import re
@@ -17,6 +18,9 @@ from src.utils.document_storage import (
 DOCUMENT_VALIDATION_PROVIDERS = ["Deterministic", "OpenAI API", "Local server"]
 MAX_PREVIEW_CHARS = 4500
 
+# Validation is deliberately conservative. The deterministic layer checks
+# visible text, filenames, MIME types, and category keywords. Optional AI layers
+# can help classify the preview, but neither path proves legal authenticity.
 CATEGORY_EXPECTATIONS = {
     "financial_statements": {
         "label": DOCUMENT_CATEGORIES["financial_statements"],
@@ -90,16 +94,20 @@ CATEGORY_EXPECTATIONS = {
             "contracted revenue",
             "projected",
             "assumption",
+            "remaining debt",
             "planned debt service",
             "operating costs",
             "runway",
             "growth",
         ],
-        "follow_up": "Ask for forecast assumptions, signed-contract support, pipeline evidence, and monthly debt-service planning.",
+        "follow_up": "Ask for forecast assumptions, signed-contract support, pipeline evidence, and the annual debt path behind the five-year plan.",
     },
 }
 
 RED_FLAG_MARKERS = [
+    # Markers are strings planted in the fictional sample documents and common
+    # wording a reviewer would want surfaced. They downgrade confidence and
+    # create follow-up guidance without changing uploaded evidence.
     ("unreconciled", "Unreconciled values"),
     ("manual revenue adjustment", "Manual revenue adjustment"),
     ("missing invoice", "Missing invoice support"),
@@ -138,6 +146,7 @@ def _local_api_key():
 
 def _normalize_local_base_url(base_url):
     normalized = (base_url or "http://localhost:1234/v1").strip().rstrip("/")
+    # Accept either a server root or a full chat-completions URL from local model tools.
     if normalized.endswith("/v1/chat/completions"):
         return normalized[: -len("/chat/completions")]
     if normalized.endswith("/chat/completions"):
@@ -170,6 +179,7 @@ def _archive_text_preview(content, suffix):
 
     members = []
     if suffix == ".docx":
+        # Office files are ZIP containers; a bounded XML preview is enough for category matching.
         members = ["word/document.xml"]
     elif suffix == ".xlsx":
         members = [
@@ -212,6 +222,7 @@ def text_preview(content, metadata, max_chars=MAX_PREVIEW_CHARS):
             return decoded[:max_chars], "decoded text"
 
     if suffix == ".pdf" or content[:4] == b"%PDF":
+        # PDF/OCR extraction is deliberately out of scope for this local deterministic MVP check.
         return (
             "PDF binary detected. Text extraction is not enabled in this MVP check.",
             "binary pdf",
@@ -228,6 +239,9 @@ def text_preview(content, metadata, max_chars=MAX_PREVIEW_CHARS):
 
 
 def _category_scores(text, filename):
+    # Keyword scoring favors simple, explainable evidence checks over opaque
+    # classification. A document can still require review if the text preview is
+    # short, binary, or keyword-poor.
     combined = f"{filename}\n{text}".lower()
     scores = {}
     hits = {}
@@ -255,6 +269,9 @@ def _status_from_scores(
     preview_source,
     suffix,
 ):
+    # Convert keyword scores into the three statuses used across the UI. Binary
+    # files are kept in Needs review unless metadata/text strongly supports the
+    # expected category.
     if (
         preview_source in {"binary pdf", "binary image", "metadata only"}
         and expected_score < 3
@@ -278,6 +295,8 @@ def _status_from_scores(
 
 
 def deterministic_document_validation(content, metadata, expected_category=None):
+    # Deterministic validation is the guaranteed offline path. It gives the
+    # lender useful triage even when hosted/local LLM credentials are missing.
     expected_category = expected_category or metadata.get("category")
     expected_label = DOCUMENT_CATEGORIES.get(
         expected_category, str(expected_category or "Unknown")
@@ -287,6 +306,7 @@ def deterministic_document_validation(content, metadata, expected_category=None)
     suffix = f".{filename.rsplit('.', 1)[-1].lower()}" if "." in filename else ""
     scores, hits = _category_scores(preview, filename)
     red_flags = _red_flag_hits(preview, filename)
+    # Category scoring uses visible text/metadata first, then red flags can downgrade confidence.
     detected_category = max(scores, key=scores.get) if scores else expected_category
     detected_label = DOCUMENT_CATEGORIES.get(
         detected_category, str(detected_category or "Unknown")
@@ -359,6 +379,9 @@ def deterministic_document_validation(content, metadata, expected_category=None)
 
 
 def _validation_messages(content, metadata, deterministic_result):
+    # The AI prompt includes deterministic output as context, asking the model to
+    # reason over the same bounded preview rather than inventing unseen document
+    # content.
     preview, preview_source = text_preview(content, metadata)
     categories = ", ".join(
         f"{key}: {value}" for key, value in DOCUMENT_CATEGORIES.items()
@@ -396,6 +419,8 @@ def _validation_messages(content, metadata, deterministic_result):
 
 
 def _extract_json(text):
+    # Hosted/local models sometimes wrap JSON in prose. Pull out the first JSON
+    # object so validation can still fail gracefully instead of crashing.
     if not text:
         return None
     try:
@@ -411,6 +436,9 @@ def _extract_json(text):
 
 
 def _coerce_ai_result(payload, fallback, provider):
+    # Normalize AI output into the deterministic result shape. Invalid fields
+    # fall back to deterministic values so one malformed model response cannot
+    # break the lender workflow.
     if not isinstance(payload, dict):
         result = dict(fallback)
         result["ai_error"] = "AI response was not valid JSON."
@@ -534,6 +562,8 @@ def validate_document(
     local_base_url=None,
     local_api_key=None,
 ):
+    # Always run deterministic validation first. Hosted/local AI is an optional
+    # refinement layer and inherits deterministic fallback/error behavior.
     deterministic_result = deterministic_document_validation(
         content, metadata, metadata.get("category")
     )
@@ -552,6 +582,9 @@ def validate_document(
 
 
 def validation_summary(results):
+    # Summary status is intentionally strict: one mismatch makes the whole run a
+    # mismatch, while any Needs review result keeps the package out of a fully
+    # verified state.
     total = len(results)
     verified = sum(1 for result in results if result.get("status") == "Verified")
     mismatches = sum(1 for result in results if result.get("status") == "Mismatch")
@@ -584,6 +617,9 @@ def run_document_validation(
     local_api_key=None,
     root=None,
 ):
+    # Iterate over the local document vault for one application. The returned
+    # run object is stored by src/ui/document_validation.py under a scope such as
+    # "sme_preview" or "lender_verification".
     results = []
     for document in list_documents(session_id, application_id, root=root):
         content, metadata = read_document(
@@ -614,6 +650,8 @@ def run_document_validation(
 
 
 def validation_results_table(results):
+    # Convert validation dictionaries into the compact dataframe shown in both
+    # SME preview and lender verification panels.
     return pd.DataFrame(
         [
             {

@@ -1,3 +1,4 @@
+# Streamlit session bootstrap and demo-state initialization helpers.
 import os
 
 import streamlit as st
@@ -9,19 +10,27 @@ from src.core.modeling import train_model
 
 MODEL_CACHE_VERSION = "rf-only-v1"
 
+# Runtime is imported by every Streamlit page. It centralizes expensive startup
+# work and shared session defaults so individual pages can assume the portfolio,
+# model bundle, workflow histories, and profile settings already exist.
 
 @st.cache_data(show_spinner="Loading portfolio")
 def get_seed_data():
+    # Seed data is expensive enough to cache, but deterministic so safe to reuse across pages.
     return ensure_seed_data()
 
 
 @st.cache_resource(show_spinner="Training application risk model")
 def get_model_bundle(cache_version=MODEL_CACHE_VERSION):
+    # cache_version is not used inside the function body; it is a cache-busting
+    # argument. Increment it when model shape or metrics change so Streamlit
+    # retrains instead of serving an old resource.
     seed_data = ensure_seed_data()
     return train_model(seed_data["applications"])
 
 
 def _seed_data_has_current_schema(seed_data):
+    # Cached Streamlit data can outlive code changes; this guard forces regeneration after schema updates.
     applications = (
         seed_data.get("applications") if isinstance(seed_data, dict) else None
     )
@@ -31,6 +40,8 @@ def _seed_data_has_current_schema(seed_data):
 
 
 def _seed_data_has_named_companies(seed_data):
+    # Older seed files used generic Company N names. Regenerating them improves
+    # demo realism and keeps sample/company naming aligned with the current UI.
     applications = (
         seed_data.get("applications") if isinstance(seed_data, dict) else None
     )
@@ -43,6 +54,7 @@ def _seed_data_has_named_companies(seed_data):
 
 def _model_bundle_has_current_metrics(model_bundle):
     models = getattr(model_bundle, "models", None)
+    # Old sessions may still hold previous multi-model bundles, so require the RF-only shape explicitly.
     if not isinstance(models, dict) or set(models) != {"random_forest"}:
         return False
     required_metrics = {
@@ -56,6 +68,10 @@ def _model_bundle_has_current_metrics(model_bundle):
 
 def bootstrap_state():
     restore_demo_state()
+    # Bootstrap is called by every page, so each block is idempotent and safe after reruns/navigation.
+    # The first group initializes expensive shared resources; later groups only
+    # create lightweight workflow state if it is missing from the current
+    # Streamlit session or restored demo-session JSON.
     if (
         "seed_data" not in st.session_state
         or not _seed_data_has_current_schema(st.session_state.seed_data)
@@ -68,6 +84,8 @@ def bootstrap_state():
         # Reuse the RF-only bundle across reruns and pages; model selection is no longer exposed.
         st.session_state.model_bundle = get_model_bundle(MODEL_CACHE_VERSION)
     if "portfolio_history" not in st.session_state:
+        # Portfolio/review histories are append/update stores used by Risk
+        # Dashboard, Operations Desk, and Personal Workspace during the same demo.
         st.session_state.portfolio_history = []
     if "score_history" not in st.session_state:
         st.session_state.score_history = []
@@ -108,6 +126,9 @@ def bootstrap_state():
     if "document_validation_results" not in st.session_state:
         st.session_state.document_validation_results = {}
     if "llm_provider" not in st.session_state:
+        # LLM settings are split between provider defaults and local endpoint
+        # drafts. Hosted/local generation is optional; deterministic fallback
+        # keeps the app usable offline.
         st.session_state.llm_provider = "OpenAI API"
     if "explanation_model" not in st.session_state:
         st.session_state.explanation_model = "gpt-4.1-mini"
@@ -115,6 +136,7 @@ def bootstrap_state():
     env_local_base_url = os.getenv("LOCAL_LLM_BASE_URL", "")
     env_local_model = os.getenv("LOCAL_LLM_MODEL", "")
     env_local_api_key = os.getenv("LOCAL_LLM_API_KEY", "")
+    # Local LLM endpoint/model may be restored from disk; API tokens are only read from env/session.
     if "local_llm_base_url" not in st.session_state:
         st.session_state.local_llm_base_url = (
             env_local_base_url or saved_local_profile.get("ip", "")
@@ -143,6 +165,9 @@ def bootstrap_state():
             or st.session_state.local_llm_base_url_draft
         )
     if "bulk_final_decisions" not in st.session_state:
+        # The remaining keys track cross-page workflow handoff: bulk operations,
+        # support requests, active lender case, SME draft, submission lifecycle,
+        # and publication history.
         st.session_state.bulk_final_decisions = {}
     if "bulk_action_history" not in st.session_state:
         st.session_state.bulk_action_history = []

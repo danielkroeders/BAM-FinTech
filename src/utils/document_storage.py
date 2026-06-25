@@ -1,3 +1,4 @@
+# Local file-vault helpers for SME evidence uploads and lender downloads.
 import hashlib
 import json
 import mimetypes
@@ -15,8 +16,12 @@ DOCUMENT_CATEGORIES = {
     "forecast_support": "Forecast support",
 }
 
+# The document vault is intentionally inside .tmp and excluded from Git. It lets
+# the demo use real uploaded bytes, hashes, downloads, and validation metadata
+# without touching external storage.
 
 def _safe_segment(value, fallback="item"):
+    # User-supplied session/application IDs become path segments, so keep only safe characters.
     cleaned = re.sub(r"[^A-Za-z0-9_-]+", "-", str(value or "")).strip("-_")
     return cleaned[:80] or fallback
 
@@ -35,6 +40,8 @@ def _manifest_path(session_id, application_id, root=None):
 
 
 def _load_manifest(session_id, application_id, root=None):
+    # The manifest is the source of truth for saved file metadata. If it is
+    # missing or malformed, return an empty list rather than breaking the portal.
     path = _manifest_path(session_id, application_id, root=root)
     if not path.exists():
         return []
@@ -49,6 +56,7 @@ def _write_manifest(session_id, application_id, documents, root=None):
     path = _manifest_path(session_id, application_id, root=root)
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.with_suffix(".tmp")
+    # Manifests are replaced atomically so document metadata stays in sync with saved files.
     temp_path.write_text(json.dumps(documents, indent=2), encoding="utf-8")
     temp_path.replace(path)
 
@@ -62,6 +70,8 @@ def save_document(
     content_type=None,
     root=None,
 ):
+    # Save bytes under a generated document ID while preserving the original
+    # filename in metadata for the UI. The hash is used for duplicate detection.
     if category not in DOCUMENT_CATEGORIES:
         raise ValueError(f"Unsupported document category: {category}")
     if not isinstance(content, bytes) or not content:
@@ -74,6 +84,7 @@ def save_document(
 
     for document in documents:
         if document.get("category") == category and document.get("sha256") == digest:
+            # Duplicate uploads reuse the existing manifest entry instead of creating noise.
             return document, False
 
     document_id = f"DOC-{uuid4().hex[:12]}"
@@ -115,6 +126,8 @@ def list_documents(session_id, application_id, category=None, root=None):
 
 
 def read_document(session_id, application_id, document_id, root=None):
+    # Resolve files only through manifest entries. This prevents callers from
+    # reading arbitrary paths by passing crafted filenames.
     documents = _load_manifest(session_id, application_id, root=root)
     document = next(
         (item for item in documents if item.get("document_id") == document_id), None
@@ -132,6 +145,8 @@ def read_document(session_id, application_id, document_id, root=None):
 
 
 def document_counts(session_id, application_id, root=None):
+    # Counts are used to sync SME evidence flags after uploads, sample seeding,
+    # and session restore.
     counts = {category: 0 for category in DOCUMENT_CATEGORIES}
     for document in list_documents(session_id, application_id, root=root):
         category = document.get("category")
@@ -148,6 +163,7 @@ def clear_session_documents(session_id, root=None):
     for path in sorted(
         target.rglob("*"), key=lambda item: len(item.parts), reverse=True
     ):
+        # Delete deepest paths first so directories are empty before removal.
         if path.is_file():
             path.unlink()
         elif path.is_dir():

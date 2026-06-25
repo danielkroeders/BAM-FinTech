@@ -1,3 +1,4 @@
+# Lightweight SHAP-style driver summaries for model explanation panels.
 import pandas as pd
 
 from src.core.data_pipeline import (
@@ -12,8 +13,11 @@ from src.utils.formatting import (
     format_score,
 )
 
+# SHAP is optional in the app. This module keeps imports lazy and output compact
+# so the rest of the workflow still runs if the dependency is not installed.
 
 def _fraud_class_values(values):
+    # SHAP returns different shapes across versions; normalize to the positive-risk class.
     if isinstance(values, list):
         return values[1][0]
     if getattr(values, "ndim", 0) == 3:
@@ -31,12 +35,15 @@ def _fraud_expected_value(expected_value):
 
 def _feature_group(feature_name):
     for column in CATEGORICAL_COLUMNS:
+        # One-hot encoded categories are grouped back to the original field for readable driver tables.
         if feature_name.startswith(f"{column}_"):
             return column
     return feature_name
 
 
 def _format_value(application, feature):
+    # Driver tables should show the applicant's raw business value in a compact
+    # way rather than exposing transformed one-hot/scaled feature values.
     value = application.get(feature, "")
     if feature.endswith("_uploaded"):
         return "Yes" if float(value or 0) >= 0.5 else "No"
@@ -94,8 +101,12 @@ def _format_value(application, feature):
 
 
 def shap_driver_table(model_bundle, application):
+    # Calculate a local explanation for the Random Forest baseline. SHAP values
+    # are grouped back to business-level drivers so analysts see "industry" or
+    # "requested_amount" instead of preprocessor internals.
     import shap
 
+    # SHAP is imported lazily so the rest of the app can run if the optional package is unavailable.
     pipeline = model_bundle.pipeline
     preprocessor = pipeline.named_steps["preprocessor"]
     classifier = pipeline.named_steps["classifier"]
@@ -118,6 +129,7 @@ def shap_driver_table(model_bundle, application):
         group = _feature_group(feature_name)
         rows.append({"driver": group, "contribution": float(contribution)})
 
+    # Aggregate one-hot and transformed features back into analyst-readable drivers.
     grouped = pd.DataFrame(rows).groupby("driver", as_index=False)["contribution"].sum()
     grouped["application_value"] = grouped["driver"].apply(
         lambda feature: _format_value(enriched_application, feature)

@@ -1,3 +1,4 @@
+# Role-aware support page for lender helpdesk and SME consultant contact.
 from urllib.parse import quote
 from datetime import datetime
 
@@ -13,6 +14,9 @@ render_sidebar()
 profile = get_profile()
 sme_mode = is_sme_profile(profile)
 
+# Support content is role-aware because the same app serves applicants and bank
+# analysts. The branch below controls both the contact list and the scripted
+# chat language so SME users never see internal scoring guidance.
 
 def _active_reps():
     return SME_CONSULTANTS if sme_mode else LENDER_SUPPORT_REPS
@@ -25,6 +29,7 @@ def _active_faq():
 def _support_response(message):
     text = message.lower()
     if sme_mode:
+        # SME support avoids internal model terminology and routes applicants to consultant-style guidance.
         if any(
             word in text
             for word in ["consultant", "call", "appointment", "speak", "contact"]
@@ -47,6 +52,7 @@ def _support_response(message):
         return "Thanks. For applicant help, submit the consultant request above and include your application ID if you have one."
 
     if any(word in text for word in ["dscr", "interest", "rate", "pricing"]):
+        # Lender support can reference internal ratios because this branch is not shown to SME users.
         return (
             "For pricing questions, check Personal Workspace's interest rate, annual debt service, DSCR, and stressed DSCR fields. "
             "If DSCR is below 1.0, the case should usually remain in manual review."
@@ -72,6 +78,7 @@ def _support_response(message):
 
 
 def _mailto(rep, category, case_id, message):
+    # The MVP prepares a local mailto draft rather than sending anything to a real support system.
     prefix = (
         "YourBank consultant request"
         if sme_mode
@@ -107,6 +114,8 @@ else:
     )
 
 st.subheader("Consultants" if sme_mode else "Support Contacts")
+# Contact cards are static demo data from constants.py. The form below creates a
+# local mailto link and session ticket instead of calling a real helpdesk system.
 rep_cols = st.columns(len(reps))
 for column, rep in zip(rep_cols, reps):
     with column:
@@ -175,6 +184,7 @@ with st.form("support_request_form"):
 
 if submitted:
     selected_rep = next(rep for rep in reps if rep["name"] == selected_name)
+    # Tickets remain in session state so the demo can show a request trail without backend storage.
     ticket = {
         "Ticket ID": f"TICKET-{len(st.session_state.support_ticket_history) + 1:03d}",
         "Created": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -205,8 +215,11 @@ with chat_left:
     st.caption(
         "This chat uses scripted responses and does not contact a real support desk."
     )
+    # The chat is lightweight keyword routing. It exists so the demo can answer
+    # common workflow questions without needing an LLM or external service.
     chat_key = "sme_support_chat_history" if sme_mode else "lender_support_chat_history"
     if chat_key not in st.session_state:
+        # Chat history is split by role so lender and SME sessions do not leak scripted context.
         first_name = (
             profile.get("name") or profile.get("display_name") or "there"
         ).split()[0]

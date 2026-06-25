@@ -1,3 +1,4 @@
+# Tutorial hub with role-aware, text-only walkthroughs for the live app.
 from html import escape
 from urllib.parse import urlencode
 
@@ -18,6 +19,10 @@ profile = get_profile()
 sme_mode = is_sme_profile(profile)
 
 
+# Lender and SME guides are separate lists so internal underwriting instructions never leak into applicant help.
+# These guides are data, not screenshots. That makes the tutorial hub durable
+# when the UI shifts and keeps the assignment demo from depending on generated
+# placeholder images.
 TUTORIALS = [
     {
         "slug": "home",
@@ -27,36 +32,36 @@ TUTORIALS = [
         "category": "Getting started",
         "time": "4 min",
         "level": "Beginner",
-        "summary": "Orient yourself, resume assigned work, and read the day’s operational signals.",
-        "features": ["Task snapshot", "Quick actions", "Team updates", "Calendar"],
+        "summary": "Orient yourself, continue SME-submitted intake work, and read the day’s operational signals.",
+        "features": ["SME intake snapshot", "Suggested actions", "Team updates", "Calendar"],
         "objectives": [
-            "Read the four workload indicators",
-            "Resume the right assigned case",
+            "Read the workload indicators",
+            "Continue the right SME-submitted intake",
             "Use updates and calendar context",
         ],
         "steps": [
             {
                 "title": "Read your workload snapshot",
-                "body": "Start with My Open Tasks, High Priority, Due This Week, and Evidence Follow-Up. Together they tell you how much work is assigned, which cases carry the most risk, and where missing evidence may block a decision.",
+                "body": "Start with SME Intake, High Priority Queue, Due This Week, Evidence Follow-Up, and Operations Queue. Together they show whether a company-submitted file is waiting and whether broader queue pressure exists.",
                 "action": "Use High Priority and Due This Week to decide what deserves attention first.",
                 "tip": "A case can be urgent without being high risk. Check both the risk grade and its SLA.",
             },
             {
-                "title": "Resume an assigned task",
-                "body": "Use Continue task to choose an application from your personal queue. The label includes the application ID, applicant, and grade so you can identify the case before opening it.",
-                "action": "Select a task and choose Continue Selected Task to load it into Personal Workspace.",
-                "tip": "The handoff preserves the selected application as the active intake case.",
+                "title": "Continue a submitted intake",
+                "body": "Use SME Portal Intake when a company-submitted application is waiting. The label includes the application ID, company, and lifecycle status.",
+                "action": "Select a submitted application and choose Open SME Submission to load it into Personal Workspace.",
+                "tip": "This is the clean path for the SME -> analyst -> SME demo journey.",
             },
             {
-                "title": "Scan the current-task table",
-                "body": "The table adds requested amount, risk score, queue status, evidence gaps, and SLA. Use it for a more complete comparison when several cases look equally urgent.",
-                "action": "Compare evidence gaps before starting cases that require same-day completion.",
-                "tip": "A high missing-document count usually means the next action is evidence follow-up, not scoring.",
+                "title": "Use Operations Desk for queue work",
+                "body": "Generic synthetic queue cases now live in Operations Desk so they do not compete with SME-submitted demo cases on Home.",
+                "action": "Open Operations Desk when you want to compare queue items, filter by analyst, or perform bulk actions.",
+                "tip": "Keep Home as a launchpad and Personal Workspace as the active submitted-intake review surface.",
             },
             {
                 "title": "Use the daily context",
                 "body": "Workspace or Slack updates show handoffs and queue events. Calendar Today shows scheduled reviews, stand-ups, and escalation checks that may affect your sequencing.",
-                "action": "Open the page you need from the quick links beneath the task table.",
+                "action": "Open the page you need from the quick links beneath Suggested Actions.",
                 "tip": "Treat Home as a launchpad; detailed case work happens in Personal Workspace.",
             },
         ],
@@ -71,27 +76,27 @@ TUTORIALS = [
         "level": "Core workflow",
         "summary": "Load a case, review evidence, score the application, and record the analyst decision.",
         "features": [
-            "Case queue",
+            "SME Portal Intake",
             "Application intake",
             "Risk result",
             "Metric guide",
             "Case review",
         ],
         "objectives": [
-            "Start from a queue or SME-submitted intake",
+            "Start from a submitted SME intake",
             "Understand the scoring inputs and output",
             "Save a human review to the audit trail",
         ],
         "steps": [
             {
                 "title": "Load a lender snapshot",
-                "body": "Start a case from SME Portal Intake or Current Tasks. The active-intake banner confirms which submitted snapshot is loaded and where it came from.",
-                "action": "For the full SME-to-lender walkthrough, load a sample intake in the SME Company Portal, submit it, then open it from SME Portal Intake.",
-                "tip": "Submitted SME applications auto-score when opened in Personal Workspace. Other loaded task snapshots can be scored with Score Loaded Intake.",
+                "body": "Start from SME Portal Intake. The active-intake banner confirms which submitted snapshot is loaded and where it came from.",
+                "action": "For the full SME-to-lender walkthrough, load a sample intake in the Loan Intake Portal, submit it, then open it from SME Portal Intake.",
+                "tip": "Submitted SME applications auto-score when opened in Personal Workspace. Generic queue work belongs in Operations Desk.",
             },
             {
                 "title": "Review the locked intake",
-                "body": "Inspect the read-only company profile, loan request, financial snapshot, five-year plan, applicant narrative, and evidence checklist. Applicant data changes belong in the SME Company Portal.",
+                "body": "Inspect the read-only company profile, loan request, financial snapshot, five-year plan, applicant narrative, and evidence checklist. Applicant data changes belong in the Loan Intake Portal.",
                 "action": "Check requested amount, free cash flow, recent loans, suspicious transfers, and evidence readiness, then choose Score Loaded Intake if the snapshot has not already been scored.",
                 "tip": "Do not interpret a single field in isolation. The model combines pressure, anomaly, liquidity, and evidence signals.",
             },
@@ -681,22 +686,20 @@ SME_TUTORIALS = [
 
 ACTIVE_TUTORIALS = SME_TUTORIALS if sme_mode else TUTORIALS
 
+# Page maps drive the small visual "where this appears" cards on each tutorial tile.
+# A page map is a compact mental model of a screen: metrics, forms, tabs, or
+# actions that users should recognize when they navigate from a guide to the app.
 PAGE_MAPS = {
     "home": [
         {
             "kind": "metrics",
             "title": "Workload snapshot",
-            "detail": "My Open Tasks · High Priority · Due This Week · Evidence Follow-Up",
+            "detail": "SME Intake · High Priority Queue · Due This Week · Operations Queue",
         },
         {
             "kind": "action",
-            "title": "Quick Actions",
-            "detail": "Continue task → Continue Selected Task",
-        },
-        {
-            "kind": "table",
-            "title": "Current Tasks",
-            "detail": "Task ID · Applicant · Application risk score · Evidence gaps · SLA",
+            "title": "Suggested Actions",
+            "detail": "SME Portal Intake · Open SME Submission · Operations Desk",
         },
         {
             "kind": "split",
@@ -707,8 +710,8 @@ PAGE_MAPS = {
     "personal-workspace": [
         {
             "kind": "queue",
-            "title": "Current Tasks",
-            "detail": "Next application · Start Selected Case · SME Portal Intake",
+            "title": "SME Portal Intake",
+            "detail": "Submitted SME application · Open Submitted Application",
         },
         {
             "kind": "form",
@@ -938,6 +941,7 @@ def _query_value(name):
 
 
 def _current_query_params():
+    # New and old Streamlit query-param APIs return slightly different shapes, so normalize them here.
     try:
         params = dict(st.query_params)
     except Exception:
@@ -1767,6 +1771,7 @@ def _panel_html(tutorial):
 
 
 def _render_hub():
+    # The hub groups the active role's guides by category while preserving their defined order.
     area_options = ["All areas"]
     for tutorial in ACTIVE_TUTORIALS:
         if tutorial["category"] not in area_options:
@@ -1935,6 +1940,7 @@ def _render_guide(tutorial):
 _render_styles()
 selected_slug = _query_value("guide")
 selected_tutorial = next(
+    # Query-string routing keeps each text guide linkable without adding extra Streamlit pages.
     (tutorial for tutorial in ACTIVE_TUTORIALS if tutorial["slug"] == selected_slug),
     None,
 )

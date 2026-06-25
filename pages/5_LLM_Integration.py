@@ -1,3 +1,4 @@
+# AI report page that builds internal lender and applicant-safe SME outputs.
 import re
 
 import streamlit as st
@@ -27,12 +28,18 @@ st.caption(
 application = st.session_state.last_application
 prediction = st.session_state.last_prediction
 
+# This page always works from the latest scored case. Personal Workspace writes
+# last_application/last_prediction after scoring, and the evaluation signature
+# below prevents a report for one case from being reused on another case.
+
 def _provider_index():
+    # Preserve the user's last provider selection across reruns of the Streamlit form.
     saved = st.session_state.get("llm_chat_provider", "Deterministic")
     return PROVIDERS.index(saved) if saved in PROVIDERS else 0
 
 
 def _extract_ai_review_score(text):
+    # The prompt asks LLMs for a bounded score; parsing keeps the comparison table numeric.
     match = re.search(
         r"AI review score\s*:\s*(\d{1,3})\s*/\s*100", text or "", re.IGNORECASE
     )
@@ -82,6 +89,7 @@ def _grade_comparison(ai_grade, model_grade, model_label):
 def _record_llm_run(
     signature, application, prediction, provider, source, error, explanation
 ):
+    # Store a compact audit row so Personal Workspace can show which AI package was generated.
     ai_review_score = _extract_ai_review_score(explanation)
     ai_text_grade = _extract_ai_grade(explanation)
     ai_grade = _grade_from_review_score(ai_review_score) or ai_text_grade
@@ -115,6 +123,7 @@ if not application or not prediction:
 else:
     signature = evaluation_signature(application, prediction)
     if st.session_state.llm_chat_signature != signature:
+        # Reset report output when the scored case changes to avoid showing stale AI text.
         st.session_state.llm_chat_explanation = None
         st.session_state.llm_chat_source = None
         st.session_state.llm_chat_error = None
@@ -125,6 +134,9 @@ else:
         "model_label", st.session_state.model_bundle.label_for(model_key)
     )
     metrics = st.session_state.model_bundle.metrics_for(model_key)
+    # The model baseline card anchors the AI output. Hosted/local LLMs are used
+    # only as narrative second reviewers; the Random Forest score remains the
+    # governed numeric baseline throughout the workflow.
     st.subheader(f"{model_label} Model Baseline")
     with st.container(border=True):
         model_card_cols = st.columns([1, 3])
@@ -168,6 +180,9 @@ else:
         "produce an AI review score, map it back to the A-F grade policy, and suggest follow-up actions."
     )
     with st.form("llm_explanation_form"):
+        # Streamlit reruns the script after every interaction, so provider and
+        # model inputs are copied into local variables first and written back to
+        # session state only after the user clicks one of the form buttons.
         provider = st.radio(
             "Explanation source", PROVIDERS, index=_provider_index(), horizontal=True
         )
@@ -200,6 +215,7 @@ else:
                 ),
             )
         elif provider == "Local server":
+            # Only the endpoint/model can be persisted; the token stays session-only for demo safety.
             local_base_url = st.text_input(
                 "Local server URL or IP", value=local_base_url
             )
@@ -222,6 +238,9 @@ else:
         )
 
     if save_local_settings:
+        # Saving local settings is separate from generating a report. That lets
+        # a presenter configure a local endpoint once without accidentally
+        # creating a new evaluation package.
         try:
             saved_profile_path = save_local_llm_profile(local_base_url, local_model)
         except (OSError, ValueError) as error:
@@ -238,6 +257,9 @@ else:
     if run_explanation:
         from datetime import datetime
 
+        # One button creates both audiences so the analyst cannot publish an SME report from a different run.
+        # The package contains two reports: an internal lender memo and an
+        # applicant-safe draft. Personal Workspace can only publish the latter.
         st.session_state.llm_chat_provider = provider
         st.session_state.llm_chat_last_run = datetime.now().strftime("%Y-%m-%d %H:%M")
         selected_generation_model = "Deterministic rules"
@@ -308,6 +330,9 @@ else:
         else None
     )
 
+    # These status metrics are intentionally about the generation run, not the
+    # credit model. They help analysts see whether the visible report came from
+    # deterministic fallback, hosted OpenAI, or a local OpenAI-compatible server.
     status_cols = st.columns(4)
     status_cols[0].metric(
         "Selected provider", st.session_state.get("llm_chat_provider", "Deterministic")
@@ -357,6 +382,8 @@ else:
         st.info(explanation)
     with sme_tab:
         if current_package:
+            # The SME-facing draft is shown here for lender review before it can
+            # be attached to the published outcome in Personal Workspace.
             st.caption(
                 "Applicant-safe draft generated with the internal evaluation. A lender can edit and attach it during publication."
             )

@@ -1,3 +1,4 @@
+# Random Forest model training, scoring, grading, and validation helpers.
 from dataclasses import dataclass
 
 import pandas as pd
@@ -30,12 +31,16 @@ from src.core.data_pipeline import (
 THRESHOLD_MAP = {"A": 0.15, "B": 0.28, "C": 0.42, "D": 0.58, "E": 0.74, "F": 1.0}
 DEFAULT_MODEL_KEY = "random_forest"
 MODEL_LABELS = {
+    # Keep the public workflow RF-only; helper APIs remain keyed for cache/version compatibility.
     "random_forest": "Random Forest",
 }
 
 
 @dataclass
 class ModelSpec:
+    # One trained model plus the validation artifacts the UI needs. Keeping
+    # metrics and feature importance beside the pipeline avoids retraining when
+    # pages ask for governance information.
     key: str
     label: str
     pipeline: Pipeline
@@ -45,6 +50,9 @@ class ModelSpec:
 
 @dataclass
 class ModelBundle:
+    # The bundle preserves a model-key interface even though only Random Forest
+    # is exposed. That keeps old session state and helper calls compatible while
+    # preventing users from selecting another model in the UI.
     models: dict
     threshold_map: dict
     default_model_key: str = DEFAULT_MODEL_KEY
@@ -86,6 +94,8 @@ class ModelBundle:
 
 
 def _one_hot_encoder():
+    # scikit-learn renamed "sparse" to "sparse_output". Support both so the
+    # assignment runs across slightly different local environments.
     try:
         return OneHotEncoder(handle_unknown="ignore", sparse_output=False)
     except TypeError:
@@ -93,6 +103,7 @@ def _one_hot_encoder():
 
 
 def _preprocessor():
+    # Median/mode imputers let the demo score partially complete manual SME intakes without crashing.
     numeric_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -114,6 +125,8 @@ def _preprocessor():
 
 
 def _precision_at_top_percent(y_true, probabilities, percent=0.10):
+    # Review teams often look only at the highest-risk slice. Precision@top-k
+    # measures how clean that slice is rather than evaluating the full portfolio.
     scored = pd.DataFrame({"actual": y_true, "probability": probabilities}).sort_values(
         "probability", ascending=False
     )
@@ -123,6 +136,7 @@ def _precision_at_top_percent(y_true, probabilities, percent=0.10):
 
 def _metrics(y_test, predictions, probabilities):
     tn, fp, fn, tp = confusion_matrix(y_test, predictions).ravel()
+    # Cost estimates make model quality investor-readable by translating errors into review/default impact.
     return {
         "accuracy": accuracy_score(y_test, predictions),
         "balanced_accuracy": balanced_accuracy_score(y_test, predictions),
@@ -158,6 +172,9 @@ def _feature_names(pipeline):
 
 
 def _feature_importance(pipeline):
+    # Random Forest exposes feature_importances_. The fallback branches keep the
+    # function reusable if a future supervised model exposes coefficients or no
+    # native importance attribute.
     feature_names = _feature_names(pipeline)
     model = pipeline.named_steps["classifier"]
     if hasattr(model, "feature_importances_"):
@@ -174,14 +191,19 @@ def _feature_importance(pipeline):
 
 
 def train_model(applications):
+    # Training always starts by regenerating derived features from the raw
+    # application table. This protects against stale CSVs and ensures model
+    # validation uses the same signals as live scoring.
     applications = add_derived_features(applications)
     X = applications[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS]
     y = applications[TARGET_COLUMN]
+    # Stratification keeps rare high-risk examples represented in the validation split.
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42, stratify=y
     )
 
     classifiers = {
+        # One governed baseline avoids demo confusion from model selection while retaining validation metrics.
         "random_forest": RandomForestClassifier(
             n_estimators=220,
             min_samples_leaf=4,
@@ -213,6 +235,9 @@ def train_model(applications):
 
 
 def grade_from_probability(probability):
+    # Grade thresholds are the policy layer over the model probability. They are
+    # duplicated in user-facing explanations and must stay aligned with
+    # THRESHOLD_MAP / Model Insights.
     if probability < 0.15:
         return "A"
     if probability < 0.28:
@@ -227,6 +252,8 @@ def grade_from_probability(probability):
 
 
 def decision_from_grade(grade):
+    # Decisions are intentionally coarse. The analyst can still override the
+    # final rating/action in Personal Workspace after reviewing evidence.
     if grade in {"A", "B"}:
         return "Approve"
     if grade in {"C", "D"}:
@@ -238,6 +265,7 @@ def rule_flags(application):
     flags = []
     derived = add_derived_features(pd.DataFrame([application])).iloc[0]
 
+    # Rule flags are explanatory guardrails beside the model score, not a second decision engine.
     if float(derived["request_to_revenue_ratio"]) > 0.35:
         flags.append("Requested amount is high relative to annual revenue.")
     if float(derived["debt_to_revenue_ratio"]) > 0.65:
@@ -330,9 +358,13 @@ def rule_flags(application):
 
 
 def score_application(model_bundle, application, model_key=None):
+    # Live scoring accepts a plain dictionary from SME intake, Operations Desk,
+    # or dashboard selection. It converts that one record to the model feature
+    # table, scores high-risk probability, then adds grade, decision, and flags.
     selected_key = model_bundle._key(model_key)
     pipeline = model_bundle.pipeline_for(selected_key)
     frame = add_derived_features(pd.DataFrame([application]))
+    # Probability is always the high-risk/fraud class; grade mapping happens after this continuous score.
     probability = float(
         pipeline.predict_proba(frame[NUMERIC_COLUMNS + CATEGORICAL_COLUMNS])[:, 1][0]
     )
@@ -348,6 +380,9 @@ def score_application(model_bundle, application, model_key=None):
 
 
 def score_portfolio(model_bundle, applications, model_key=None):
+    # Portfolio scoring mirrors score_application but vectorizes over the seed
+    # table. Pages use this for queues and dashboards instead of repeatedly
+    # scoring rows one at a time.
     selected_key = model_bundle._key(model_key)
     pipeline = model_bundle.pipeline_for(selected_key)
     scored = add_derived_features(applications)

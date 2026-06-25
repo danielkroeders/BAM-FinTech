@@ -1,3 +1,4 @@
+# Profile and settings page for demo identity, integrations, and preferences.
 from datetime import datetime
 
 import pandas as pd
@@ -11,6 +12,9 @@ st.set_page_config(page_title="Profile & Settings", layout="wide")
 bootstrap_state()
 render_sidebar()
 
+# This page edits only demo identity/preferences. It does not affect model
+# scoring or SME application data, but it does drive navigation labels,
+# simulated integration cards, and preferred support channels.
 
 def _option_index(options, value):
     return options.index(value) if value in options else 0
@@ -20,6 +24,7 @@ def _integration_rows(profile):
     integrations = profile["integrations"]
     rows = []
     for item in INTEGRATION_CATALOG:
+        # Personal productivity apps share the user's email; workspace tools use their own demo account labels.
         account = (
             profile["email"]
             if item["key"] in ["gmail", "outlook", "zoom"]
@@ -66,6 +71,9 @@ profile_rows = pd.DataFrame(
 )
 integration_rows = _integration_rows(profile)
 
+# Split read-only profile facts from editable admin/session controls. That keeps
+# the most common "who am I logged in as?" question visible without exposing
+# every control on first load.
 profile_tab, apps_tab, admin_tab = st.tabs(
     ["Profile", "Personal Apps", "Admin Controls"]
 )
@@ -87,6 +95,9 @@ with admin_tab:
         "Enable controlled profile fields", value=False
     )
     with st.form("profile_settings_form"):
+        # Identity fields are partly locked so role switching remains deliberate during demos.
+        # The account type itself is controlled by login, not by this form, so a
+        # user cannot accidentally turn the lender workspace into an SME portal.
         identity_left, identity_right = st.columns(2)
         with identity_left:
             user_id = st.text_input("ID", value=profile["user_id"], disabled=True)
@@ -127,6 +138,8 @@ with admin_tab:
             )
 
         st.markdown("**Personal app access**")
+        # Integration toggles are simulated but still meaningful: Home and
+        # Support change labels/validation based on these values.
         integration_values = {}
         integration_cols = st.columns(2)
         for index, item in enumerate(INTEGRATION_CATALOG):
@@ -155,6 +168,7 @@ with admin_tab:
         if channel_key in ["slack", "teams"] and not integration_values.get(
             channel_key, False
         ):
+            # A preferred channel should only be selectable when its simulated integration is enabled.
             st.error(
                 f"Connect {preferred_channel} before setting it as the preferred channel."
             )

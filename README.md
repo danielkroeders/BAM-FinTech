@@ -39,7 +39,7 @@ For the research grounding behind the risk ratios, cash-flow signals, anomaly me
 
 1. Use the `SME company` demo account to enter company and loan data, choose simulated PSD2/accounting/registry connections, download or save generated example documents, upload real local application files, and submit the application.
 2. Sign out and use the `Lender analyst` account.
-3. Open `Home`, `Operations Desk`, or `Personal Workspace` as the lender; the submitted file appears in SME Portal Intake and auto-scores when opened in Personal Workspace.
+3. Open `Home` or `Personal Workspace` as the lender; the submitted file appears in SME Portal Intake and auto-scores when opened in Personal Workspace.
 4. Open `LLM Integration` and generate the evaluation package: a private internal report plus an applicant-safe SME report draft.
 5. Open Case Review, choose the lender action, set a separate analyst rating, and record the rationale for any difference from the model.
 6. Review or edit the SME report draft, then publish the rating and attached report. The numerical score remains private unless the lender explicitly includes it.
@@ -71,10 +71,10 @@ You may enter either the server root, such as `http://localhost:1234`, or the `/
 
 ## Pages
 
-- `Home.py`: employee homepage with current tasks, Slack Updates, and Calendar Today.
+- `Home.py`: employee homepage with SME-submitted intake, suggested actions, Slack Updates, and Calendar Today.
 - `pages/1_Personal_Workspace.py`: score one SME loan application, review evidence, use table interpretation columns and the Help-side Acronym Guide to interpret outputs such as DSCR and FCF, save a final decision, and store the latest decision in session state.
 - `pages/6_SME_Credit_Health.py`: SME-only company portal for data entry, simulated evidence connections, application readiness, lender submission, published ratings, and applicant-safe post-rating what-if planning.
-- `pages/2_Operations_Desk.py`: team workboard for incoming applications, evidence gaps, SLA status, and case handoff.
+- `pages/2_Operations_Desk.py`: synthetic queue workboard for evidence gaps, SLA status, bulk actions, and case handoff.
 - `pages/3_Risk_Dashboard.py`: grade distribution, decision mix, highest-risk applications, live session decisions, and review audit history.
 - `pages/4_Model_Insights.py`: model metrics, confusion matrix, feature importances, grading thresholds, derived signal design, and API contract preview.
 - `pages/5_LLM_Integration.py`: creates a persisted internal lender evaluation and separate applicant-safe SME report draft for the latest scored request.

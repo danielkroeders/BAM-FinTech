@@ -1,3 +1,4 @@
+# DataFrame display helpers that keep lender tables readable and consistent.
 from src.utils.formatting import (
     format_currency,
     format_integer,
@@ -7,6 +8,9 @@ from src.utils.formatting import (
 )
 
 APPLICATION_COLUMN_LABELS = {
+    # These labels are shared by Home, Operations Desk, Risk Dashboard, and
+    # Personal Workspace. Centralizing them keeps the same field from appearing
+    # under different names across lender pages.
     "application_id": "Application ID",
     "company_name": "Company",
     "industry": "Industry",
@@ -30,8 +34,14 @@ APPLICATION_COLUMN_LABELS = {
 
 
 def application_table(frame, columns, aliases=None):
+    # The helper is intentionally small: it selects columns, formats known value
+    # types, and renames labels. It does not sort, filter, or mutate the source
+    # dataframe because each page owns those workflow decisions.
+    # Only requested columns that exist are shown, so shared table calls work across different page data.
     available_columns = [column for column in columns if column in frame.columns]
     display = frame[available_columns].copy()
+    # Format values after column selection so source dataframes remain numeric
+    # for filtering, scoring, and charting.
     for column in [
         "requested_amount",
         "existing_debt",
@@ -62,4 +72,5 @@ def application_table(frame, columns, aliases=None):
         )
 
     labels = {**APPLICATION_COLUMN_LABELS, **(aliases or {})}
+    # Aliases let individual pages override generic labels without mutating the source dataframe.
     return display.rename(columns=labels)

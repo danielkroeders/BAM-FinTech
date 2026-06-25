@@ -1,3 +1,4 @@
+# Acronym guide page that translates lender metrics into role-safe language.
 import pandas as pd
 import streamlit as st
 
@@ -17,6 +18,9 @@ render_sidebar()
 profile = get_profile()
 sme_mode = is_sme_profile(profile)
 
+# The glossary draws from shared constants so terminology stays aligned with the
+# form help popups, support copy, and model-insight pages. Role filtering happens
+# in the data helper rather than in individual table rows.
 
 def _filter_rows(rows, query):
     query = str(query or "").strip().lower()
@@ -24,6 +28,7 @@ def _filter_rows(rows, query):
         return rows
     filtered = []
     for row in rows:
+        # Search the rendered glossary text, not just the acronym column.
         haystack = " ".join(str(value) for value in row.values()).lower()
         if query in haystack:
             filtered.append(row)
@@ -32,6 +37,7 @@ def _filter_rows(rows, query):
 
 st.title("Acronym & Metric Guide")
 if sme_mode:
+    # SME users get applicant-safe definitions; lender-only model terms are filtered in the data helper.
     st.caption(
         "Applicant-facing glossary for company portal terms, document evidence, simulated connections, and published-rating language."
     )
@@ -50,9 +56,13 @@ search = st.text_input(
     placeholder="Try DSCR, FCF, PSD2, KYB, document completeness...",
 )
 
+# The same search box filters both tabs. This keeps the page simple for users
+# who do not know whether a term is stored as an acronym or a metric definition.
 acronym_tab, metric_tab = st.tabs(["Acronyms", "How to read metrics"])
 
 with acronym_tab:
+    # Rows are selected at render time so switching roles immediately swaps the
+    # lender glossary for the applicant-safe glossary.
     rows = _filter_rows(acronym_rows(sme_mode), search)
     if rows:
         st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
@@ -60,6 +70,8 @@ with acronym_tab:
         st.warning("No acronym matches found. Try a shorter search term.")
 
 with metric_tab:
+    # Metric help is kept separate from acronyms because many user questions are
+    # about interpreting a value rather than expanding an abbreviation.
     rows = _filter_rows(metric_rows(sme_mode), search)
     if rows:
         st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
@@ -67,6 +79,8 @@ with metric_tab:
         st.warning("No metric matches found. Try a shorter search term.")
 
 st.subheader("Where to use this")
+# Bottom links route the reader back into the workflow page that matches their
+# role, so the guide can be used as contextual help rather than a dead-end page.
 if sme_mode:
     st.write(
         "Use this guide while preparing company data, uploading documents, reading a published rating, or planning future improvements."
