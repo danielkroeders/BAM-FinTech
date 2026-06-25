@@ -548,7 +548,7 @@ SME_TUTORIALS = [
                 "title": "Download what was saved",
                 "body": "Saved files appear in the document table and can be downloaded from the portal. The lender can later download the same saved bytes.",
                 "action": "Use the download buttons to confirm the files that are attached to the application.",
-                "tip": "Use Clear Demo State only when you intentionally want to remove demo-session files.",
+                "tip": "Use Clear Session only when you intentionally want to remove demo-session files.",
             },
         ],
     },

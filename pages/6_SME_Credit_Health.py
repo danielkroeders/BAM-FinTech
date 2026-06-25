@@ -149,6 +149,7 @@ def _blank_company_application():
         "free_cash_flow": 0.0,
         "monthly_burn_rate": 0.0,
         "cash_balance_at_application": 0.0,
+        "expected_runway_months": 0.0,
         "current_assets": 0.0,
         "current_liabilities": 0.0,
         "liquid_assets": 0.0,
@@ -1658,7 +1659,7 @@ if company_mode:
         st.subheader("Saved application files")
         st.caption(
             "These uploads are written to the local demo-session vault. They survive refresh and sign-out, "
-            "are excluded from Git, and are removed only when Clear Demo State is used."
+            "are excluded from Git, and are removed only when Clear Session is used."
         )
         upload_columns = st.columns(2)
         upload_widgets = {}

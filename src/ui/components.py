@@ -869,6 +869,57 @@ def _render_demo_prompt():
         _demo_prompt_body()
 
 
+def _render_session_footer():
+    with st.container(key="sidebar_session_footer"):
+        st.markdown(
+            '<div class="sidebar-section-label">Session</div>',
+            unsafe_allow_html=True,
+        )
+        if st.button("Sign Out", width="stretch"):
+            st.session_state.authenticated = False
+            st.session_state.login_transition = False
+            st.session_state[DEMO_PROMPT_HANDLED_KEY] = False
+            persist_demo_state()
+            _rerun()
+
+        if not st.session_state.get("clear_demo_state_requested", False):
+            if st.button(
+                "Clear Session",
+                width="stretch",
+                help=(
+                    "Ask before resetting this demo session, saved uploads, reviews, SME submissions, "
+                    "AI outputs, and login state."
+                ),
+            ):
+                st.session_state.clear_demo_state_requested = True
+                _rerun()
+        else:
+            st.warning(
+                "Are you sure you want to clear this session? This will remove saved uploads and sample evidence files, "
+                "and reset SME intakes, lender reviews, AI outputs, validation results, support tickets, and login state.",
+                icon=":material/warning:",
+            )
+            acknowledged = st.checkbox(
+                "I understand this cannot be undone.",
+                key="clear_demo_state_acknowledged",
+            )
+            confirm_col, cancel_col = st.columns(2)
+            with confirm_col:
+                if st.button(
+                    "Clear",
+                    type="primary",
+                    disabled=not acknowledged,
+                    width="stretch",
+                ):
+                    clear_demo_state()
+                    _rerun()
+            with cancel_col:
+                if st.button("Cancel", width="stretch"):
+                    st.session_state.clear_demo_state_requested = False
+                    st.session_state.clear_demo_state_acknowledged = False
+                    _rerun()
+
+
 def render_sidebar(suppress_demo_prompt=False):
     _render_global_theme()
     if not st.session_state.get("authenticated"):
@@ -910,6 +961,18 @@ def render_sidebar(suppress_demo_prompt=False):
             line-height: 1.2;
             overflow-wrap: anywhere;
         }
+        .st-key-sidebar_session_footer {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.16), rgba(15, 23, 42, 0.9));
+            border-top: 1px solid rgba(148, 163, 184, 0.28);
+            bottom: 0;
+            margin-top: 2rem;
+            padding: 0.75rem 0 0.4rem;
+            position: sticky;
+            z-index: 2;
+        }
+        .st-key-sidebar_session_footer [data-testid="stAlert"] {
+            margin-bottom: 0.5rem;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -935,16 +998,4 @@ def render_sidebar(suppress_demo_prompt=False):
             """,
             unsafe_allow_html=True,
         )
-        if st.button("Sign Out", width="stretch"):
-            st.session_state.authenticated = False
-            st.session_state.login_transition = False
-            st.session_state[DEMO_PROMPT_HANDLED_KEY] = False
-            persist_demo_state()
-            _rerun()
-        if st.button(
-            "Clear Demo State",
-            width="stretch",
-            help="Reset this demo session, saved uploads, reviews, SME submissions, AI outputs, and login state.",
-        ):
-            clear_demo_state()
-            _rerun()
+        _render_session_footer()
