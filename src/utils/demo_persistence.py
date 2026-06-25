@@ -17,8 +17,6 @@ PERSISTED_KEYS = [
     "login_stage",
     "login_transition",
     "user_profile",
-    "dark_mode",
-    "dark_mode_preference",
     "portfolio_history",
     "score_history",
     "review_history",
@@ -169,8 +167,9 @@ def clear_demo_state():
     path = _session_path(session_id)
     if path.exists():
         path.unlink()
-    for key in PERSISTED_KEYS:
-        if key in st.session_state:
+    for key in list(st.session_state.keys()):
+        if key != SESSION_STATE_KEY:
             del st.session_state[key]
+    st.session_state[SESSION_STATE_KEY] = session_id
     st.session_state[SESSION_LOADED_KEY] = True
     st.session_state.demo_state_cleared_at = datetime.now().strftime("%Y-%m-%d %H:%M")

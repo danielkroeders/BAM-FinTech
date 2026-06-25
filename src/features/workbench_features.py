@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pandas as pd
+import streamlit as st
 
 from src.core.data_pipeline import add_derived_features
 from src.utils.formatting import (
@@ -22,6 +23,7 @@ ALICE_ANALYST = "Ms. Cooper"
 ALICE_MAX_TASKS = 20
 ALICE_SAME_DAY_TASKS = 2
 ALICE_THIS_WEEK_TASKS = 5
+BANK_BASE_INTEREST_RATE = 0.065
 
 
 def _number(value, default=0.0):
@@ -127,8 +129,33 @@ def _assign_alice_workload(queue):
     return alice_indexes, same_day_indexes, this_week_indexes, next_week_indexes
 
 
+def _model_cache_key(model_bundle):
+    # Include a small model signature so cached queue scores refresh after retraining or metric changes.
+    models = getattr(model_bundle, "models", {})
+    return tuple(
+        sorted(
+            (
+                key,
+                getattr(spec, "label", ""),
+                round(float(getattr(spec, "metrics", {}).get("roc_auc", 0)), 6),
+            )
+            for key, spec in models.items()
+        )
+    )
+
+
+@st.cache_data(show_spinner=False)
+def _cached_scored_portfolio(_model_bundle, applications, model_key, model_cache_key):
+    return score_portfolio(_model_bundle, applications, model_key=model_key)
+
+
 def build_application_queue(model_bundle, applications, limit=None, model_key=None):
-    queue = score_portfolio(model_bundle, applications, model_key=model_key).copy()
+    queue = _cached_scored_portfolio(
+        model_bundle,
+        applications,
+        model_key,
+        _model_cache_key(model_bundle),
+    ).copy()
     queue["queue_status"] = queue.apply(queue_status, axis=1)
     queue["missing_documents"] = queue.apply(
         lambda row: len(missing_documents(row)), axis=1
@@ -168,7 +195,6 @@ def build_application_queue(model_bundle, applications, limit=None, model_key=No
 def recommended_loan_terms(application, prediction, signals):
     grade = prediction.get("grade", "C")
     requested_amount = _number(application.get("requested_amount"))
-    current_rate = _number(application.get("interest_rate"))
     current_term = int(_number(application.get("term_months"), 36))
     dscr = _number(signals.get("debt_service_coverage_ratio"))
     stressed_dscr = _number(signals.get("stressed_debt_service_coverage_ratio"))
@@ -188,7 +214,7 @@ def recommended_loan_terms(application, prediction, signals):
         "E": 0.05,
         "F": 0.07,
     }.get(grade, 0.02)
-    proposed_rate = min(max(current_rate + rate_uplift, current_rate), 0.24)
+    proposed_rate = min(BANK_BASE_INTEREST_RATE + rate_uplift, 0.24)
     proposed_term = current_term if grade in {"A", "B", "C"} else min(current_term, 36)
     collateral_target = {
         "A": 0.6,
@@ -222,7 +248,7 @@ def recommended_loan_terms(application, prediction, signals):
         {
             "Term": "Suggested interest rate",
             "Recommendation": format_percent(proposed_rate),
-            "Rationale": "Risk-adjusted pricing based on the current model grade.",
+            "Rationale": "Bank-side risk-adjusted pricing based on the current model grade.",
             "How to read it": "A higher suggested rate compensates for risk but also increases debt service, so it should be checked against DSCR instead of treated as a free fix.",
         },
         {

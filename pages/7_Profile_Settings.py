@@ -146,7 +146,7 @@ with admin_tab:
             daily_digest = st.checkbox(
                 "Daily digest", value=bool(profile["daily_digest"])
             )
-        dark_mode = st.checkbox("Dark mode", value=bool(profile["dark_mode"]))
+        st.caption("Appearance follows Streamlit Settings > Theme.")
 
         saved = st.form_submit_button("Save Admin Controls", width="stretch")
 
@@ -176,7 +176,6 @@ with admin_tab:
                     "preferred_email_app": preferred_email_app,
                     "review_alerts": review_alerts,
                     "daily_digest": daily_digest,
-                    "dark_mode": dark_mode,
                     "settings_last_saved": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 }
             )

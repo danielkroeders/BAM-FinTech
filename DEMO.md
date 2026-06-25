@@ -19,7 +19,7 @@ This is not a production underwriting, legal, or compliance decision system. Hig
 
 ### 1. SME Company Portal
 
-Start on the login screen. The default demo account should be `SME company`. Enter any password, then enter any random 6-digit code in the two-step authorization screen.
+Start on the login screen. The default demo account should be `SME company`, and the username field should show `DemoUser`. Use one of the fake SSO buttons or enter any password, then enter any random 6-digit code in the two-step authorization screen.
 
 Open the company portal.
 
@@ -30,16 +30,20 @@ Say:
 Point out:
 
 - Company and loan data entry
+- Detailed company, loan, financial, working-capital, five-year-plan, and executive context fields with help pop-ups for ratios and risk terms
+- `Previous step` and `Next step` navigation across the SME portal workflow
 - `Load sample intake` in Company Data for a fast demo setup
-- Recommended sample cases:
-  - `Low-risk established borrower` for a clean approval case
-  - `A2M Logistics Loan` for the fuel-cost pressure and new long-term contract example
-  - `Credit stacking case` for manual review behavior
-  - `Suspicious transfers` for a high-risk compliance case
-  - `High country-risk borrower` for jurisdictional risk discussion
+- Recommended evidence cases:
+  - `Clean evidence` for a low-risk established borrower
+  - `Neutral evidence` for the A2M Logistics fuel-cost pressure and long-term contract example
+  - `Risky evidence` for manual review behavior
+  - `Fraudulent evidence` for a high-risk compliance case
+  - `Ambiguous evidence` for jurisdictional risk discussion
 - PSD2/Open Banking consent simulation
 - Accounting and registry/KYB connection simulation
-- Generated CSV examples for each document category, with sample evidence files seeded when a sample intake is loaded
+- `Sample document cases` in Data Connections, including generated CSV examples for each document category and sample evidence files seeded when a sample intake is loaded
+- Compact sample-file downloads next to each upload box after sample evidence is loaded
+- Interest rate is not requested by the SME; lender pricing appears later as a bank-side recommendation
 - Real local file uploads for financial statements, bank statements, tax returns, ownership/KYB, and forecast support
 - Saved-file metadata, SHA-256 hashes, and lender download access
 - Application-readiness checks
@@ -76,6 +80,7 @@ Point out:
 
 - Applicant data is locked in Personal Workspace; changes must happen in the SME Company Portal and be resubmitted
 - The loaded intake snapshot: company profile, loan request, financials, five-year plan, narrative, and evidence
+- The organized analyst tabs: `Decision Package`, `Risk Analysis`, `AI Output`, `Case Materials`, and `Audit History`
 - Random Forest scoring baseline outputting a 0-1 application risk score
 - Application risk score
 - Risk grade
@@ -97,9 +102,11 @@ Point out:
 - Peer benchmark position against similar SME applications
 - Downloadable case summary
 
-Open the Evidence tab to download the exact files saved by the SME and run lender document verification. Use deterministic validation for the fully local path, or choose OpenAI/local model validation to show AI-assisted document classification on bounded previews. If the validation finds a likely mismatch, show how the lender can reject or request clarification using the evidence-mismatch rationale.
+Open `Risk Analysis` to download the exact files saved by the SME and run lender document verification. Use deterministic validation for the fully local path, or choose OpenAI/local model validation to show AI-assisted document classification on bounded previews. If the validation finds a likely mismatch, show how the lender can reject or request clarification using the evidence-mismatch rationale.
 
 ### 4. Case Review
+
+Open `LLM Integration` and click `Generate Internal + SME Reports`. Return to `Personal Workspace` and show `AI Output`.
 
 Click `Open Case Review`.
 
@@ -114,6 +121,7 @@ Point out:
 - The immutable model grade remains visible separately from the analyst rating
 - The analyst note is stored separately from the model output and AI review
 - The case summary preserves the decision rationale
+- `Open Case Review` stays disabled until the AI output package exists
 
 Open `LLM Integration` and click `Generate Internal + SME Reports`. Show that the internal lender report is private while the second tab contains an applicant-safe improvement report.
 
@@ -212,11 +220,11 @@ Say:
 Use this if time is short:
 
 1. Log in as `SME company`.
-2. Load `Suspicious transfers` from `Load sample intake`.
+2. Load `Fraudulent evidence` from `Load sample intake`.
 3. Submit the application to lender review.
 4. Sign out and log in as `Lender analyst`.
 5. Open the submitted file from `SME Portal Intake` in Personal Workspace.
-6. Show the locked intake snapshot, Random Forest score, risk flags, explanation, and evidence tab.
+6. Show the locked intake snapshot, Random Forest score, risk flags, explanation, and `Risk Analysis` tab.
 7. Save a case review, generate the SME report draft if time allows, and publish the rating.
 8. Sign back in as `SME company` and show the published rating/report.
 

@@ -6,7 +6,7 @@ from src.utils.formatting import format_currency, format_integer, format_percent
 from src.core.modeling import score_portfolio
 from src.core.runtime import bootstrap_state
 from src.utils.table_views import application_table
-from src.ui.components import open_application_in_workspace, render_sidebar
+from src.ui.components import is_dark_mode, open_application_in_workspace, render_sidebar
 
 st.set_page_config(page_title="Risk Dashboard", layout="wide")
 bootstrap_state()
@@ -77,11 +77,7 @@ def _display_table(frame, columns):
 
 
 def _chart_style(chart):
-    dark = bool(
-        st.session_state.get(
-            "dark_mode_preference", st.session_state.get("dark_mode", False)
-        )
-    )
+    dark = is_dark_mode()
     text = "#cbd5e1" if dark else "#475569"
     grid = "rgba(148, 163, 184, 0.24)" if dark else "rgba(148, 163, 184, 0.28)"
     return (

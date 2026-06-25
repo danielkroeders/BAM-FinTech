@@ -131,8 +131,6 @@ SME_NAV_SECTIONS = [
     ),
 ]
 
-DARK_MODE_STATE_KEY = "dark_mode_preference"
-DARK_MODE_WIDGET_KEY = "dark_mode_toggle"
 DEMO_PROMPT_REMEMBERED_KEY = "demo_prompt_remembered"
 DEMO_PROMPT_CHOICE_KEY = "demo_prompt_choice"
 DEMO_PROMPT_HANDLED_KEY = "demo_prompt_handled_this_session"
@@ -142,36 +140,28 @@ DEMO_PROMPT_CHECKBOX_KEY = "demo_prompt_remember_checkbox"
 # DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=YOUR_VIDEO_ID"
 
 
-def _set_dark_mode_preference(value=False, profile=None):
-    dark_mode = bool(value)
-    st.session_state[DARK_MODE_STATE_KEY] = dark_mode
-    st.session_state.dark_mode = dark_mode
-
-    target_profile = profile
-    if target_profile is None and "user_profile" in st.session_state:
-        target_profile = {**st.session_state.user_profile}
-        st.session_state.user_profile = target_profile
-    if target_profile is not None:
-        target_profile["dark_mode"] = dark_mode
-    return dark_mode
+def _streamlit_theme_type():
+    theme = getattr(getattr(st, "context", None), "theme", {}) or {}
+    if isinstance(theme, dict):
+        theme_type = theme.get("type") or theme.get("base") or ""
+    else:
+        theme_type = getattr(theme, "type", "") or getattr(theme, "base", "")
+    if not theme_type:
+        try:
+            theme_type = st.get_option("theme.base") or ""
+        except Exception:
+            theme_type = ""
+    return str(theme_type).lower()
 
 
 def _is_dark_mode():
-    if DARK_MODE_STATE_KEY not in st.session_state:
-        saved_profile = st.session_state.get("user_profile", {})
-        fallback = st.session_state.get(
-            "dark_mode", saved_profile.get("dark_mode", PROFILE["dark_mode"])
-        )
-        _set_dark_mode_preference(fallback)
-    else:
-        st.session_state.dark_mode = bool(st.session_state[DARK_MODE_STATE_KEY])
-    return bool(st.session_state[DARK_MODE_STATE_KEY])
+    dark_mode = _streamlit_theme_type() == "dark"
+    st.session_state.dark_mode = dark_mode
+    return dark_mode
 
 
-def _sync_dark_mode_from_widget():
-    _set_dark_mode_preference(
-        st.session_state.get(DARK_MODE_WIDGET_KEY, _is_dark_mode())
-    )
+def is_dark_mode():
+    return _is_dark_mode()
 
 
 def get_profile():
@@ -216,12 +206,7 @@ def save_profile(profile):
     updated_profile = {**defaults, **profile}
     if updated_profile.get("user_type") == "Internal analyst":
         updated_profile["user_type"] = "Team Member"
-    dark_mode = (
-        updated_profile["dark_mode"]
-        if "dark_mode" in updated_profile
-        else _is_dark_mode()
-    )
-    updated_profile["dark_mode"] = _set_dark_mode_preference(dark_mode)
+    updated_profile["dark_mode"] = _is_dark_mode()
     saved_integrations = updated_profile.get("integrations", {})
     updated_profile["integrations"] = {
         key: bool(saved_integrations.get(key, default))
@@ -592,6 +577,28 @@ def _render_login_screen():
         div[data-testid="stForm"] p {
             color: rgba(248, 250, 252, 0.9);
         }
+        div[data-testid="stForm"] .stTextInput input,
+        div[data-testid="stForm"] .stTextInput input:disabled,
+        div[data-testid="stForm"] div[data-baseweb="select"] > div {
+            background: #f8fafc;
+            border-color: rgba(20, 184, 166, 0.36);
+            color: #0f172a;
+            opacity: 1;
+            -webkit-text-fill-color: #0f172a;
+        }
+        div[data-testid="stForm"] div[data-baseweb="select"] span,
+        div[data-testid="stForm"] div[data-baseweb="select"] svg,
+        div[data-testid="stForm"] .stTextInput input::placeholder {
+            color: #0f172a;
+            -webkit-text-fill-color: #0f172a;
+        }
+        div[data-testid="stForm"] div[data-baseweb="select"] * {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+        div[data-testid="stForm"] div[data-baseweb="select"] svg path {
+            fill: #0f172a;
+        }
         .login-form-title {
             color: #f8fafc;
             font-size: 1.7rem;
@@ -702,23 +709,32 @@ def _render_login_screen():
                     ),
                 )
                 login_profile = SME_PROFILE if account_type == "sme" else PROFILE
-                username = st.text_input(
-                    "Email", value=login_profile["email"], disabled=True
-                )
+                username = st.text_input("Username", value="DemoUser", disabled=True)
                 password = st.text_input("Password", type="password")
                 remember_me = st.checkbox(
                     "Remember me",
                     value=bool(st.session_state.get("remember_me", False)),
                 )
+                sso_cols = st.columns(3)
+                google_sso = sso_cols[0].form_submit_button(
+                    "Google", width="stretch"
+                )
+                microsoft_sso = sso_cols[1].form_submit_button(
+                    "Microsoft", width="stretch"
+                )
+                bank_sso = sso_cols[2].form_submit_button(
+                    "YourBank SSO", width="stretch"
+                )
                 submitted = st.form_submit_button("Continue", width="stretch")
-            if submitted:
-                if username.strip() and password:
+            sso_submitted = google_sso or microsoft_sso or bank_sso
+            if submitted or sso_submitted:
+                if username.strip() and (password or sso_submitted):
                     st.session_state.remember_me = remember_me
                     st.session_state.pending_login_account_type = account_type
                     st.session_state.login_stage = "2fa"
                     _rerun()
                 else:
-                    st.warning("Enter your email and password to continue.")
+                    st.warning("Enter your username and password to continue.")
 
 
 def _complete_login():
@@ -909,16 +925,7 @@ def render_sidebar(suppress_demo_prompt=False):
         unsafe_allow_html=True,
     )
     with st.sidebar:
-        hdr_col, dm_col = st.columns([3, 1])
-        hdr_col.header("Company Portal" if is_sme_profile(profile) else "Workspace")
-        st.session_state[DARK_MODE_WIDGET_KEY] = _is_dark_mode()
-        dm_col.toggle(
-            "Dark mode",
-            key=DARK_MODE_WIDGET_KEY,
-            on_change=_sync_dark_mode_from_widget,
-            label_visibility="collapsed",
-            help="Toggle dark mode",
-        )
+        st.header("Company Portal" if is_sme_profile(profile) else "Workspace")
         navigation = SME_NAV_SECTIONS if is_sme_profile(profile) else NAV_SECTIONS
         for section_label, links in navigation:
             st.markdown(
@@ -943,4 +950,11 @@ def render_sidebar(suppress_demo_prompt=False):
             st.session_state.login_transition = False
             st.session_state[DEMO_PROMPT_HANDLED_KEY] = False
             persist_demo_state()
+            _rerun()
+        if st.button(
+            "Clear Demo State",
+            width="stretch",
+            help="Reset this demo session, saved uploads, reviews, SME submissions, AI outputs, and login state.",
+        ):
+            clear_demo_state()
             _rerun()

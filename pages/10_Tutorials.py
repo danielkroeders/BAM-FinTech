@@ -103,9 +103,9 @@ TUTORIALS = [
             },
             {
                 "title": "Record the human decision",
-                "body": "Open Case Review, select an analyst action, and add a concise note that explains the evidence considered. Saving the review stores the final action separately from the model recommendation.",
-                "action": "Write a note that names the decisive risk and mitigating factors.",
-                "tip": "For high-risk E/F cases, keep a human compliance-style review in the loop before external communication.",
+                "body": "Generate the Internal + SME Reports package in LLM Integration first, then open Case Review, select an analyst action, and add a concise note that explains the evidence considered. Saving the review stores the final action separately from the model recommendation.",
+                "action": "Confirm the AI Output tab is populated, then write a note that names the decisive risk and mitigating factors.",
+                "tip": "Case Review stays disabled until the internal and SME-facing AI output package exists.",
             },
         ],
     },
@@ -296,7 +296,7 @@ TUTORIALS = [
         "category": "Account & help",
         "time": "5 min",
         "level": "Beginner",
-        "summary": "Review your profile, connected apps, controlled fields, notifications, and theme.",
+        "summary": "Review your profile, connected apps, controlled fields, and notifications.",
         "features": ["Profile", "Personal apps", "Admin controls", "Preferences"],
         "objectives": [
             "Verify analyst identity and permissions",
@@ -324,9 +324,9 @@ TUTORIALS = [
             },
             {
                 "title": "Save channels and preferences",
-                "body": "Choose preferred channel and email app, toggle personal app access, notification settings, daily digest, and dark mode, then save.",
+                "body": "Choose preferred channel and email app, toggle personal app access, notification settings, and daily digest, then save.",
                 "action": "Connect Slack or Teams before selecting it as the preferred channel.",
-                "tip": "Dark mode is also available from the sidebar toggle.",
+                "tip": "Appearance is controlled from Streamlit Settings > Theme.",
             },
         ],
     },
@@ -481,7 +481,7 @@ SME_TUTORIALS = [
         "steps": [
             {
                 "title": "Open Company Data",
-                "body": "Use the SME company portal to enter the company name, industry, region, legal type, years in business, employees, revenue, debt, and requested loan amount.",
+                "body": "Use the SME company portal to enter the company name, industry, region, legal type, years in business, employees, revenue, debt, and requested loan amount. Interest pricing is set later by YourBank as a lender recommendation.",
                 "action": "Fill the Company Data tab and choose Save Company Data.",
                 "tip": "Saved company data updates the readiness preview but does not submit the file yet.",
             },
@@ -534,8 +534,8 @@ SME_TUTORIALS = [
             },
             {
                 "title": "Use the example document pack",
-                "body": "The example pack shows fictional CSV structures for financial statements, bank statements, tax returns, ownership/KYB, and forecast support.",
-                "action": "Download examples for reference or save them for a demo package.",
+                "body": "The Sample document cases section shows fictional CSV structures for financial statements, bank statements, tax returns, ownership/KYB, and forecast support.",
+                "action": "Open Data Connections, review Sample document cases, then save the examples for a demo package if needed.",
                 "tip": "Saving examples writes actual CSV bytes into the same local vault as uploaded files.",
             },
             {
@@ -833,7 +833,7 @@ PAGE_MAPS = {
         {
             "kind": "form",
             "title": "Admin Controls",
-            "detail": "Enable controlled profile fields · Preferred channels · App access · Alerts · Dark mode · Save Admin Controls",
+            "detail": "Enable controlled profile fields · Preferred channels · App access · Alerts · Save Admin Controls",
         },
     ],
     "support": [

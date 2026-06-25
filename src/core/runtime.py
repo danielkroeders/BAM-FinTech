@@ -3,7 +3,7 @@ import os
 import streamlit as st
 
 from src.core.data_pipeline import BASE_NUMERIC_COLUMNS, ensure_seed_data
-from src.utils.demo_persistence import persist_demo_state, restore_demo_state
+from src.utils.demo_persistence import restore_demo_state
 from src.utils.llm_profiles import load_local_llm_profile
 from src.core.modeling import train_model
 
@@ -162,4 +162,3 @@ def bootstrap_state():
         st.session_state.application_lifecycle = {}
     if "rating_publication_history" not in st.session_state:
         st.session_state.rating_publication_history = []
-    persist_demo_state()

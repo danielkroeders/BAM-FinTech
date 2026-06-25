@@ -267,6 +267,35 @@ st.markdown(
         font-size: 0.84rem;
         line-height: 1.4;
     }
+    .workspace-score-guide {
+        background: rgba(15, 23, 42, 0.88);
+        border: 1px solid rgba(20, 184, 166, 0.26);
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+        margin: 0.65rem 0 0.75rem;
+        padding: 0.85rem;
+    }
+    .workspace-score-guide-title {
+        color: #f8fafc;
+        font-size: 0.95rem;
+        font-weight: 850;
+        line-height: 1.2;
+        margin-bottom: 0.65rem;
+    }
+    .workspace-score-guide-label {
+        color: #5eead4;
+        font-size: 0.72rem;
+        font-weight: 800;
+        line-height: 1.15;
+        margin-top: 0.65rem;
+        text-transform: uppercase;
+    }
+    .workspace-score-guide-copy {
+        color: rgba(248, 250, 252, 0.86);
+        font-size: 0.8rem;
+        line-height: 1.42;
+        margin-top: 0.2rem;
+    }
     @media (max-width: 900px) {
         .score-strip {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -736,35 +765,52 @@ def _risk_score_interpretation(probability):
 def _render_workspace_metric_guide(application, prediction, signals):
     with st.sidebar:
         st.divider()
-        with st.expander("How to read this score", expanded=True):
-            st.markdown("**Application risk score**")
-            st.write(
+        guide_rows = [
+            (
+                "Application risk score",
                 f"{_ratio(prediction['fraud_probability'])} means: "
-                f"{_risk_score_interpretation(prediction['fraud_probability'])}"
-            )
-            st.markdown("**Stressed DSCR**")
-            st.write(
+                f"{_risk_score_interpretation(prediction['fraud_probability'])}",
+            ),
+            (
+                "Stressed DSCR",
                 f"{_score(signals['stressed_debt_service_coverage_ratio'])} means: "
-                f"{_dscr_interpretation(signals['stressed_debt_service_coverage_ratio'])}"
-            )
-            st.markdown("**Document completeness**")
-            st.write(
+                f"{_dscr_interpretation(signals['stressed_debt_service_coverage_ratio'])}",
+            ),
+            (
+                "Document completeness",
                 f"{_score(signals['document_completeness_score'])} means the expected evidence package is "
-                "substantially present when it is close to 1.00. It still needs lender validation for content and category fit."
-            )
-            st.markdown("**Free cash flow**")
-            st.write(
+                "substantially present when it is close to 1.00. It still needs lender validation for content and category fit.",
+            ),
+            (
+                "Free cash flow",
                 f"{_money(application.get('free_cash_flow', 0))} is the annual cash available after operating and investment needs. "
-                "Positive values support repayment; weak or negative values increase cash-flow pressure."
-            )
-            st.caption(
-                "For DSCR, FCF, CAGR, KYB, PSD2, ROC-AUC, and SHA-256 definitions, open the Help glossary."
-            )
-            safe_page_link(
-                "pages/11_Acronym_Guide.py",
-                "Open Acronym Guide",
-                ":material/menu_book:",
-            )
+                "Positive values support repayment; weak or negative values increase cash-flow pressure.",
+            ),
+        ]
+        guide_html = "".join(
+            f"""
+            <div class="workspace-score-guide-label">{escape(label)}</div>
+            <div class="workspace-score-guide-copy">{escape(copy)}</div>
+            """
+            for label, copy in guide_rows
+        )
+        st.markdown(
+            f"""
+            <section class="workspace-score-guide">
+                <div class="workspace-score-guide-title">How to read this score</div>
+                {guide_html}
+            </section>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "For DSCR, FCF, CAGR, KYB, PSD2, ROC-AUC, and SHA-256 definitions, open the Help glossary."
+        )
+        safe_page_link(
+            "pages/11_Acronym_Guide.py",
+            "Open Acronym Guide",
+            ":material/menu_book:",
+        )
 
 
 def _summary_table(rows):
@@ -842,6 +888,41 @@ def _evaluation_package_for(application, prediction):
     return dict(package)
 
 
+def _render_ai_output(application, prediction):
+    package = _evaluation_package_for(application, prediction)
+    if not package:
+        st.warning(
+            "Please use the AI before continuing. Open LLM Integration and generate the Internal + SME Reports package for this scored case."
+        )
+        safe_page_link(
+            "pages/5_LLM_Integration.py",
+            "Open LLM Integration",
+            ":material/psychology:",
+        )
+        return None
+
+    st.success("AI evaluation package is attached to this scored case.")
+    meta_cols = st.columns(4)
+    meta_cols[0].metric("Package ID", package.get("evaluation_package_id", "N/A"))
+    meta_cols[1].metric("Provider", package.get("provider", "N/A"))
+    meta_cols[2].metric("Source", package.get("internal_source", "N/A"))
+    meta_cols[3].metric("Generated", package.get("generated_at", "N/A"))
+    st.caption(
+        "Copy-ready AI output from LLM Integration. The internal report stays lender-only; the SME report is the draft used for publication."
+    )
+    st.markdown("**Internal lender AI output**")
+    st.code(
+        package.get("internal_report", "No internal AI output available."),
+        language="markdown",
+    )
+    st.markdown("**SME-facing AI output draft**")
+    st.code(
+        package.get("sme_report", "No SME-facing AI draft available."),
+        language="markdown",
+    )
+    return package
+
+
 def _update_lifecycle(application_id, **values):
     lifecycle = _lifecycle_for(application_id)
     lifecycle.update(values)
@@ -855,6 +936,127 @@ def _update_sme_submission_status(application_id, status, **values):
         if submission.get("application_id") == application_id:
             submission.update({"status": status, **values})
             return
+
+
+def _render_review_publication(
+    application,
+    prediction,
+    current_review,
+    final_decision,
+    publication_status,
+    prediction_model_label,
+    decision_conditions,
+):
+    review_cols = st.columns(4)
+    review_cols[0].metric(
+        "Final decision", final_decision, help=WORKSPACE_HELP["final_decision"]
+    )
+    review_cols[1].metric(
+        "Analyst rating",
+        (
+            current_review.get("analyst_grade", "Pending")
+            if current_review
+            else "Pending"
+        ),
+        help="Reviewed lender rating kept separately from the model grade.",
+    )
+    review_cols[2].metric("Publication", publication_status)
+    review_cols[3].metric(
+        "Scoring model", prediction_model_label, help=WORKSPACE_HELP["ml_technique"]
+    )
+    st.dataframe(
+        pd.DataFrame({"Review condition": decision_conditions}),
+        width="stretch",
+        hide_index=True,
+    )
+    if current_review:
+        adjustment_label = (
+            "Adjusted from model"
+            if current_review.get("rating_adjusted")
+            else "Aligned with model"
+        )
+        st.info(
+            f"{adjustment_label}: model grade {prediction['grade']} \u2192 analyst rating "
+            f"{current_review.get('analyst_grade', prediction['grade'])}. "
+            f"Rationale: {current_review.get('rating_rationale', 'No rationale recorded.')}"
+        )
+        evaluation_package = _evaluation_package_for(application, prediction)
+        if evaluation_package:
+            with st.expander("AI evaluation package", expanded=False):
+                st.caption(
+                    f"Generated {evaluation_package.get('generated_at', 'N/A')} via "
+                    f"{evaluation_package.get('provider', evaluation_package.get('internal_source', 'N/A'))}. "
+                    "The internal report stays private; the SME draft is attached only when the rating is published."
+                )
+                st.markdown("**Internal lender report**")
+                st.markdown(
+                    evaluation_package.get(
+                        "internal_report", "No internal report available."
+                    )
+                )
+                st.markdown("**SME report draft**")
+                st.markdown(
+                    evaluation_package.get("sme_report", "No SME report available.")
+                )
+        else:
+            st.warning("No current AI evaluation package is attached to this score.")
+            safe_page_link(
+                "pages/5_LLM_Integration.py",
+                "Generate Evaluation Package",
+                ":material/psychology:",
+            )
+        with st.expander(
+            "Publish rating to SME",
+            expanded=publication_status != "Rating published",
+        ):
+            _rating_publication_form(application, prediction, current_review)
+    else:
+        st.warning("Complete the lender evaluation before publishing any rating to the SME.")
+
+
+def _render_score_history(application):
+    score_events = [
+        row
+        for row in st.session_state.score_history
+        if row.get("application_id") == application["application_id"]
+    ]
+    review_events = [
+        row
+        for row in st.session_state.review_history
+        if row.get("application_id") == application["application_id"]
+    ]
+    history_cols = st.columns(2)
+    with history_cols[0]:
+        st.caption("Score events")
+        st.dataframe(score_events[-8:], width="stretch", hide_index=True)
+    with history_cols[1]:
+        st.caption("Review events")
+        st.dataframe(review_events[-8:], width="stretch", hide_index=True)
+
+
+def _render_lender_document_validation(application):
+    st.markdown("**Saved SME-uploaded files**")
+    _render_saved_application_files(application["application_id"])
+    _, new_validation_run = render_document_validation_panel(
+        demo_session_id,
+        application["application_id"],
+        "lender_verification",
+        "Lender document verification",
+        (
+            "Run the formal lender-side check after intake. AI-assisted validation can classify the visible "
+            "content, but final acceptance remains an analyst decision."
+        ),
+        "Run Lender Document Verification",
+    )
+    if new_validation_run:
+        summary = new_validation_run.get("summary", {})
+        _update_lifecycle(
+            application["application_id"],
+            document_validation_status=summary.get("status", "Unknown"),
+            document_validation_run_id=new_validation_run.get("run_id"),
+            document_validation_at=new_validation_run.get("validated_at"),
+        )
+        persist_demo_state()
 
 
 def _render_saved_application_files(application_id):
@@ -879,20 +1081,26 @@ def _render_saved_application_files(application_id):
         width="stretch",
         hide_index=True,
     )
-    for document in documents:
+    download_cols = st.columns(min(max(len(documents), 1), 3))
+    for index, document in enumerate(documents):
         content, metadata = read_document(
             demo_session_id,
             application_id,
             document["document_id"],
         )
-        st.download_button(
-            f"Download {metadata['category_label']}: {metadata['original_name']}",
-            data=content,
-            file_name=metadata["original_name"],
-            mime=metadata["content_type"],
-            key=f"lender_download_{metadata['document_id']}",
-            width="stretch",
-        )
+        with download_cols[index % len(download_cols)]:
+            short_name = metadata["original_name"]
+            if len(short_name) > 24:
+                short_name = short_name[:21] + "..."
+            st.caption(f"{metadata['category_label']}: {short_name}")
+            st.download_button(
+                "Download",
+                data=content,
+                file_name=metadata["original_name"],
+                mime=metadata["content_type"],
+                key=f"lender_download_{metadata['document_id']}",
+                width="stretch",
+            )
 
 
 def _store_prediction(application, prediction, explanation):
@@ -1003,6 +1211,14 @@ def _update_latest_history(prediction, review):
 def _review_form_body():
     application = st.session_state.last_application
     prediction = st.session_state.last_prediction
+    if not _evaluation_package_for(application, prediction):
+        st.error("Please use the AI before saving the lender review.")
+        safe_page_link(
+            "pages/5_LLM_Integration.py",
+            "Open LLM Integration",
+            ":material/psychology:",
+        )
+        return
     existing_review = st.session_state.get("last_review") or {}
     lender_validation = latest_document_validation_run(
         application["application_id"], "lender_verification"
@@ -1459,767 +1675,668 @@ if st.session_state.last_prediction:
         prediction,
         signals,
     )
+    ai_evaluation_package = _evaluation_package_for(application, prediction)
     _render_workspace_metric_guide(application, prediction, signals)
 
-    score_tab, evidence_tab, review_tab, history_tab = st.tabs(
-        ["Score", "Evidence", "Review", "History"]
+    detail_tabs = st.tabs(
+        [
+            "Decision Package",
+            "Risk Analysis",
+            "AI Output",
+            "Case Materials",
+            "Audit History",
+        ]
     )
-    with score_tab:
-        score_cols = st.columns(5)
-        score_cols[0].metric(
-            "Application risk score",
-            _ratio(prediction["fraud_probability"]),
-            help=WORKSPACE_HELP["application_risk_score"],
+    with detail_tabs[0]:
+        st.subheader("Score Output")
+        risk_score_label = _tip_label(
+            "Application risk score", WORKSPACE_HELP["application_risk_score"]
         )
-        score_cols[1].metric(
-            "Model grade", prediction["grade"], help=WORKSPACE_HELP["risk_grade"]
+        risk_grade_label = _tip_label("Model grade", WORKSPACE_HELP["risk_grade"])
+        recommendation_label = _tip_label(
+            "Model recommendation", WORKSPACE_HELP["model_recommendation"]
         )
-        score_cols[2].metric(
-            "Model recommendation",
-            prediction["decision"],
-            help=WORKSPACE_HELP["model_recommendation"],
+        ml_technique_label = _tip_label("Scoring model", WORKSPACE_HELP["ml_technique"])
+        review_status_label = _tip_label("Review status", WORKSPACE_HELP["review_status"])
+        stressed_dscr_label = _tip_label("Stressed DSCR", WORKSPACE_HELP["stressed_dscr"])
+        st.markdown(
+            f"""
+            <div class="score-panel {risk_tone}">
+                <div class="score-panel-header">
+                    <div>
+                        <div class="score-label">{risk_score_label}</div>
+                        <div class="score-headline">{escape(_ratio(prediction["fraud_probability"]))}</div>
+                        <div class="score-subtitle">{escape(risk_label)} profile with {escape(flag_label)}.</div>
+                    </div>
+                    <div class="decision-badge {decision_tone}" title="{escape(WORKSPACE_HELP["final_decision"], quote=True)}">{escape(final_decision)}</div>
+                </div>
+                <div class="score-strip">
+                    <div class="score-item">
+                        <div class="score-label">{risk_grade_label}</div>
+                        <div class="score-value">{escape(prediction["grade"])}</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">{recommendation_label}</div>
+                        <div class="score-value">{escape(prediction["decision"])}</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">{ml_technique_label}</div>
+                        <div class="score-value">{escape(prediction_model_label)}</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">{review_status_label}</div>
+                        <div class="score-value">{escape(review_status)}</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">{stressed_dscr_label}</div>
+                        <div class="score-value">{escape(_score(signals["stressed_debt_service_coverage_ratio"]))}</div>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-        score_cols[3].metric(
-            "Scoring model", prediction_model_label, help=WORKSPACE_HELP["ml_technique"]
+        st.markdown(
+            f"""
+            <div class="decision-panel {decision_tone}">
+                <div class="decision-title">Final Decision: {escape(final_decision)}</div>
+                <div class="decision-copy">{escape(_decision_copy(application, prediction, current_review, signals))}</div>
+                <ul class="decision-list">{condition_html}</ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-        score_cols[4].metric(
-            "Stressed DSCR",
-            _score(signals["stressed_debt_service_coverage_ratio"]),
-            help=WORKSPACE_HELP["stressed_dscr"],
+        st.subheader("Decision Rationale")
+        st.caption(
+            "Explanation source: deterministic analyst explanation. Open LLM Integration to run a local or hosted model."
         )
+        st.info(explanation)
+        safe_page_link(
+            "pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:"
+        )
+
+        terms_col, monitoring_col = st.columns(2)
+        with terms_col:
+            st.subheader("Recommended Loan Terms")
+            st.dataframe(pd.DataFrame(loan_terms), width="stretch", hide_index=True)
+        with monitoring_col:
+            st.subheader("Portfolio Monitoring Preview")
+            st.dataframe(pd.DataFrame(monitoring_rows), width="stretch", hide_index=True)
+
+        st.subheader("Model Confidence and Governance")
         st.dataframe(pd.DataFrame(confidence_rows), width="stretch", hide_index=True)
-    with evidence_tab:
+        st.caption(
+            "Output is analyst decision support. Model scores, AI review, and final analyst action remain separate."
+        )
+
+    with detail_tabs[1]:
+        st.subheader("Data Readiness")
+        source_badges = data_source_badges(application, signals)
+        badge_html = "".join(
+            f'<span class="source-badge {escape(badge["Tone"])}">{escape(badge["Source"])}: {escape(badge["Status"])}</span>'
+            for badge in source_badges
+        )
+        st.markdown(f'<div class="badge-row">{badge_html}</div>', unsafe_allow_html=True)
         st.dataframe(
             pd.DataFrame(_data_readiness_rows(application, signals)),
             width="stretch",
             hide_index=True,
         )
-        st.markdown("**Saved SME-uploaded files**")
-        _render_saved_application_files(application["application_id"])
-        _, new_validation_run = render_document_validation_panel(
-            demo_session_id,
-            application["application_id"],
-            "lender_verification",
-            "Lender document verification",
-            (
-                "Run the formal lender-side check after intake. AI-assisted validation can classify the visible "
-                "content, but final acceptance remains an analyst decision."
-            ),
-            "Run Lender Document Verification",
-        )
-        if new_validation_run:
-            summary = new_validation_run.get("summary", {})
-            _update_lifecycle(
-                application["application_id"],
-                document_validation_status=summary.get("status", "Unknown"),
-                document_validation_run_id=new_validation_run.get("run_id"),
-                document_validation_at=new_validation_run.get("validated_at"),
-            )
-            persist_demo_state()
-    with review_tab:
-        review_cols = st.columns(4)
-        review_cols[0].metric(
-            "Final decision", final_decision, help=WORKSPACE_HELP["final_decision"]
-        )
-        review_cols[1].metric(
-            "Analyst rating",
-            (
-                current_review.get("analyst_grade", "Pending")
-                if current_review
-                else "Pending"
-            ),
-            help="Reviewed lender rating kept separately from the model grade.",
-        )
-        review_cols[2].metric("Publication", publication_status)
-        review_cols[3].metric(
-            "Scoring model", prediction_model_label, help=WORKSPACE_HELP["ml_technique"]
+        st.caption(
+            "MVP source coverage is simulated from the local case file. Production would connect consented bank feeds, accounting APIs, registry/KYB, and document ingestion."
         )
         st.dataframe(
-            pd.DataFrame({"Review condition": decision_conditions}),
+            pd.DataFrame(data_source_coverage_rows(application, signals)),
             width="stretch",
             hide_index=True,
         )
-        if current_review:
-            adjustment_label = (
-                "Adjusted from model"
-                if current_review.get("rating_adjusted")
-                else "Aligned with model"
+        _render_lender_document_validation(application)
+
+        with st.expander("Scenario Analysis", expanded=False):
+            st.caption(
+                "Use this to show how forward-looking evidence can move the risk profile before a final human decision."
             )
-            st.info(
-                f"{adjustment_label}: model grade {prediction['grade']} → analyst rating "
-                f"{current_review.get('analyst_grade', prediction['grade'])}. "
-                f"Rationale: {current_review.get('rating_rationale', 'No rationale recorded.')}"
-            )
-            evaluation_package = _evaluation_package_for(application, prediction)
-            if evaluation_package:
-                with st.expander("AI evaluation package", expanded=False):
-                    st.caption(
-                        f"Generated {evaluation_package.get('generated_at', 'N/A')} via "
-                        f"{evaluation_package.get('provider', evaluation_package.get('internal_source', 'N/A'))}. "
-                        "The internal report stays private; the SME draft is attached only when the rating is published."
-                    )
-                    internal_report_tab, sme_report_tab = st.tabs(
-                        ["Internal lender report", "SME report draft"]
-                    )
-                    with internal_report_tab:
-                        st.markdown(
-                            evaluation_package.get(
-                                "internal_report", "No internal report available."
-                            )
-                        )
-                    with sme_report_tab:
-                        st.markdown(
-                            evaluation_package.get(
-                                "sme_report", "No SME report available."
-                            )
-                        )
-            else:
-                st.warning(
-                    "No current AI evaluation package is attached to this score."
+            scenario_left, scenario_middle, scenario_right = st.columns(3)
+            with scenario_left:
+                revenue_growth_delta = st.slider(
+                    "Revenue growth change",
+                    min_value=-0.15,
+                    max_value=0.20,
+                    value=0.00,
+                    step=0.01,
+                    format="%.2f",
                 )
-                safe_page_link(
-                    "pages/5_LLM_Integration.py",
-                    "Generate Evaluation Package",
-                    ":material/psychology:",
+                fcf_margin_delta = st.slider(
+                    "FCF margin change",
+                    min_value=-0.10,
+                    max_value=0.15,
+                    value=0.00,
+                    step=0.01,
+                    format="%.2f",
                 )
-            with st.expander(
-                "Publish rating to SME",
-                expanded=publication_status != "Rating published",
-            ):
-                _rating_publication_form(application, prediction, current_review)
-        else:
-            st.warning(
-                "Complete the lender evaluation before publishing any rating to the SME."
+            with scenario_middle:
+                operating_cost_pressure = st.slider(
+                    "Operating cost pressure",
+                    min_value=0.00,
+                    max_value=0.15,
+                    value=0.00,
+                    step=0.01,
+                    format="%.2f",
+                )
+                debt_reduction_delta = st.slider(
+                    "Debt reduction plan change",
+                    min_value=-0.20,
+                    max_value=0.35,
+                    value=0.00,
+                    step=0.05,
+                    format="%.2f",
+                )
+            with scenario_right:
+                contract_evidence = st.selectbox(
+                    "Contract evidence",
+                    ["Current file", "Signed and documented", "Unconfirmed"],
+                )
+                complete_documents = st.checkbox("Complete missing documents", value=False)
+            simulated_application = apply_scenario(
+                application,
+                revenue_growth_delta=revenue_growth_delta,
+                fcf_margin_delta=fcf_margin_delta,
+                operating_cost_pressure=operating_cost_pressure,
+                contract_evidence=contract_evidence,
+                complete_documents=complete_documents,
+                debt_reduction_delta=debt_reduction_delta,
             )
-    with history_tab:
-        score_events = [
-            row
-            for row in st.session_state.score_history
-            if row.get("application_id") == application["application_id"]
-        ]
-        review_events = [
-            row
-            for row in st.session_state.review_history
-            if row.get("application_id") == application["application_id"]
-        ]
-        history_cols = st.columns(2)
-        with history_cols[0]:
-            st.caption("Score events")
-            st.dataframe(score_events[-8:], width="stretch", hide_index=True)
-        with history_cols[1]:
-            st.caption("Review events")
-            st.dataframe(review_events[-8:], width="stretch", hide_index=True)
-
-    st.subheader("Score Output")
-    risk_score_label = _tip_label(
-        "Application risk score", WORKSPACE_HELP["application_risk_score"]
-    )
-    risk_grade_label = _tip_label("Model grade", WORKSPACE_HELP["risk_grade"])
-    recommendation_label = _tip_label(
-        "Model recommendation", WORKSPACE_HELP["model_recommendation"]
-    )
-    ml_technique_label = _tip_label("Scoring model", WORKSPACE_HELP["ml_technique"])
-    review_status_label = _tip_label("Review status", WORKSPACE_HELP["review_status"])
-    stressed_dscr_label = _tip_label("Stressed DSCR", WORKSPACE_HELP["stressed_dscr"])
-    st.markdown(
-        f"""
-        <div class="score-panel {risk_tone}">
-            <div class="score-panel-header">
-                <div>
-                    <div class="score-label">{risk_score_label}</div>
-                    <div class="score-headline">{escape(_ratio(prediction["fraud_probability"]))}</div>
-                    <div class="score-subtitle">{escape(risk_label)} profile with {escape(flag_label)}.</div>
-                </div>
-                <div class="decision-badge {decision_tone}" title="{escape(WORKSPACE_HELP["final_decision"], quote=True)}">{escape(final_decision)}</div>
-            </div>
-            <div class="score-strip">
-                <div class="score-item">
-                    <div class="score-label">{risk_grade_label}</div>
-                    <div class="score-value">{escape(prediction["grade"])}</div>
-                </div>
-                <div class="score-item">
-                    <div class="score-label">{recommendation_label}</div>
-                    <div class="score-value">{escape(prediction["decision"])}</div>
-                </div>
-                <div class="score-item">
-                    <div class="score-label">{ml_technique_label}</div>
-                    <div class="score-value">{escape(prediction_model_label)}</div>
-                </div>
-                <div class="score-item">
-                    <div class="score-label">{review_status_label}</div>
-                    <div class="score-value">{escape(review_status)}</div>
-                </div>
-                <div class="score-item">
-                    <div class="score-label">{stressed_dscr_label}</div>
-                    <div class="score-value">{escape(_score(signals["stressed_debt_service_coverage_ratio"]))}</div>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f"""
-        <div class="decision-panel {decision_tone}">
-            <div class="decision-title">Final Decision: {escape(final_decision)}</div>
-            <div class="decision-copy">{escape(_decision_copy(application, prediction, current_review, signals))}</div>
-            <ul class="decision-list">{condition_html}</ul>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.subheader("Decision Rationale")
-    st.caption(
-        "Explanation source: deterministic analyst explanation. Open LLM Integration to run a local or hosted model."
-    )
-    st.info(explanation)
-    safe_page_link(
-        "pages/5_LLM_Integration.py", "Open LLM Integration", ":material/psychology:"
-    )
-
-    terms_col, monitoring_col = st.columns(2)
-    with terms_col:
-        st.subheader("Recommended Loan Terms")
-        st.dataframe(pd.DataFrame(loan_terms), width="stretch", hide_index=True)
-    with monitoring_col:
-        st.subheader("Portfolio Monitoring Preview")
-        st.dataframe(pd.DataFrame(monitoring_rows), width="stretch", hide_index=True)
-
-    st.subheader("Model Confidence and Governance")
-    st.dataframe(pd.DataFrame(confidence_rows), width="stretch", hide_index=True)
-    st.caption(
-        "Output is analyst decision support. Model scores, AI review, and final analyst action remain separate."
-    )
-
-    st.subheader("Data Readiness")
-    source_badges = data_source_badges(application, signals)
-    badge_html = "".join(
-        f'<span class="source-badge {escape(badge["Tone"])}">{escape(badge["Source"])}: {escape(badge["Status"])}</span>'
-        for badge in source_badges
-    )
-    st.markdown(f'<div class="badge-row">{badge_html}</div>', unsafe_allow_html=True)
-    st.dataframe(
-        pd.DataFrame(_data_readiness_rows(application, signals)),
-        width="stretch",
-        hide_index=True,
-    )
-    st.caption(
-        "MVP source coverage is simulated from the local case file. Production would connect consented bank feeds, accounting APIs, registry/KYB, and document ingestion."
-    )
-    st.dataframe(
-        pd.DataFrame(data_source_coverage_rows(application, signals)),
-        width="stretch",
-        hide_index=True,
-    )
-
-    with st.expander("Scenario Analysis", expanded=False):
-        st.caption(
-            "Use this to show how forward-looking evidence can move the risk profile before a final human decision."
-        )
-        scenario_left, scenario_middle, scenario_right = st.columns(3)
-        with scenario_left:
-            revenue_growth_delta = st.slider(
-                "Revenue growth change",
-                min_value=-0.15,
-                max_value=0.20,
-                value=0.00,
-                step=0.01,
-                format="%.2f",
-            )
-            fcf_margin_delta = st.slider(
-                "FCF margin change",
-                min_value=-0.10,
-                max_value=0.15,
-                value=0.00,
-                step=0.01,
-                format="%.2f",
-            )
-        with scenario_middle:
-            operating_cost_pressure = st.slider(
-                "Operating cost pressure",
-                min_value=0.00,
-                max_value=0.15,
-                value=0.00,
-                step=0.01,
-                format="%.2f",
-            )
-            debt_reduction_delta = st.slider(
-                "Debt reduction plan change",
-                min_value=-0.20,
-                max_value=0.35,
-                value=0.00,
-                step=0.05,
-                format="%.2f",
-            )
-        with scenario_right:
-            contract_evidence = st.selectbox(
-                "Contract evidence",
-                ["Current file", "Signed and documented", "Unconfirmed"],
-            )
-            complete_documents = st.checkbox("Complete missing documents", value=False)
-        simulated_application = apply_scenario(
-            application,
-            revenue_growth_delta=revenue_growth_delta,
-            fcf_margin_delta=fcf_margin_delta,
-            operating_cost_pressure=operating_cost_pressure,
-            contract_evidence=contract_evidence,
-            complete_documents=complete_documents,
-            debt_reduction_delta=debt_reduction_delta,
-        )
-        scenario_prediction, scenario_rows = scenario_comparison_rows(
-            st.session_state.model_bundle,
-            application,
-            prediction,
-            simulated_application,
-            model_key=prediction_model_key,
-        )
-        st.dataframe(pd.DataFrame(scenario_rows), width="stretch", hide_index=True)
-        st.caption(
-            f"Scenario output: grade {scenario_prediction['grade']} and model recommendation "
-            f"{scenario_prediction['decision']}. This is a what-if view, not a saved final decision."
-        )
-
-    st.subheader("Risk Driver View")
-    st.dataframe(pd.DataFrame(driver_rows), width="stretch", hide_index=True)
-
-    snapshot_left, snapshot_middle, snapshot_right = st.columns(3)
-    with snapshot_left:
-        st.dataframe(
-            _summary_table(
-                [
-                    ("Interest rate", _ratio(application.get("interest_rate", 0))),
-                    ("Annual interest", _money(signals["annual_interest_expense"])),
-                    ("Annual debt service", _money(signals["annual_debt_service"])),
-                    ("DSCR", _score(signals["debt_service_coverage_ratio"])),
-                    (
-                        "Stressed DSCR (+2%)",
-                        _score(signals["stressed_debt_service_coverage_ratio"]),
-                    ),
-                    ("Free cash flow", _money(application.get("free_cash_flow", 0))),
-                    ("Monthly burn", _money(application.get("monthly_burn_rate", 0))),
-                    (
-                        "Cash flow / revenue",
-                        _ratio(application.get("cash_flow_to_revenue_ratio", 0)),
-                    ),
-                    (
-                        "Expected runway",
-                        format_months(application.get("expected_runway_months", 0)),
-                    ),
-                    ("Current ratio", _score(application.get("current_ratio", 0))),
-                    ("Quick ratio", _score(application.get("quick_ratio", 0))),
-                    (
-                        "Cash conversion cycle",
-                        _days(signals["cash_conversion_cycle_days"]),
-                    ),
-                ]
-            ),
-            width="stretch",
-            hide_index=True,
-        )
-    with snapshot_middle:
-        st.dataframe(
-            _summary_table(
-                [
-                    (
-                        "Revenue CAGR",
-                        _ratio(application.get("forecast_revenue_cagr", 0)),
-                    ),
-                    (
-                        "Employee CAGR",
-                        _ratio(application.get("forecast_employee_cagr", 0)),
-                    ),
-                    (
-                        "Y5 FCF margin",
-                        _ratio(application.get("forecast_fcf_margin_year5", 0)),
-                    ),
-                    (
-                        "Debt reduction",
-                        _ratio(application.get("planned_debt_reduction_pct", 0)),
-                    ),
-                    ("Applicant narrative", _context_completeness(application)),
-                    (
-                        "Statement anomaly",
-                        _score(signals["financial_statement_anomaly_score"]),
-                    ),
-                ]
-            ),
-            width="stretch",
-            hide_index=True,
-        )
-    with snapshot_right:
-        st.dataframe(
-            _summary_table(
-                [
-                    (
-                        "Document complete",
-                        _score(signals["document_completeness_score"]),
-                    ),
-                    ("Document risk", _score(signals["document_quality_risk_score"])),
-                    ("Process risk", _score(signals["process_integrity_risk_score"])),
-                    (
-                        "Identity risk",
-                        _score(signals["identity_verification_risk_score"]),
-                    ),
-                    (
-                        "Working capital risk",
-                        _score(signals["working_capital_pressure_score"]),
-                    ),
-                    (
-                        "Network risk",
-                        _score(signals["related_party_network_risk_score"]),
-                    ),
-                    (
-                        "Narrative risk",
-                        _score(signals["narrative_consistency_risk_score"]),
-                    ),
-                ]
-            ),
-            width="stretch",
-            hide_index=True,
-        )
-
-    forecast = build_forecast_table(pd.DataFrame([application]))
-    display_forecast = forecast.rename(
-        columns={
-            "forecast_year": "Year",
-            "projected_revenue": "Projected revenue",
-            "projected_employees": "Projected employees",
-            "projected_free_cash_flow": "Projected FCF",
-            "projected_debt": "Projected debt",
-        }
-    )[
-        [
-            "Year",
-            "Projected revenue",
-            "Projected employees",
-            "Projected FCF",
-            "Projected debt",
-        ]
-    ].copy()
-    for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
-        display_forecast[column] = display_forecast[column].apply(_money)
-    display_forecast["Projected employees"] = display_forecast[
-        "Projected employees"
-    ].apply(format_integer)
-    with st.expander("Generated Five-Year Forecast", expanded=False):
-        st.dataframe(display_forecast, width="stretch", hide_index=True)
-
-    executive_rows = [
-        {"Executive": "CEO", "Context": application.get("ceo_context", "")},
-        {"Executive": "CFO", "Context": application.get("cfo_context", "")},
-        {"Executive": "COO", "Context": application.get("coo_context", "")},
-    ]
-    executive_rows = [row for row in executive_rows if row["Context"]]
-    if executive_rows:
-        with st.expander("Executive Context", expanded=False):
-            st.dataframe(executive_rows, width="stretch", hide_index=True)
-
-    applicant_rows = [
-        {
-            "Context": "Loan purpose",
-            "Applicant input": application.get("loan_purpose_context", ""),
-        },
-        {
-            "Context": "Current business",
-            "Applicant input": application.get("current_business_context", ""),
-        },
-        {
-            "Context": "Future business",
-            "Applicant input": application.get("future_business_context", ""),
-        },
-    ]
-    applicant_rows = [row for row in applicant_rows if row["Applicant input"]]
-    if applicant_rows:
-        with st.expander("Applicant Narrative", expanded=False):
-            st.dataframe(applicant_rows, width="stretch", hide_index=True)
-
-    document_rows = [
-        {
-            "Document": "Financial statements",
-            "Present": _yes_no(application.get("financial_statements_uploaded", 0)),
-        },
-        {
-            "Document": "Bank statements",
-            "Present": _yes_no(application.get("bank_statements_uploaded", 0)),
-        },
-        {
-            "Document": "Tax return",
-            "Present": _yes_no(application.get("tax_return_uploaded", 0)),
-        },
-        {
-            "Document": "Ownership/KYB",
-            "Present": _yes_no(application.get("ownership_docs_uploaded", 0)),
-        },
-        {
-            "Document": "Forecast support",
-            "Present": _yes_no(application.get("forecast_support_uploaded", 0)),
-        },
-    ]
-    verification_rows = [
-        {
-            "Check": "Email domain age",
-            "Value": format_months(application.get("email_domain_age_months", 0)),
-        },
-        {
-            "Check": "Website age",
-            "Value": format_months(application.get("website_age_months", 0)),
-        },
-        {
-            "Check": "Bank account age",
-            "Value": format_months(application.get("bank_account_age_months", 0)),
-        },
-    ]
-    with st.expander("Applicant Evidence Review", expanded=False):
-        review_left, review_right = st.columns(2)
-        with review_left:
-            st.dataframe(pd.DataFrame(document_rows), width="stretch", hide_index=True)
-        with review_right:
-            st.dataframe(
-                pd.DataFrame(verification_rows), width="stretch", hide_index=True
-            )
-
-    signal_rows = [
-        {
-            "Signal": "Debt / revenue",
-            "Value": _ratio(signals["debt_to_revenue_ratio"]),
-            "What it tells the analyst": "Debt pressure relative to business size.",
-        },
-        {
-            "Signal": "Request / revenue",
-            "Value": _ratio(signals["request_to_revenue_ratio"]),
-            "What it tells the analyst": "Requested exposure relative to reported revenue.",
-        },
-        {
-            "Signal": "Loan velocity",
-            "Value": _score(signals["loan_velocity_score"]),
-            "What it tells the analyst": "Recent borrowing intensity and possible credit stacking.",
-        },
-        {
-            "Signal": "Payment stress",
-            "Value": _score(signals["payment_stress_score"]),
-            "What it tells the analyst": "Late-payment and debt-pressure stress.",
-        },
-        {
-            "Signal": "External financing pressure",
-            "Value": _score(signals["external_financing_pressure"]),
-            "What it tells the analyst": "Financing pressure from request size, debt, and recent borrowing.",
-        },
-        {
-            "Signal": "Financial distress",
-            "Value": _score(signals["financial_distress_score"]),
-            "What it tells the analyst": "Combined debt, payment, collateral, and history stress.",
-        },
-        {
-            "Signal": "Transaction anomaly",
-            "Value": _score(signals["transaction_anomaly_score"]),
-            "What it tells the analyst": "Suspicious transfer and behavior pattern risk.",
-        },
-        {
-            "Signal": "Cash-flow pressure",
-            "Value": _score(signals["cash_flow_pressure_score"]),
-            "What it tells the analyst": "Negative FCF and burn-rate pressure.",
-        },
-        {
-            "Signal": "Runway risk",
-            "Value": _score(signals["runway_risk_score"]),
-            "What it tells the analyst": "Short-runway liquidity risk.",
-        },
-        {
-            "Signal": "Cash conversion risk",
-            "Value": _score(signals["cash_conversion_risk_score"]),
-            "What it tells the analyst": "Weak cash conversion relative to revenue.",
-        },
-        {
-            "Signal": "Forecast aggressiveness",
-            "Value": _score(signals["forecast_plan_aggressiveness_score"]),
-            "What it tells the analyst": "Ambition of the five-year plan relative to current signals.",
-        },
-        {
-            "Signal": "Forecast execution risk",
-            "Value": _score(signals["forecast_execution_risk_score"]),
-            "What it tells the analyst": "Risk that the forecast is hard to execute.",
-        },
-        {
-            "Signal": "Hiring efficiency risk",
-            "Value": _score(signals["forecast_hiring_efficiency_risk_score"]),
-            "What it tells the analyst": "Revenue growth that may be under-supported by employee growth.",
-        },
-        {
-            "Signal": "Debt service plan risk",
-            "Value": _score(signals["forecast_debt_service_risk_score"]),
-            "What it tells the analyst": "Debt reduction strain under current cash-flow pressure.",
-        },
-        {
-            "Signal": "Interest rate risk",
-            "Value": _score(signals["interest_rate_risk_score"]),
-            "What it tells the analyst": "Pricing level that can increase repayment burden.",
-        },
-        {
-            "Signal": "Debt service stress",
-            "Value": _score(signals["debt_service_stress_score"]),
-            "What it tells the analyst": "Coverage pressure from DSCR and the +2% rate stress test.",
-        },
-        {
-            "Signal": "Cash conversion cycle",
-            "Value": _days(signals["cash_conversion_cycle_days"]),
-            "What it tells the analyst": "Working-capital timing pressure across receivables, inventory, and payables.",
-        },
-        {
-            "Signal": "Document completeness",
-            "Value": _score(signals["document_completeness_score"]),
-            "What it tells the analyst": "How much of the expected application package is present.",
-        },
-        {
-            "Signal": "Document quality risk",
-            "Value": _score(signals["document_quality_risk_score"]),
-            "What it tells the analyst": "Missing evidence and document-package gaps.",
-        },
-        {
-            "Signal": "Process integrity risk",
-            "Value": _score(signals["process_integrity_risk_score"]),
-            "What it tells the analyst": "System-supplied process metadata, where available.",
-        },
-        {
-            "Signal": "Identity verification risk",
-            "Value": _score(signals["identity_verification_risk_score"]),
-            "What it tells the analyst": "Digital footprint age, bank-account age, and consistency signals.",
-        },
-        {
-            "Signal": "Working-capital pressure",
-            "Value": _score(signals["working_capital_pressure_score"]),
-            "What it tells the analyst": "Liquidity ratio weakness and cash conversion pressure.",
-        },
-        {
-            "Signal": "Financial statement anomaly",
-            "Value": _score(signals["financial_statement_anomaly_score"]),
-            "What it tells the analyst": "Revenue/cash-flow mismatch, receivables pressure, and unsupported margin improvement.",
-        },
-        {
-            "Signal": "Related-party network risk",
-            "Value": _score(signals["related_party_network_risk_score"]),
-            "What it tells the analyst": "Ownership, counterparty concentration, and shared identifier concerns.",
-        },
-        {
-            "Signal": "Narrative consistency risk",
-            "Value": _score(signals["narrative_consistency_risk_score"]),
-            "What it tells the analyst": "Potential contradictions between applicant context, documents, and financials.",
-        },
-    ]
-    with st.expander("Calculated Risk Signals", expanded=False):
-        st.caption(
-            "Fraud and anomaly detection are one component of the broader credit-risk assessment. "
-            "Most normalized risk scores run from 0.00 to 1.00, where higher means more concern unless the row says otherwise."
-        )
-        st.dataframe(
-            pd.DataFrame(_add_signal_interpretations(signal_rows)),
-            width="stretch",
-            hide_index=True,
-        )
-
-    action_cols = st.columns([1, 1, 1, 2])
-    if action_cols[0].button("Open Case Review", width="stretch"):
-        st.session_state.show_review_dialog = True
-        rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
-        if rerun:
-            rerun()
-    report = case_summary(application, prediction, explanation, current_review)
-    memo = credit_memo(
-        application,
-        prediction,
-        explanation,
-        current_review,
-        loan_terms,
-        monitoring_rows,
-        timeline_rows,
-    )
-    action_cols[1].download_button(
-        "Generate Credit Memo",
-        data=memo,
-        file_name=f"{application['application_id']}_credit_memo.md",
-        mime="text/markdown",
-        width="stretch",
-    )
-    action_cols[2].download_button(
-        "Download Audit Summary",
-        data=report,
-        file_name=f"{application['application_id']}_case_summary.txt",
-        mime="text/plain",
-        width="stretch",
-    )
-    if st.session_state.last_email_link and current_review:
-        action_cols[3].markdown(
-            f"[Open email draft]({st.session_state.last_email_link})"
-        )
-
-    if st.session_state.show_review_dialog:
-        with st.expander("Case Review", expanded=True):
-            _review_form_body()
-
-    st.subheader("Decision History Timeline")
-    st.dataframe(pd.DataFrame(timeline_rows), width="stretch", hide_index=True)
-
-    st.subheader("Risk Factors")
-    st.caption(
-        "These are plain-language flags produced by the deterministic model. They explain why the file deserves attention, "
-        "but the final lender decision still comes from the saved analyst review."
-    )
-    if prediction["flags"]:
-        for flag in prediction["flags"]:
-            st.warning(flag)
-    else:
-        st.success("No elevated deterministic risk flags were triggered.")
-
-    st.subheader("Similar Historical Applications")
-    st.caption(
-        "Nearest historical portfolio cases by company profile, requested terms, and credit/anomaly risk signals."
-    )
-    similar = similar_applications(
-        st.session_state.model_bundle,
-        applications,
-        application,
-        model_key=prediction_model_key,
-    )
-    display_similar = similar.copy()
-    for column in ["requested_amount", "free_cash_flow"]:
-        if column in display_similar:
-            display_similar[column] = display_similar[column].apply(_money)
-    if "expected_runway_months" in display_similar:
-        display_similar["expected_runway_months"] = display_similar[
-            "expected_runway_months"
-        ].apply(format_months)
-    if "document_completeness_score" in display_similar:
-        display_similar["document_completeness_score"] = display_similar[
-            "document_completeness_score"
-        ].apply(_score)
-    for column in ["interest_rate", "forecast_revenue_cagr", "fraud_probability"]:
-        if column in display_similar:
-            display_similar[column] = display_similar[column].apply(_ratio)
-    if "debt_service_coverage_ratio" in display_similar:
-        display_similar["debt_service_coverage_ratio"] = display_similar[
-            "debt_service_coverage_ratio"
-        ].apply(_score)
-    display_similar = display_similar.rename(
-        columns={"fraud_probability": "Application risk score"}
-    )
-    st.dataframe(display_similar, width="stretch", hide_index=True)
-
-    st.subheader("Peer Benchmark")
-    st.caption(
-        "Synthetic peer comparison for the applicant's sector and region where enough peers are available."
-    )
-    st.dataframe(
-        pd.DataFrame(
-            peer_benchmark_rows(
+            scenario_prediction, scenario_rows = scenario_comparison_rows(
                 st.session_state.model_bundle,
-                applications,
                 application,
                 prediction,
+                simulated_application,
                 model_key=prediction_model_key,
             )
-        ),
-        width="stretch",
-        hide_index=True,
-    )
+            st.dataframe(pd.DataFrame(scenario_rows), width="stretch", hide_index=True)
+            st.caption(
+                f"Scenario output: grade {scenario_prediction['grade']} and model recommendation "
+                f"{scenario_prediction['decision']}. This is a what-if view, not a saved final decision."
+            )
+
+        st.subheader("Risk Driver View")
+        st.dataframe(pd.DataFrame(driver_rows), width="stretch", hide_index=True)
+
+        snapshot_left, snapshot_middle, snapshot_right = st.columns(3)
+        with snapshot_left:
+            st.dataframe(
+                _summary_table(
+                    [
+                        ("Interest rate", _ratio(application.get("interest_rate", 0))),
+                        ("Annual interest", _money(signals["annual_interest_expense"])),
+                        ("Annual debt service", _money(signals["annual_debt_service"])),
+                        ("DSCR", _score(signals["debt_service_coverage_ratio"])),
+                        (
+                            "Stressed DSCR (+2%)",
+                            _score(signals["stressed_debt_service_coverage_ratio"]),
+                        ),
+                        ("Free cash flow", _money(application.get("free_cash_flow", 0))),
+                        ("Monthly burn", _money(application.get("monthly_burn_rate", 0))),
+                        (
+                            "Cash flow / revenue",
+                            _ratio(application.get("cash_flow_to_revenue_ratio", 0)),
+                        ),
+                        (
+                            "Expected runway",
+                            format_months(application.get("expected_runway_months", 0)),
+                        ),
+                        ("Current ratio", _score(application.get("current_ratio", 0))),
+                        ("Quick ratio", _score(application.get("quick_ratio", 0))),
+                        (
+                            "Cash conversion cycle",
+                            _days(signals["cash_conversion_cycle_days"]),
+                        ),
+                    ]
+                ),
+                width="stretch",
+                hide_index=True,
+            )
+        with snapshot_middle:
+            st.dataframe(
+                _summary_table(
+                    [
+                        (
+                            "Revenue CAGR",
+                            _ratio(application.get("forecast_revenue_cagr", 0)),
+                        ),
+                        (
+                            "Employee CAGR",
+                            _ratio(application.get("forecast_employee_cagr", 0)),
+                        ),
+                        (
+                            "Y5 FCF margin",
+                            _ratio(application.get("forecast_fcf_margin_year5", 0)),
+                        ),
+                        (
+                            "Debt reduction",
+                            _ratio(application.get("planned_debt_reduction_pct", 0)),
+                        ),
+                        ("Applicant narrative", _context_completeness(application)),
+                        (
+                            "Statement anomaly",
+                            _score(signals["financial_statement_anomaly_score"]),
+                        ),
+                    ]
+                ),
+                width="stretch",
+                hide_index=True,
+            )
+        with snapshot_right:
+            st.dataframe(
+                _summary_table(
+                    [
+                        (
+                            "Document complete",
+                            _score(signals["document_completeness_score"]),
+                        ),
+                        ("Document risk", _score(signals["document_quality_risk_score"])),
+                        ("Process risk", _score(signals["process_integrity_risk_score"])),
+                        (
+                            "Identity risk",
+                            _score(signals["identity_verification_risk_score"]),
+                        ),
+                        (
+                            "Working capital risk",
+                            _score(signals["working_capital_pressure_score"]),
+                        ),
+                        (
+                            "Network risk",
+                            _score(signals["related_party_network_risk_score"]),
+                        ),
+                        (
+                            "Narrative risk",
+                            _score(signals["narrative_consistency_risk_score"]),
+                        ),
+                    ]
+                ),
+                width="stretch",
+                hide_index=True,
+            )
+
+        forecast = build_forecast_table(pd.DataFrame([application]))
+        display_forecast = forecast.rename(
+            columns={
+                "forecast_year": "Year",
+                "projected_revenue": "Projected revenue",
+                "projected_employees": "Projected employees",
+                "projected_free_cash_flow": "Projected FCF",
+                "projected_debt": "Projected debt",
+            }
+        )[
+            [
+                "Year",
+                "Projected revenue",
+                "Projected employees",
+                "Projected FCF",
+                "Projected debt",
+            ]
+        ].copy()
+        for column in ["Projected revenue", "Projected FCF", "Projected debt"]:
+            display_forecast[column] = display_forecast[column].apply(_money)
+        display_forecast["Projected employees"] = display_forecast[
+            "Projected employees"
+        ].apply(format_integer)
+        with st.expander("Generated Five-Year Forecast", expanded=False):
+            st.dataframe(display_forecast, width="stretch", hide_index=True)
+
+        executive_rows = [
+            {"Executive": "CEO", "Context": application.get("ceo_context", "")},
+            {"Executive": "CFO", "Context": application.get("cfo_context", "")},
+            {"Executive": "COO", "Context": application.get("coo_context", "")},
+        ]
+        executive_rows = [row for row in executive_rows if row["Context"]]
+        if executive_rows:
+            with st.expander("Executive Context", expanded=False):
+                st.dataframe(executive_rows, width="stretch", hide_index=True)
+
+        applicant_rows = [
+            {
+                "Context": "Loan purpose",
+                "Applicant input": application.get("loan_purpose_context", ""),
+            },
+            {
+                "Context": "Current business",
+                "Applicant input": application.get("current_business_context", ""),
+            },
+            {
+                "Context": "Future business",
+                "Applicant input": application.get("future_business_context", ""),
+            },
+        ]
+        applicant_rows = [row for row in applicant_rows if row["Applicant input"]]
+        if applicant_rows:
+            with st.expander("Applicant Narrative", expanded=False):
+                st.dataframe(applicant_rows, width="stretch", hide_index=True)
+
+        document_rows = [
+            {
+                "Document": "Financial statements",
+                "Present": _yes_no(application.get("financial_statements_uploaded", 0)),
+            },
+            {
+                "Document": "Bank statements",
+                "Present": _yes_no(application.get("bank_statements_uploaded", 0)),
+            },
+            {
+                "Document": "Tax return",
+                "Present": _yes_no(application.get("tax_return_uploaded", 0)),
+            },
+            {
+                "Document": "Ownership/KYB",
+                "Present": _yes_no(application.get("ownership_docs_uploaded", 0)),
+            },
+            {
+                "Document": "Forecast support",
+                "Present": _yes_no(application.get("forecast_support_uploaded", 0)),
+            },
+        ]
+        verification_rows = [
+            {
+                "Check": "Email domain age",
+                "Value": format_months(application.get("email_domain_age_months", 0)),
+            },
+            {
+                "Check": "Website age",
+                "Value": format_months(application.get("website_age_months", 0)),
+            },
+            {
+                "Check": "Bank account age",
+                "Value": format_months(application.get("bank_account_age_months", 0)),
+            },
+        ]
+        with st.expander("Applicant Evidence Review", expanded=False):
+            review_left, review_right = st.columns(2)
+            with review_left:
+                st.dataframe(pd.DataFrame(document_rows), width="stretch", hide_index=True)
+            with review_right:
+                st.dataframe(
+                    pd.DataFrame(verification_rows), width="stretch", hide_index=True
+                )
+
+        signal_rows = [
+            {
+                "Signal": "Debt / revenue",
+                "Value": _ratio(signals["debt_to_revenue_ratio"]),
+                "What it tells the analyst": "Debt pressure relative to business size.",
+            },
+            {
+                "Signal": "Request / revenue",
+                "Value": _ratio(signals["request_to_revenue_ratio"]),
+                "What it tells the analyst": "Requested exposure relative to reported revenue.",
+            },
+            {
+                "Signal": "Loan velocity",
+                "Value": _score(signals["loan_velocity_score"]),
+                "What it tells the analyst": "Recent borrowing intensity and possible credit stacking.",
+            },
+            {
+                "Signal": "Payment stress",
+                "Value": _score(signals["payment_stress_score"]),
+                "What it tells the analyst": "Late-payment and debt-pressure stress.",
+            },
+            {
+                "Signal": "External financing pressure",
+                "Value": _score(signals["external_financing_pressure"]),
+                "What it tells the analyst": "Financing pressure from request size, debt, and recent borrowing.",
+            },
+            {
+                "Signal": "Financial distress",
+                "Value": _score(signals["financial_distress_score"]),
+                "What it tells the analyst": "Combined debt, payment, collateral, and history stress.",
+            },
+            {
+                "Signal": "Transaction anomaly",
+                "Value": _score(signals["transaction_anomaly_score"]),
+                "What it tells the analyst": "Suspicious transfer and behavior pattern risk.",
+            },
+            {
+                "Signal": "Cash-flow pressure",
+                "Value": _score(signals["cash_flow_pressure_score"]),
+                "What it tells the analyst": "Negative FCF and burn-rate pressure.",
+            },
+            {
+                "Signal": "Runway risk",
+                "Value": _score(signals["runway_risk_score"]),
+                "What it tells the analyst": "Short-runway liquidity risk.",
+            },
+            {
+                "Signal": "Cash conversion risk",
+                "Value": _score(signals["cash_conversion_risk_score"]),
+                "What it tells the analyst": "Weak cash conversion relative to revenue.",
+            },
+            {
+                "Signal": "Forecast aggressiveness",
+                "Value": _score(signals["forecast_plan_aggressiveness_score"]),
+                "What it tells the analyst": "Ambition of the five-year plan relative to current signals.",
+            },
+            {
+                "Signal": "Forecast execution risk",
+                "Value": _score(signals["forecast_execution_risk_score"]),
+                "What it tells the analyst": "Risk that the forecast is hard to execute.",
+            },
+            {
+                "Signal": "Hiring efficiency risk",
+                "Value": _score(signals["forecast_hiring_efficiency_risk_score"]),
+                "What it tells the analyst": "Revenue growth that may be under-supported by employee growth.",
+            },
+            {
+                "Signal": "Debt service plan risk",
+                "Value": _score(signals["forecast_debt_service_risk_score"]),
+                "What it tells the analyst": "Debt reduction strain under current cash-flow pressure.",
+            },
+            {
+                "Signal": "Interest rate risk",
+                "Value": _score(signals["interest_rate_risk_score"]),
+                "What it tells the analyst": "Pricing level that can increase repayment burden.",
+            },
+            {
+                "Signal": "Debt service stress",
+                "Value": _score(signals["debt_service_stress_score"]),
+                "What it tells the analyst": "Coverage pressure from DSCR and the +2% rate stress test.",
+            },
+            {
+                "Signal": "Cash conversion cycle",
+                "Value": _days(signals["cash_conversion_cycle_days"]),
+                "What it tells the analyst": "Working-capital timing pressure across receivables, inventory, and payables.",
+            },
+            {
+                "Signal": "Document completeness",
+                "Value": _score(signals["document_completeness_score"]),
+                "What it tells the analyst": "How much of the expected application package is present.",
+            },
+            {
+                "Signal": "Document quality risk",
+                "Value": _score(signals["document_quality_risk_score"]),
+                "What it tells the analyst": "Missing evidence and document-package gaps.",
+            },
+            {
+                "Signal": "Process integrity risk",
+                "Value": _score(signals["process_integrity_risk_score"]),
+                "What it tells the analyst": "System-supplied process metadata, where available.",
+            },
+            {
+                "Signal": "Identity verification risk",
+                "Value": _score(signals["identity_verification_risk_score"]),
+                "What it tells the analyst": "Digital footprint age, bank-account age, and consistency signals.",
+            },
+            {
+                "Signal": "Working-capital pressure",
+                "Value": _score(signals["working_capital_pressure_score"]),
+                "What it tells the analyst": "Liquidity ratio weakness and cash conversion pressure.",
+            },
+            {
+                "Signal": "Financial statement anomaly",
+                "Value": _score(signals["financial_statement_anomaly_score"]),
+                "What it tells the analyst": "Revenue/cash-flow mismatch, receivables pressure, and unsupported margin improvement.",
+            },
+            {
+                "Signal": "Related-party network risk",
+                "Value": _score(signals["related_party_network_risk_score"]),
+                "What it tells the analyst": "Ownership, counterparty concentration, and shared identifier concerns.",
+            },
+            {
+                "Signal": "Narrative consistency risk",
+                "Value": _score(signals["narrative_consistency_risk_score"]),
+                "What it tells the analyst": "Potential contradictions between applicant context, documents, and financials.",
+            },
+        ]
+        with st.expander("Calculated Risk Signals", expanded=False):
+            st.caption(
+                "Fraud and anomaly detection are one component of the broader credit-risk assessment. "
+                "Most normalized risk scores run from 0.00 to 1.00, where higher means more concern unless the row says otherwise."
+            )
+            st.dataframe(
+                pd.DataFrame(_add_signal_interpretations(signal_rows)),
+                width="stretch",
+                hide_index=True,
+            )
+
+    with detail_tabs[2]:
+        _render_ai_output(application, prediction)
+
+    with detail_tabs[3]:
+        if not ai_evaluation_package:
+            st.warning(
+                "Please use the AI before case review. Generate the Internal + SME Reports package in LLM Integration first."
+            )
+            safe_page_link(
+                "pages/5_LLM_Integration.py",
+                "Open LLM Integration",
+                ":material/psychology:",
+            )
+            st.session_state.show_review_dialog = False
+        action_cols = st.columns([1, 1, 1, 2])
+        if action_cols[0].button(
+            "Open Case Review",
+            width="stretch",
+            disabled=not bool(ai_evaluation_package),
+            help=(
+                "Generate the AI output package before reviewing."
+                if not ai_evaluation_package
+                else "Open the lender review form."
+            ),
+        ):
+            st.session_state.show_review_dialog = True
+            rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
+            if rerun:
+                rerun()
+        report = case_summary(application, prediction, explanation, current_review)
+        memo = credit_memo(
+            application,
+            prediction,
+            explanation,
+            current_review,
+            loan_terms,
+            monitoring_rows,
+            timeline_rows,
+        )
+        action_cols[1].download_button(
+            "Generate Credit Memo",
+            data=memo,
+            file_name=f"{application['application_id']}_credit_memo.md",
+            mime="text/markdown",
+            width="stretch",
+        )
+        action_cols[2].download_button(
+            "Download Audit Summary",
+            data=report,
+            file_name=f"{application['application_id']}_case_summary.txt",
+            mime="text/plain",
+            width="stretch",
+        )
+        if st.session_state.last_email_link and current_review:
+            action_cols[3].markdown(
+                f"[Open email draft]({st.session_state.last_email_link})"
+            )
+
+        if st.session_state.show_review_dialog and ai_evaluation_package:
+            with st.expander("Case Review", expanded=True):
+                _review_form_body()
+
+        st.subheader("Review and SME Publication")
+        _render_review_publication(
+            application,
+            prediction,
+            current_review,
+            final_decision,
+            publication_status,
+            prediction_model_label,
+            decision_conditions,
+        )
+
+        st.subheader("Decision History Timeline")
+        st.dataframe(pd.DataFrame(timeline_rows), width="stretch", hide_index=True)
+
+        st.subheader("Risk Factors")
+        st.caption(
+            "These are plain-language flags produced by the deterministic model. They explain why the file deserves attention, "
+            "but the final lender decision still comes from the saved analyst review."
+        )
+        if prediction["flags"]:
+            for flag in prediction["flags"]:
+                st.warning(flag)
+        else:
+            st.success("No elevated deterministic risk flags were triggered.")
+
+        st.subheader("Similar Historical Applications")
+        st.caption(
+            "Nearest historical portfolio cases by company profile, requested terms, and credit/anomaly risk signals."
+        )
+        similar = similar_applications(
+            st.session_state.model_bundle,
+            applications,
+            application,
+            model_key=prediction_model_key,
+        )
+        display_similar = similar.copy()
+        for column in ["requested_amount", "free_cash_flow"]:
+            if column in display_similar:
+                display_similar[column] = display_similar[column].apply(_money)
+        if "expected_runway_months" in display_similar:
+            display_similar["expected_runway_months"] = display_similar[
+                "expected_runway_months"
+            ].apply(format_months)
+        if "document_completeness_score" in display_similar:
+            display_similar["document_completeness_score"] = display_similar[
+                "document_completeness_score"
+            ].apply(_score)
+        for column in ["interest_rate", "forecast_revenue_cagr", "fraud_probability"]:
+            if column in display_similar:
+                display_similar[column] = display_similar[column].apply(_ratio)
+        if "debt_service_coverage_ratio" in display_similar:
+            display_similar["debt_service_coverage_ratio"] = display_similar[
+                "debt_service_coverage_ratio"
+            ].apply(_score)
+        display_similar = display_similar.rename(
+            columns={"fraud_probability": "Application risk score"}
+        )
+        st.dataframe(display_similar, width="stretch", hide_index=True)
+
+        st.subheader("Peer Benchmark")
+        st.caption(
+            "Synthetic peer comparison for the applicant's sector and region where enough peers are available."
+        )
+        st.dataframe(
+            pd.DataFrame(
+                peer_benchmark_rows(
+                    st.session_state.model_bundle,
+                    applications,
+                    application,
+                    prediction,
+                    model_key=prediction_model_key,
+                )
+            ),
+            width="stretch",
+            hide_index=True,
+        )
+    with detail_tabs[4]:
+        st.subheader("Score and Review Events")
+        _render_score_history(application)
 else:
     st.info("Submit the form to score an application.")
 
