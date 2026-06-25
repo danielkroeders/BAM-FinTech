@@ -34,6 +34,203 @@ def _month_label(year_month_index):
     return f"{year}-{month:02d}"
 
 
+def _fraudulent_document_rows(
+    company,
+    safe_company,
+    prior_year,
+    generated_on,
+    revenue,
+    requested_amount,
+    existing_debt,
+    free_cash_flow,
+    monthly_burn_rate,
+    base_monthly_revenue,
+    forecast_growth,
+    loan_purpose,
+):
+    """Return fictional document rows with deliberate red flags for demo review."""
+
+    claimed_revenue = revenue * 1.48
+    tax_reported_revenue = revenue * 0.56
+    adjusted_cash_flow = max(abs(free_cash_flow) * 0.6, revenue * 0.06)
+    financial_rows = [
+        {
+            "statement_year": prior_year,
+            "line_item": "Revenue",
+            "amount_eur": round(claimed_revenue),
+            "notes": "Applicant-submitted revenue is unreconciled to tax turnover and bank deposits.",
+        },
+        {
+            "statement_year": prior_year,
+            "line_item": "Manual revenue adjustment",
+            "amount_eur": round(claimed_revenue - revenue),
+            "notes": "Late-stage spreadsheet override with missing invoice identifiers.",
+        },
+        {
+            "statement_year": prior_year,
+            "line_item": "Gross profit",
+            "amount_eur": round(claimed_revenue * 0.54),
+            "notes": "Margin uplift conflicts with supplier payment history.",
+        },
+        {
+            "statement_year": prior_year,
+            "line_item": "Operating expenses",
+            "amount_eur": round(revenue * 0.24),
+            "notes": "Expense lines exclude related-party service fees found in bank activity.",
+        },
+        {
+            "statement_year": prior_year,
+            "line_item": "Free cash flow",
+            "amount_eur": round(adjusted_cash_flow),
+            "notes": "Restated from negative ledger export without source-system audit trail.",
+        },
+        {
+            "statement_year": prior_year,
+            "line_item": "Cash and equivalents",
+            "amount_eur": round(max(requested_amount * 0.42, monthly_burn_rate * 5)),
+            "notes": "Closing cash balance conflicts with ending bank statement balance.",
+        },
+        {
+            "statement_year": prior_year,
+            "line_item": "Existing debt",
+            "amount_eur": round(existing_debt * 0.45),
+            "notes": "Excludes two same-day lender advances disclosed in transaction notes.",
+        },
+        {
+            "statement_year": prior_year,
+            "line_item": "Equity",
+            "amount_eur": round(max(revenue * 0.22, 1)),
+            "notes": "Equity figure cannot be tied to filed accounts.",
+        },
+    ]
+
+    first_month = generated_on.year * 12 + generated_on.month - 5
+    bank_rows = []
+    ending_balance = max(monthly_burn_rate, requested_amount * 0.05)
+    related_parties = [
+        "Azul Trade Partners - related party",
+        "North Coast Procurement - shared director",
+        "Blue Market Holdings - undisclosed affiliate",
+    ]
+    for offset in range(6):
+        circular_transfer = requested_amount * (0.12 + offset * 0.01)
+        inflows = base_monthly_revenue * (0.72 + offset * 0.02) + circular_transfer
+        outflows = inflows * 0.97 + monthly_burn_rate * 0.12
+        ending_balance += inflows - outflows
+        bank_rows.append(
+            {
+                "period": _month_label(first_month + offset),
+                "account": f"Operating account DEMO-{safe_company[:6].upper()}",
+                "total_inflows_eur": round(inflows),
+                "total_outflows_eur": round(outflows),
+                "ending_balance_eur": round(max(ending_balance, 0)),
+                "overdraft_days": 9 + offset,
+                "largest_counterparty": (
+                    f"{related_parties[offset % len(related_parties)]}; "
+                    "round-number same-day in/out transfer"
+                ),
+            }
+        )
+
+    taxable_profit = max(tax_reported_revenue * 0.03, 1)
+    tax_rows = [
+        {
+            "tax_year": prior_year,
+            "field": "Taxpayer legal name",
+            "example_value": company,
+            "notes": "Filed return uses shortened trade name; legal-name match needs confirmation.",
+        },
+        {
+            "tax_year": prior_year,
+            "field": "Reported turnover",
+            "example_value": round(tax_reported_revenue),
+            "notes": "Tax turnover materially below submitted financial statements.",
+        },
+        {
+            "tax_year": prior_year,
+            "field": "Taxable profit",
+            "example_value": round(taxable_profit),
+            "notes": "Low profit conflicts with high claimed cash generation.",
+        },
+        {
+            "tax_year": prior_year,
+            "field": "Corporate income tax paid",
+            "example_value": round(taxable_profit * 0.25),
+            "notes": "Payment reference missing from bank statement extracts.",
+        },
+        {
+            "tax_year": prior_year,
+            "field": "VAT / sales tax filing status",
+            "example_value": "Late filings and unresolved arrears",
+            "notes": "Compliance status conflicts with applicant declaration.",
+        },
+    ]
+
+    kyb_rows = [
+        {
+            "evidence_type": "Company registry extract",
+            "example_value": company,
+            "owner_or_source": "National business registry",
+            "status": "Extract is older than 12 months.",
+        },
+        {
+            "evidence_type": "Registration number",
+            "example_value": f"DEMO-{safe_company[:8].upper()}-2026",
+            "owner_or_source": "National business registry",
+            "status": "Registration number format differs across submitted files.",
+        },
+        {
+            "evidence_type": "Director identity",
+            "example_value": "Managing director unresolved",
+            "owner_or_source": "Board / company secretary",
+            "status": "Director name does not match bank mandate.",
+        },
+        {
+            "evidence_type": "Ultimate beneficial owner",
+            "example_value": "Founder shareholder - 70%",
+            "owner_or_source": "Shareholder register",
+            "status": "UBO not present in registry extract.",
+        },
+        {
+            "evidence_type": "Ultimate beneficial owner",
+            "example_value": "Blue Market Holdings - 30%",
+            "owner_or_source": "Shareholder register",
+            "status": "Related-party exposure not disclosed in application narrative.",
+        },
+        {
+            "evidence_type": "Sanctions / PEP screening",
+            "example_value": "Possible sanctions fuzzy match",
+            "owner_or_source": "KYB provider",
+            "status": "Unresolved screening alert requires compliance escalation.",
+        },
+    ]
+
+    forecast_rows = []
+    for offset in range(1, 7):
+        growth_factor = 1 + forecast_growth * (offset / 6)
+        expected_revenue = base_monthly_revenue * growth_factor * 1.9
+        contracted_revenue = expected_revenue * 0.18
+        operating_costs = max(monthly_burn_rate * 0.55, expected_revenue * 0.38)
+        debt_service = requested_amount / max(12, offset * 10)
+        forecast_rows.append(
+            {
+                "forecast_month": _month_label(
+                    generated_on.year * 12 + generated_on.month + offset
+                ),
+                "contracted_revenue_eur": round(contracted_revenue),
+                "pipeline_revenue_eur": round(expected_revenue - contracted_revenue),
+                "operating_costs_eur": round(operating_costs),
+                "planned_debt_service_eur": round(debt_service),
+                "evidence_note": (
+                    "Unsupported growth assumption; unsigned LOI treated as contracted revenue. "
+                    f"Purpose: {loan_purpose[:70]}"
+                ),
+            }
+        )
+
+    return financial_rows, bank_rows, tax_rows, kyb_rows, forecast_rows
+
+
 def build_document_examples(application, generated_on=None):
     """Build fictional SME document examples from the current application values.
 
@@ -227,13 +424,51 @@ def build_document_examples(application, generated_on=None):
             }
         )
 
+    file_variant = "example"
+    descriptions = {
+        "financial_statements": "Prior-year income statement, cash, debt, and equity line items.",
+        "bank_statements": "Six months of inflows, outflows, balances, overdraft days, and counterparties.",
+        "tax_returns": "Filed turnover, taxable profit, tax paid, and filing status.",
+        "ownership_kyb": "Registry, director, UBO, shareholder, and screening evidence.",
+        "forecast_support": "Monthly revenue forecast, committed pipeline, costs, debt service, and assumptions.",
+    }
+    if str(application.get("sample_document_profile", "")).lower() == "fraudulent":
+        (
+            financial_rows,
+            bank_rows,
+            tax_rows,
+            kyb_rows,
+            forecast_rows,
+        ) = _fraudulent_document_rows(
+            company,
+            safe_company,
+            prior_year,
+            generated_on,
+            revenue,
+            requested_amount,
+            existing_debt,
+            free_cash_flow,
+            monthly_burn_rate,
+            base_monthly_revenue,
+            forecast_growth,
+            loan_purpose,
+        )
+        file_variant = "flagged"
+        descriptions = {
+            "financial_statements": "Financial statements with unreconciled manual adjustments and debt omissions.",
+            "bank_statements": "Bank activity with round-number transfers, overdrafts, and related-party counterparties.",
+            "tax_returns": "Tax summary that conflicts with the submitted financial statements.",
+            "ownership_kyb": "KYB evidence with UBO, registry, and screening inconsistencies.",
+            "forecast_support": "Forecast support with unsupported growth and unsigned pipeline assumptions.",
+        }
+
     generated_date = generated_on.strftime("%Y-%m-%d")
     return {
         "financial_statements": {
             "label": DOCUMENT_CATEGORIES["financial_statements"],
-            "file_name": f"{safe_company}_example_financial_statements.csv",
+            "file_name": f"{safe_company}_{file_variant}_financial_statements.csv",
             "mime_type": "text/csv",
-            "description": "Prior-year income statement, cash, debt, and equity line items.",
+            "description": descriptions["financial_statements"],
             "content": _csv_bytes(
                 financial_rows, ["statement_year", "line_item", "amount_eur", "notes"]
             ),
@@ -241,9 +476,9 @@ def build_document_examples(application, generated_on=None):
         },
         "bank_statements": {
             "label": DOCUMENT_CATEGORIES["bank_statements"],
-            "file_name": f"{safe_company}_example_bank_statements.csv",
+            "file_name": f"{safe_company}_{file_variant}_bank_statements.csv",
             "mime_type": "text/csv",
-            "description": "Six months of inflows, outflows, balances, overdraft days, and counterparties.",
+            "description": descriptions["bank_statements"],
             "content": _csv_bytes(
                 bank_rows,
                 [
@@ -260,9 +495,9 @@ def build_document_examples(application, generated_on=None):
         },
         "tax_returns": {
             "label": DOCUMENT_CATEGORIES["tax_returns"],
-            "file_name": f"{safe_company}_example_tax_return_summary.csv",
+            "file_name": f"{safe_company}_{file_variant}_tax_return_summary.csv",
             "mime_type": "text/csv",
-            "description": "Filed turnover, taxable profit, tax paid, and filing status.",
+            "description": descriptions["tax_returns"],
             "content": _csv_bytes(
                 tax_rows, ["tax_year", "field", "example_value", "notes"]
             ),
@@ -270,9 +505,9 @@ def build_document_examples(application, generated_on=None):
         },
         "ownership_kyb": {
             "label": DOCUMENT_CATEGORIES["ownership_kyb"],
-            "file_name": f"{safe_company}_example_ownership_kyb.csv",
+            "file_name": f"{safe_company}_{file_variant}_ownership_kyb.csv",
             "mime_type": "text/csv",
-            "description": "Registry, director, UBO, shareholder, and screening evidence.",
+            "description": descriptions["ownership_kyb"],
             "content": _csv_bytes(
                 kyb_rows,
                 ["evidence_type", "example_value", "owner_or_source", "status"],
@@ -281,9 +516,9 @@ def build_document_examples(application, generated_on=None):
         },
         "forecast_support": {
             "label": DOCUMENT_CATEGORIES["forecast_support"],
-            "file_name": f"{safe_company}_example_forecast_support.csv",
+            "file_name": f"{safe_company}_{file_variant}_forecast_support.csv",
             "mime_type": "text/csv",
-            "description": "Monthly revenue forecast, committed pipeline, costs, debt service, and assumptions.",
+            "description": descriptions["forecast_support"],
             "content": _csv_bytes(
                 forecast_rows,
                 [

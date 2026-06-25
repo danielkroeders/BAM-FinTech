@@ -19,7 +19,7 @@ This is not a production underwriting, legal, or compliance decision system. Hig
 
 ### 1. SME Company Portal
 
-Start on the login screen. The default demo account should be `SME company`, and the username field should show `DemoUser`. Use one of the fake SSO buttons or enter any password, then enter any random 6-digit code in the two-step authorization screen.
+Start on the login screen. The default demo account should be `SME company`, and the username field should show `DemoUser`. Use `SME SSO` for the SME account or `YourBank SSO` for the lender account, then enter any random 6-digit code in the two-step authorization screen.
 
 Open the company portal.
 

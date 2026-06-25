@@ -38,7 +38,7 @@ from src.utils.formatting import (
 )
 from src.utils.workflow_transfer import SME_SUBMISSION_SOURCE
 
-st.set_page_config(page_title="SME Company Portal", layout="wide")
+st.set_page_config(page_title="Loan Intake Portal", layout="wide")
 bootstrap_state()
 render_sidebar()
 
@@ -56,28 +56,48 @@ SME_WORKFLOW_STEPS = [
     "4. Submit to Lender",
 ]
 EVIDENCE_CASES = {
+    "Blank manual intake": {
+        "scenario": None,
+        "company_name": "",
+        "is_blank": True,
+        "description": "Start with an empty SME-owned intake and enter your own company data.",
+    },
     "Clean evidence": {
         "scenario": "Low-risk established borrower",
+        "company_name": "NoviCore Software B.V.",
         "description": "Complete evidence package with strong liquidity and low anomaly pressure.",
     },
     "Neutral evidence": {
         "scenario": "A2M Logistics Loan",
+        "company_name": "A2M Logistics B.V.",
         "description": "Mostly complete package with some margin and forecast-support questions.",
     },
     "Risky evidence": {
         "scenario": "Credit stacking case",
+        "company_name": "Riverton Buildworks LLC",
         "description": "Debt pressure, negative cash flow, and missing support that need manual review.",
     },
     "Fraudulent evidence": {
         "scenario": "Suspicious transfers",
+        "company_name": "Mercado Azul Trading S.A.S.",
+        "document_profile": "fraudulent",
+        "document_categories": [
+            "financial_statements",
+            "bank_statements",
+            "tax_returns",
+            "ownership_kyb",
+            "forecast_support",
+        ],
         "description": "High anomaly and process-integrity concerns for compliance discussion.",
     },
     "Ambiguous evidence": {
         "scenario": "High country-risk borrower",
+        "company_name": "Al Noor Freight Services",
         "description": "Mixed evidence where jurisdiction, identity, and cash-flow context matter.",
     },
 }
 SAMPLE_CASE_OPTIONS = list(EVIDENCE_CASES)
+SELECT_PLACEHOLDER = "Select..."
 SAMPLE_DOCUMENT_FIELDS = {
     "financial_statements": "financial_statements_uploaded",
     "bank_statements": "bank_statements_uploaded",
@@ -93,7 +113,7 @@ def _default_company_application():
         {
             "application_id": "SME-A2M-001",
             "company_id": "SME-CO-001",
-            "company_name": "A2M Logistics",
+            "company_name": "A2M Logistics B.V.",
             "open_banking_connected": 1,
             "accounting_connected": 1,
             "registry_connected": 1,
@@ -108,16 +128,103 @@ def _default_company_application():
     return application
 
 
+def _blank_company_application():
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:17]
+    return {
+        "application_id": f"SME-MANUAL-{timestamp}",
+        "company_id": f"SME-CO-MANUAL-{timestamp}",
+        "company_name": "",
+        "industry": "",
+        "region": "",
+        "company_type": "",
+        "requested_amount": 0.0,
+        "term_months": 60,
+        "annual_revenue": 0.0,
+        "years_in_business": 0.0,
+        "existing_debt": 0.0,
+        "num_recent_loans": 0,
+        "employees": 1,
+        "collateral_value": 0.0,
+        "collateral_ratio": 0.0,
+        "free_cash_flow": 0.0,
+        "monthly_burn_rate": 0.0,
+        "cash_balance_at_application": 0.0,
+        "current_assets": 0.0,
+        "current_liabilities": 0.0,
+        "liquid_assets": 0.0,
+        "current_ratio": 0.0,
+        "quick_ratio": 0.0,
+        "receivables_days": 0,
+        "payables_days": 0,
+        "inventory_days": 0,
+        "forecast_revenue_year5": 0.0,
+        "forecast_employees_year5": 1,
+        "forecast_fcf_year5": 0.0,
+        "planned_debt_reduction_amount": 0.0,
+        "forecast_revenue_cagr": 0.0,
+        "forecast_employee_cagr": 0.0,
+        "forecast_fcf_margin_year5": 0.0,
+        "planned_debt_reduction_pct": 0.0,
+        "loan_purpose_context": "",
+        "current_business_context": "",
+        "future_business_context": "",
+        "ceo_context": "",
+        "cfo_context": "",
+        "coo_context": "",
+        "open_banking_connected": 0,
+        "accounting_connected": 0,
+        "registry_connected": 0,
+        "documents_connected": 0,
+        "financial_statements_uploaded": 0,
+        "bank_statements_uploaded": 0,
+        "tax_return_uploaded": 0,
+        "ownership_docs_uploaded": 0,
+        "forecast_support_uploaded": 0,
+        "document_edit_count": 0,
+        "late_stage_change_count": 0,
+        "process_deviation_score": 0.0,
+        "email_domain_age_months": 0,
+        "website_age_months": 0,
+        "bank_account_age_months": 0,
+        "late_payment_ratio": 0.0,
+        "suspicious_transfer_ratio": 0.0,
+        "country_risk_score": 0.0,
+        "location_mismatch_score": 0.0,
+        "duplicate_contact_score": 0.0,
+        "related_party_exposure_score": 0.0,
+        "counterparty_concentration_score": 0.0,
+        "shared_identifier_score": 0.0,
+        "narrative_contradiction_score": 0.0,
+        "sample_case_name": "Blank manual intake",
+        "sample_document_profile": "standard",
+        "sample_document_categories": [],
+        "source_scenario_name": "Manual input",
+        "evidence_case_description": EVIDENCE_CASES["Blank manual intake"][
+            "description"
+        ],
+    }
+
+
 def _sample_company_application(evidence_case_name):
     evidence_case = EVIDENCE_CASES.get(evidence_case_name)
     if not evidence_case:
         raise ValueError("Choose a named evidence case before loading it.")
+    if evidence_case.get("is_blank"):
+        return _blank_company_application()
+
     scenario_name = evidence_case["scenario"]
     sample_values = DEMO_SCENARIOS.get(scenario_name)
     if not isinstance(sample_values, dict):
         raise ValueError("Choose a named sample case before loading it.")
 
     application = dict(sample_values)
+    document_categories = evidence_case.get("document_categories")
+    if document_categories:
+        for category in document_categories:
+            field_name = SAMPLE_DOCUMENT_FIELDS.get(category)
+            if field_name:
+                application[field_name] = 1
+
     sample_code = "".join(
         character for character in scenario_name.upper() if character.isalnum()
     )[:8]
@@ -133,26 +240,26 @@ def _sample_company_application(evidence_case_name):
                 if scenario_name == "A2M Logistics Loan"
                 else f"SME-CO-{sample_code or 'CASE'}"
             ),
-            "company_name": (
-                "A2M Logistics"
-                if scenario_name == "A2M Logistics Loan"
-                else scenario_name
-            ),
+            "company_name": evidence_case["company_name"],
             "sample_case_name": evidence_case_name,
+            "sample_document_profile": evidence_case.get(
+                "document_profile", "standard"
+            ),
+            "sample_document_categories": list(document_categories or []),
             "source_scenario_name": scenario_name,
             "evidence_case_description": evidence_case["description"],
             "open_banking_connected": int(
-                bool(sample_values.get("bank_statements_uploaded", 0))
+                bool(application.get("bank_statements_uploaded", 0))
             ),
             "accounting_connected": int(
-                bool(sample_values.get("financial_statements_uploaded", 0))
+                bool(application.get("financial_statements_uploaded", 0))
             ),
             "registry_connected": int(
-                bool(sample_values.get("ownership_docs_uploaded", 0))
+                bool(application.get("ownership_docs_uploaded", 0))
             ),
             "documents_connected": int(
                 any(
-                    sample_values.get(field, 0)
+                    application.get(field, 0)
                     for field in [
                         "financial_statements_uploaded",
                         "bank_statements_uploaded",
@@ -183,8 +290,14 @@ def _store_company_application(application):
 def _save_sample_documents(application):
     examples = build_document_examples(application)
     saved_count = 0
-    for category, field_name in SAMPLE_DOCUMENT_FIELDS.items():
-        if not application.get(field_name):
+    sample_categories = application.get("sample_document_categories") or [
+        category
+        for category, field_name in SAMPLE_DOCUMENT_FIELDS.items()
+        if application.get(field_name)
+    ]
+    for category in sample_categories:
+        field_name = SAMPLE_DOCUMENT_FIELDS.get(category)
+        if category not in examples:
             continue
         example = examples[category]
         _, created = save_document(
@@ -195,8 +308,18 @@ def _save_sample_documents(application):
             example["content"],
             example["mime_type"],
         )
+        if field_name:
+            application[field_name] = 1
         if created:
             saved_count += 1
+    if sample_categories:
+        application["documents_connected"] = 1
+    if application.get("bank_statements_uploaded"):
+        application["open_banking_connected"] = 1
+    if application.get("financial_statements_uploaded"):
+        application["accounting_connected"] = 1
+    if application.get("ownership_docs_uploaded"):
+        application["registry_connected"] = 1
     return saved_count
 
 
@@ -208,6 +331,18 @@ def _term_option_index(value):
     if term in TERM_OPTIONS:
         return TERM_OPTIONS.index(term)
     return min(range(len(TERM_OPTIONS)), key=lambda index: abs(TERM_OPTIONS[index] - term))
+
+
+def _select_options(values):
+    return [SELECT_PLACEHOLDER] + list(values)
+
+
+def _select_index(options, value):
+    return options.index(value) if value in options else 0
+
+
+def _select_value(value):
+    return "" if value == SELECT_PLACEHOLDER else value
 
 
 def _field_help(field_name):
@@ -984,7 +1119,7 @@ def _render_post_publication_health_view(application, prediction, lifecycle):
 
 
 if company_mode:
-    st.title(f"{profile['name']} Company Portal")
+    st.title("Loan Intake Portal")
     st.caption(
         "Enter company data, manage evidence connections, review credit health, and submit the file to a lender."
     )
@@ -1048,16 +1183,19 @@ if company_mode:
         industries = sorted(applications["industry"].dropna().unique())
         regions = sorted(applications["region"].dropna().unique())
         company_types = sorted(applications["company_type"].dropna().unique())
+        industry_options = _select_options(industries)
+        region_options = _select_options(regions)
+        company_type_options = _select_options(company_types)
 
-        with st.expander("Load sample intake", expanded=False):
+        with st.expander("Start or load intake", expanded=False):
             st.caption(
-                "Sample intake starts on the SME side. After loading it, review the data and submit the snapshot to the lender."
+                "Start from a blank manual intake or load a prepared evidence case on the SME side."
             )
             evidence_case_name = st.selectbox(
-                "Evidence case", SAMPLE_CASE_OPTIONS, key="sme_sample_case_name"
+                "Intake option", SAMPLE_CASE_OPTIONS, key="sme_sample_case_name"
             )
             st.caption(EVIDENCE_CASES[evidence_case_name]["description"])
-            if st.button("Load Sample Case", width="stretch"):
+            if st.button("Load Selected Intake", width="stretch"):
                 try:
                     application = _sample_company_application(evidence_case_name)
                 except ValueError as exc:
@@ -1087,10 +1225,15 @@ if company_mode:
                         company_name=application["company_name"],
                         sample_case_name=evidence_case_name,
                     )
-                    st.success(
-                        f"{evidence_case_name} loaded into the SME intake. "
-                        f"{saved_sample_documents} sample evidence file(s) were saved."
-                    )
+                    if EVIDENCE_CASES[evidence_case_name].get("is_blank"):
+                        st.success(
+                            "Blank manual intake started. Enter company data and upload your own evidence files."
+                        )
+                    else:
+                        st.success(
+                            f"{evidence_case_name} loaded into the SME intake. "
+                            f"{saved_sample_documents} sample evidence file(s) were saved."
+                        )
                     if document_seed_error:
                         st.warning(
                             f"The intake loaded, but sample evidence files could not all be saved: {document_seed_error}"
@@ -1111,21 +1254,15 @@ if company_mode:
                 )
                 industry = st.selectbox(
                     "Industry",
-                    industries,
-                    index=(
-                        industries.index(application.get("industry"))
-                        if application.get("industry") in industries
-                        else 0
-                    ),
+                    industry_options,
+                    index=_select_index(industry_options, application.get("industry")),
                     help=_field_help("industry"),
                 )
                 company_type = st.selectbox(
                     "Company type",
-                    company_types,
-                    index=(
-                        company_types.index(application.get("company_type"))
-                        if application.get("company_type") in company_types
-                        else 0
+                    company_type_options,
+                    index=_select_index(
+                        company_type_options, application.get("company_type")
                     ),
                     help=_field_help("company_type"),
                 )
@@ -1146,12 +1283,8 @@ if company_mode:
             with company_right:
                 region = st.selectbox(
                     "Region",
-                    regions,
-                    index=(
-                        regions.index(application.get("region"))
-                        if application.get("region") in regions
-                        else 0
-                    ),
+                    region_options,
+                    index=_select_index(region_options, application.get("region")),
                     help=_field_help("region"),
                 )
                 annual_revenue = st.number_input(
@@ -1380,10 +1513,10 @@ if company_mode:
         if saved_company_data:
             application.update(
                 {
-                    "company_name": company_name.strip() or "SME Applicant",
-                    "industry": industry,
-                    "region": region,
-                    "company_type": company_type,
+                    "company_name": company_name.strip(),
+                    "industry": _select_value(industry),
+                    "region": _select_value(region),
+                    "company_type": _select_value(company_type),
                     "years_in_business": years_in_business,
                     "employees": employees,
                     "annual_revenue": annual_revenue,
@@ -1705,7 +1838,7 @@ if company_mode:
     st.divider()
     _render_sme_step_buttons(selected_step, "bottom")
 else:
-    st.title("SME Company Portal")
+    st.title("Loan Intake Portal")
     st.warning(
         "This page is available only to the SME company account. The lender workspace no longer includes an SME "
         "Credit Health preview."

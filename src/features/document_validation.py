@@ -99,6 +99,29 @@ CATEGORY_EXPECTATIONS = {
     },
 }
 
+RED_FLAG_MARKERS = [
+    ("unreconciled", "Unreconciled values"),
+    ("manual revenue adjustment", "Manual revenue adjustment"),
+    ("missing invoice", "Missing invoice support"),
+    ("negative ledger export", "Restated negative ledger export"),
+    ("audit trail", "Missing source audit trail"),
+    ("same-day", "Same-day transfer pattern"),
+    ("round-number", "Round-number transfers"),
+    ("related party", "Related-party activity"),
+    ("shared director", "Shared director counterparty"),
+    ("undisclosed affiliate", "Undisclosed affiliate"),
+    ("tax turnover materially below", "Tax turnover mismatch"),
+    ("unresolved arrears", "Unresolved tax arrears"),
+    ("older than 12 months", "Stale registry extract"),
+    ("registration number format differs", "Registry number mismatch"),
+    ("ubo not present", "UBO not in registry"),
+    ("not disclosed", "Undisclosed exposure"),
+    ("possible sanctions", "Possible sanctions match"),
+    ("fuzzy match", "Unresolved screening match"),
+    ("unsupported growth", "Unsupported growth assumption"),
+    ("unsigned loi", "Unsigned pipeline evidence"),
+]
+
 
 def _api_key():
     try:
@@ -215,6 +238,15 @@ def _category_scores(text, filename):
     return scores, hits
 
 
+def _red_flag_hits(text, filename):
+    combined = f"{filename}\n{text}".lower()
+    hits = []
+    for marker, label in RED_FLAG_MARKERS:
+        if marker in combined and label not in hits:
+            hits.append(label)
+    return hits[:8]
+
+
 def _status_from_scores(
     expected_category,
     detected_category,
@@ -254,6 +286,7 @@ def deterministic_document_validation(content, metadata, expected_category=None)
     filename = str(metadata.get("original_name", ""))
     suffix = f".{filename.rsplit('.', 1)[-1].lower()}" if "." in filename else ""
     scores, hits = _category_scores(preview, filename)
+    red_flags = _red_flag_hits(preview, filename)
     detected_category = max(scores, key=scores.get) if scores else expected_category
     detected_label = DOCUMENT_CATEGORIES.get(
         detected_category, str(detected_category or "Unknown")
@@ -268,18 +301,43 @@ def deterministic_document_validation(content, metadata, expected_category=None)
         preview_source,
         suffix,
     )
+    if red_flags and status == "Verified":
+        status = "Needs review"
+        confidence = min(confidence, 0.72)
+    elif red_flags:
+        confidence = max(confidence, 0.62)
 
     if expected_category not in DOCUMENT_CATEGORIES:
         status = "Needs review"
         confidence = min(confidence, 0.4)
 
     evidence = hits.get(expected_category, [])
-    if status == "Verified":
+    if red_flags and status == "Mismatch":
+        rationale = (
+            f"The file looks more like {detected_label.lower()} than {expected_label.lower()} "
+            f"and includes review markers: {', '.join(red_flags[:3])}."
+        )
+    elif red_flags:
+        rationale = (
+            f"The file appears to match {expected_label.lower()}, but includes review markers: "
+            f"{', '.join(red_flags[:3])}."
+        )
+    elif status == "Verified":
         rationale = f"The file content and filename contain markers expected for {expected_label.lower()}."
     elif status == "Mismatch":
         rationale = f"The file looks more like {detected_label.lower()} than {expected_label.lower()} based on visible markers."
     else:
         rationale = f"The file needs human confirmation because the visible content is limited or does not strongly prove it is {expected_label.lower()}."
+
+    follow_up = CATEGORY_EXPECTATIONS.get(expected_category, {}).get(
+        "follow_up",
+        "Ask the applicant for clearer source evidence.",
+    )
+    if red_flags:
+        follow_up = (
+            "Ask for source-system exports, consented bank feeds, current registry extracts, "
+            "and independent tax evidence to resolve the flagged inconsistencies."
+        )
 
     return {
         "document_id": metadata.get("document_id"),
@@ -294,10 +352,8 @@ def deterministic_document_validation(content, metadata, expected_category=None)
         "preview_source": preview_source,
         "rationale": rationale,
         "evidence": evidence,
-        "follow_up": CATEGORY_EXPECTATIONS.get(expected_category, {}).get(
-            "follow_up",
-            "Ask the applicant for clearer source evidence.",
-        ),
+        "red_flags": red_flags,
+        "follow_up": follow_up,
         "validated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
@@ -328,7 +384,7 @@ def _validation_messages(content, metadata, deterministic_result):
                 "You classify SME loan application evidence. Decide whether the visible document metadata and bounded "
                 "text preview match the declared document category. You cannot prove authenticity; report only whether "
                 "the file appears to be the expected category. Return strict JSON with keys: status, confidence, "
-                "detected_category, rationale, evidence, follow_up. status must be one of Verified, Needs review, Mismatch. "
+                "detected_category, rationale, evidence, red_flags, follow_up. status must be one of Verified, Needs review, Mismatch. "
                 f"Allowed categories are: {categories}."
             ),
         },
@@ -382,6 +438,12 @@ def _coerce_ai_result(payload, fallback, provider):
     if not isinstance(evidence, list):
         evidence = fallback.get("evidence", [])
 
+    red_flags = payload.get("red_flags", fallback.get("red_flags", []))
+    if isinstance(red_flags, str):
+        red_flags = [red_flags]
+    if not isinstance(red_flags, list):
+        red_flags = fallback.get("red_flags", [])
+
     result = dict(fallback)
     result.update(
         {
@@ -395,6 +457,7 @@ def _coerce_ai_result(payload, fallback, provider):
             "rationale": str(payload.get("rationale", fallback["rationale"])).strip()
             or fallback["rationale"],
             "evidence": [str(item)[:160] for item in evidence[:6]],
+            "red_flags": [str(item)[:160] for item in red_flags[:8]],
             "follow_up": str(payload.get("follow_up", fallback["follow_up"])).strip()
             or fallback["follow_up"],
         }
@@ -559,6 +622,7 @@ def validation_results_table(results):
                 "Status": result.get("status"),
                 "Confidence": f"{float(result.get('confidence', 0)):.0%}",
                 "Detected as": result.get("detected_label"),
+                "Flags": ", ".join(result.get("red_flags", [])) or "-",
                 "Provider": result.get("provider"),
                 "Reason": result.get("rationale"),
             }

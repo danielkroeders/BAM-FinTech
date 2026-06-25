@@ -107,6 +107,11 @@ def _render_validation_run(run):
                 st.write(result.get("rationale", "No rationale returned."))
                 if result.get("evidence"):
                     st.caption("Evidence markers: " + ", ".join(result["evidence"]))
+                if result.get("red_flags"):
+                    st.warning(
+                        "Red flags: " + ", ".join(result["red_flags"]),
+                        icon=":material/report:",
+                    )
                 st.caption(
                     f"Follow-up: {result.get('follow_up', 'Ask for clearer evidence.')}"
                 )

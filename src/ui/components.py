@@ -689,6 +689,14 @@ def _render_login_screen():
                 else:
                     st.warning("Enter a 6-digit verification code.")
         else:
+            account_type = st.selectbox(
+                "Demo account",
+                ["sme", "lender"],
+                format_func=lambda value: (
+                    "Lender analyst" if value == "lender" else "SME company"
+                ),
+            )
+            sso_label = "SME SSO" if account_type == "sme" else "YourBank SSO"
             with st.form("login_form"):
                 st.markdown(
                     """
@@ -701,32 +709,14 @@ def _render_login_screen():
                     """,
                     unsafe_allow_html=True,
                 )
-                account_type = st.selectbox(
-                    "Demo account",
-                    ["sme", "lender"],
-                    format_func=lambda value: (
-                        "Lender analyst" if value == "lender" else "SME company"
-                    ),
-                )
-                login_profile = SME_PROFILE if account_type == "sme" else PROFILE
                 username = st.text_input("Username", value="DemoUser", disabled=True)
                 password = st.text_input("Password", type="password")
                 remember_me = st.checkbox(
                     "Remember me",
                     value=bool(st.session_state.get("remember_me", False)),
                 )
-                sso_cols = st.columns(3)
-                google_sso = sso_cols[0].form_submit_button(
-                    "Google", width="stretch"
-                )
-                microsoft_sso = sso_cols[1].form_submit_button(
-                    "Microsoft", width="stretch"
-                )
-                bank_sso = sso_cols[2].form_submit_button(
-                    "YourBank SSO", width="stretch"
-                )
+                sso_submitted = st.form_submit_button(sso_label, width="stretch")
                 submitted = st.form_submit_button("Continue", width="stretch")
-            sso_submitted = google_sso or microsoft_sso or bank_sso
             if submitted or sso_submitted:
                 if username.strip() and (password or sso_submitted):
                     st.session_state.remember_me = remember_me
