@@ -27,7 +27,7 @@ if is_sme_profile(profile):
         "DIMENSIONS, derived ratios, and review policy."
     )
     st.write(
-        "For application guidance, use the SME company portal, applicant tutorials, or connect with a YourBank consultant."
+        "For application guidance, use the Loan Intake Portal, applicant tutorials, or connect with a YourBank consultant."
     )
     link_cols = st.columns(3)
     with link_cols[0]:

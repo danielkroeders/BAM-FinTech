@@ -1550,7 +1550,7 @@ def _rating_publication_form(application, prediction, review):
             published_grade=review["analyst_grade"],
         )
         persist_demo_state()
-        st.success("The reviewed rating is now visible in the SME company portal.")
+        st.success("The reviewed rating is now visible in the Loan Intake Portal.")
         rerun = getattr(st, "rerun", None) or getattr(st, "experimental_rerun", None)
         if rerun:
             rerun()

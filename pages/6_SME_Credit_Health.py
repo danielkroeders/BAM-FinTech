@@ -674,6 +674,23 @@ def _render_sme_workflow_nav():
     return selected_step
 
 
+def _focus_published_result_if_needed(application, lifecycle):
+    # After the lender publishes in the same demo session, the returning SME
+    # should land on the result view instead of staying on the previous submit
+    # or intake step. The marker prevents repeated forced navigation after the
+    # user has already seen this publication.
+    if lifecycle.get("status") != "Rating published":
+        return
+    application_id = application.get("application_id", "")
+    publication_marker = (
+        f"{application_id}:{lifecycle.get('publication_id') or lifecycle.get('published_at')}"
+    )
+    if st.session_state.get("sme_published_result_focus_marker") == publication_marker:
+        return
+    st.session_state.sme_workflow_step = SME_WORKFLOW_STEPS[2]
+    st.session_state.sme_published_result_focus_marker = publication_marker
+
+
 def _documents_by_category(documents):
     # Uploads are stored as a flat manifest, but the UI renders one upload slot
     # per expected evidence category. Grouping here keeps the page code simple.
@@ -943,30 +960,55 @@ def _render_published_rating(application, lifecycle):
     # Publication is the return leg of the SME -> analyst -> SME workflow. Only
     # fields explicitly written by the lender publication form are shown here;
     # internal notes and model-only details remain private.
-    st.success("The lender has published a reviewed rating for this application.")
-    published_cols = st.columns(4)
-    published_cols[0].metric(
-        "Published rating", lifecycle.get("published_grade", "N/A")
+    published_grade = lifecycle.get("published_grade") or "N/A"
+    published_decision = lifecycle.get("published_decision") or "Reviewed"
+    published_at = lifecycle.get("published_at") or "N/A"
+    score_visible = bool(lifecycle.get("published_score_visible"))
+    published_score = lifecycle.get("published_score")
+    score_label = (
+        format_percent(published_score)
+        if score_visible and published_score is not None
+        else "Not disclosed by YourBank"
     )
-    published_cols[1].metric(
-        "Lender decision", lifecycle.get("published_decision", "N/A")
-    )
-    published_cols[2].metric(
-        "Risk score",
-        (
-            format_percent(lifecycle.get("published_score", 0))
-            if lifecycle.get("published_score_visible")
-            else "Not disclosed"
-        ),
-    )
-    published_cols[3].metric("Published", lifecycle.get("published_at", "N/A"))
-    st.subheader("Message from the lender")
-    st.info(lifecycle.get("published_message", "The lender has completed its review."))
+
+    st.success("YourBank reviewed your credit application.")
+    with st.container(border=True):
+        st.subheader("YourBank reviewed your credit application")
+        st.caption(
+            "This is the reviewed lender outcome for the submitted application snapshot."
+        )
+        result_cols = st.columns(4)
+        result_cols[0].metric("Final reviewed rating", published_grade)
+        result_cols[1].metric("Lender decision", published_decision)
+        result_cols[2].metric("Published score", score_label)
+        result_cols[3].metric("Reviewed on", published_at)
+
+        outcome_rows = [
+            {
+                "Item": "Application",
+                "Value": application.get("company_name", "Submitted application"),
+            },
+            {
+                "Item": "Requested amount",
+                "Value": format_currency(application.get("requested_amount", 0)),
+            },
+            {
+                "Item": "What this means",
+                "Value": (
+                    "YourBank has completed the lender review. The rating, decision, "
+                    "message, and attached report below are the published result."
+                ),
+            },
+        ]
+        st.dataframe(pd.DataFrame(outcome_rows), width="stretch", hide_index=True)
+
+    st.subheader("Message from YourBank")
+    st.info(lifecycle.get("published_message", "YourBank has completed its review."))
     published_sme_report = lifecycle.get("published_sme_report")
     if lifecycle.get("published_sme_report_attached") and published_sme_report:
         st.subheader("Your Evaluation Report")
         st.caption(
-            "This lender-published report explains the reviewed outcome and practical ways to clarify or strengthen the application."
+            "This YourBank-published report explains the reviewed outcome and practical ways to clarify or strengthen the application."
         )
         with st.container(border=True):
             st.markdown(published_sme_report)
@@ -986,7 +1028,7 @@ def _render_published_rating(application, lifecycle):
             "The published rating reflects the lender's evidence review and differs from the original model grade."
         )
     st.caption(
-        "The published rating is the lender's reviewed outcome. Internal model outputs and analyst audit notes remain private."
+        "The published rating is YourBank's reviewed outcome. Internal model outputs and analyst audit notes remain private."
     )
 
 
@@ -1307,6 +1349,7 @@ if company_mode:
     progress_cols[2].metric("Application status", lifecycle.get("status", "Draft"))
     progress_cols[3].metric("Lender submissions", format_integer(submitted_count))
 
+    _focus_published_result_if_needed(application, lifecycle)
     selected_step = _render_sme_workflow_nav()
 
     if selected_step == SME_WORKFLOW_STEPS[0]:

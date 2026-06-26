@@ -1,613 +1,164 @@
 # Codex Repository Guide: CredRisk.AI Underwriter Workbench
 
-This is the canonical Codex guide for building, maintaining, and extending this repository. It describes the current application and its durable engineering rules. When this document and executable code disagree, inspect the code and update this document in the same change.
+This is the working guide for future Codex sessions in this repository. Treat it as the first orientation document before making changes. If this file and the live code disagree, inspect the code, update the implementation, and refresh this guide in the same change.
 
-## Product Identity
+## Product Shape
 
-CredRisk.AI Underwriter Workbench is a multi-page Streamlit demo for SME lending operations.
+CredRisk.AI Underwriter Workbench is a local multi-page Streamlit demo for SME lending.
 
-The main user is Alice Cooper, a credit analyst. The app combines:
+The current demo workflow is:
 
-- an analyst task queue and daily operating context;
-- applicant-first SME loan intake;
-- supervised application-risk scoring;
-- explicit A-F risk grades and model recommendations;
-- deterministic explanations and optional LLM second review;
-- case-specific SHAP analysis;
-- human final-decision capture and audit history;
-- portfolio, model-governance, borrower-health, support, and tutorial views.
+1. SME creates and submits a loan intake.
+2. Lender analyst reviews the locked submitted snapshot.
+3. Lender publishes a reviewed rating and applicant-safe report.
+4. SME returns to view the published result.
 
-The product is decision support. It is not a production underwriting, legal, fraud, or compliance decision engine. Keep these outputs separate everywhere:
+The app is decision support only. It is not a production underwriting, legal, compliance, or fraud-decision system. Keep these records separate throughout the app:
 
-1. Applicant-provided data and evidence.
-2. Selected supervised-model score, grade, and recommendation.
-3. Deterministic or LLM-generated second review.
-4. Analyst final decision and notes.
-5. Audit and session history.
+- applicant-provided data and evidence;
+- Random Forest model score, grade, and recommendation;
+- deterministic or optional AI second-review output;
+- analyst final action, rating, rationale, and audit history;
+- SME-facing published rating, message, and report.
 
-Never present a model or LLM output as legal certainty or as an automatic final credit decision. High-risk cases require human review before external action.
+Do not present model, AI, or document-validation output as legal certainty or as an automatic final credit decision.
 
-## Running the App
+## Run Contract
 
-Python 3.10 or newer is recommended.
+Use Python 3.10+.
 
-Manual launch:
+Manual run:
 
 ```bash
 pip install -r requirements.txt
 streamlit run Home.py
 ```
 
-Windows users can run `Run_App.bat`. It creates `.venv` when needed, installs or updates dependencies, and launches `Home.py`.
-
-`Home.py` is the only application entrypoint. Do not introduce or reference `app.py`.
-
-The app normally opens at `http://localhost:8501`.
-
-## Dependencies and Streamlit Configuration
-
-`requirements.txt` contains:
+Windows users can run:
 
 ```text
-streamlit
-pandas
-numpy
-scikit-learn
-openai
-shap
-pypdf
+Run_App.bat
 ```
 
-`.streamlit/config.toml` hides Streamlit's automatic page navigation because navigation is rendered by `src/ui/components.py`. It also defines the light theme:
+`Home.py` is the only app entrypoint. Do not add or document an `app.py` entrypoint.
 
-```toml
-[client]
-showSidebarNavigation = false
-
-[theme]
-base = "light"
-primaryColor = "#14B8A6"
-backgroundColor = "#F8FAFC"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#0F172A"
-```
-
-## Repository Structure
+The app normally runs at:
 
 ```text
-.
-|-- .codex/
-|   `-- CODEX.md
-|-- .streamlit/
-|   `-- config.toml
-|-- Home.py
-|-- pages/
-|   |-- 1_Personal_Workspace.py
-|   |-- 2_Operations_Desk.py
-|   |-- 3_Risk_Dashboard.py
-|   |-- 4_Model_Insights.py
-|   |-- 5_LLM_Integration.py
-|   |-- 6_SME_Credit_Health.py
-|   |-- 7_Profile_Settings.py
-|   |-- 8_About.py
-|   |-- 9_Support.py
-|   |-- 10_Tutorials.py
-|   `-- 11_Acronym_Guide.py
-|-- src/
-|   |-- core/
-|   |   |-- data_pipeline.py
-|   |   |-- modeling.py
-|   |   `-- runtime.py
-|   |-- features/
-|   |   |-- alignment_features.py
-|   |   |-- case_workflow.py
-|   |   |-- explanations.py
-|   |   |-- shap_explanations.py
-|   |   `-- workbench_features.py
-|   |-- ui/
-|   |   `-- components.py
-|   `-- utils/
-|       |-- acronym_guide.py
-|       |-- demo_persistence.py
-|       |-- formatting.py
-|       |-- llm_profiles.py
-|       |-- table_views.py
-|       `-- workflow_transfer.py
-|-- data/
-|   |-- assets/
-|   |-- docs/
-|   |-- seed/
-|   `-- seeds/
-|-- docs/
-|   |-- CredRiskAI_Pitchdeck.html
-|   |-- CredRiskAI_Pitchdeck.pdf
-|   `-- CredRiskAI_Pitchdeck.pptx
-|-- README.md
-|-- DEMO.md
-|-- Run_App.bat
-|-- requirements.txt
-|-- BP.pdf
-`-- FinTech Assignment 2-1.pdf
+http://localhost:8501
 ```
 
-`data/seed` is the canonical generated data directory. `data/seeds` is retained as a compatibility mirror.
+## Current Login Contract
 
-`.tmp`, `.venv`, bytecode, local `llm_models` directories, and local pitch-deck speaker notes are ignored. Do not commit generated demo sessions or credentials.
+The demo login uses two roles:
 
-## Shared Page Lifecycle
+- `SME company`
+- `Lender analyst`
 
-Every Streamlit page follows this order:
+The username field is `DemoUser`. The role-specific SSO buttons are:
+
+- SME page: `SME SSO`
+- bank/lender page: `YourBank SSO`
+
+The password and six-digit verification step are demo controls. Any values are accepted.
+
+## Main Workflow
+
+### SME Side
+
+The SME uses `pages/6_SME_Credit_Health.py`, shown as `Loan Intake Portal`.
+
+The SME can:
+
+- load clean, neutral, risky, fraudulent, ambiguous, or blank manual intake cases;
+- enter company profile, loan request, financial snapshot, working-capital amounts, loan purpose, current/future context, and executive context;
+- fill a required five-row five-year plan;
+- simulate PSD2/Open Banking, accounting, registry/KYB, and document connections;
+- save fictional sample evidence files into the local document vault;
+- upload local evidence files;
+- submit a locked snapshot to lender review;
+- later view the lender-published rating and report.
+
+The five-year plan field is `forecast_plan_rows`.
+
+Shape:
 
 ```python
-st.set_page_config(...)
-bootstrap_state()
-render_sidebar()
+[
+    {
+        "forecast_year": 1,
+        "projected_revenue": 0.0,
+        "projected_employees": 1,
+        "projected_free_cash_flow": 0.0,
+        "projected_debt": 0.0,
+    },
+    ...
+]
 ```
 
-Use `bootstrap_state()` before reading shared state. Use `render_sidebar()` for authentication, theme, navigation, profile controls, onboarding, and demo-state reset.
-
-The sidebar navigation is defined by `NAV_SECTIONS` in `src/ui/components.py`. Update it when adding, removing, or renaming a page.
-
-Use `safe_page_link()` for internal links and `open_application_in_workspace()` when handing a case into Personal Workspace.
-
-## Page Contracts
-
-### `Home.py`
-
-Home is an employee operations console, not a marketing landing page.
-
-It contains:
-
-- the demo login and two-step verification experience through the shared sidebar;
-- a welcome header for Alice Cooper;
-- personal queue metrics;
-- SME Portal Intake for company-submitted applications persisted in demo state;
-- a task selector and handoff into Personal Workspace;
-- the current-task table;
-- quick links;
-- Slack or workspace updates based on profile connections;
-- Calendar Today.
-
-The workload metrics are My Open Tasks, High Priority, Due This Week, Evidence
-Follow-Up, and SME Intake. SME Portal Intake rows must open the submitted
-application snapshot in Personal Workspace using `SME_SUBMISSION_SOURCE`.
-
-### `pages/1_Personal_Workspace.py`
-
-This is the main single-case analyst workflow.
-
-The user can:
-
-- start a selected assigned case;
-- start the A2M Logistics example directly;
-- use manual entry;
-- load a scenario from Example Cases;
-- open company-submitted applications from SME Portal Intake;
-- select Random Forest or Logistic Regression;
-- complete applicant, financial, forecast, narrative, evidence, and advanced inputs;
-- score the application;
-- auto-score submitted SME applications when opened in Personal Workspace;
-- inspect score, evidence, review, and history tabs;
-- use table interpretation columns after scoring, with a link to the separate Acronym Guide page;
-- save a human case review;
-- download case summary and credit memo;
-- compare similar applications and peers;
-- continue to LLM Integration.
-
-Current example scenarios are:
-
-- Custom application
-- A2M Logistics Loan
-- Low-risk established borrower
-- Credit stacking case
-- Suspicious transfers
-- High country-risk borrower
-
-Input sections are:
-
-- Company Profile
-- Loan Request
-- Financial Snapshot
-- Working Capital Ratios
-- Five-Year Plan
-- Applicant Narrative
-- Executive Context
-- Applicant Evidence Checklist
-- Advanced Signals
-
-The scored workflow includes:
-
-- application risk score and grade;
-- selected model label and recommendation;
-- final-decision and review state;
-- affordability and stressed DSCR;
-- detailed table interpretation columns explaining how to read metrics, normalized scores, acronyms, and evidence signals;
-- deterministic rationale and rule flags;
-- recommended loan terms;
-- portfolio monitoring preview;
-- model-confidence and governance rows;
-- data readiness;
-- scenario analysis;
-- grouped risk drivers;
-- generated five-year forecast;
-- applicant and executive context;
-- evidence review and calculated signals;
-- decision timeline;
-- similar historical applications;
-- peer benchmark.
-
-Keep hover-help affordances for dense fields and metrics. Preserve European number parsing and formatting.
-
-Case review actions are:
-
-```text
-Approve
-Reject
-Manual Review
-Request Documents
-Escalate to Compliance
-```
+Rules:
 
-Saving an analyst review must not overwrite the model score, model recommendation, or AI review.
+- exactly five rows;
+- years exactly `1` through `5`;
+- revenue and debt must be `>= 0`;
+- employees must be `>= 1`;
+- free cash flow is required and may be negative.
 
-### `pages/2_Operations_Desk.py`
+The model still consumes derived legacy fields. Derive these from year 5 of the submitted plan:
 
-This is the team workboard.
+- `forecast_revenue_year5`
+- `forecast_employees_year5`
+- `forecast_fcf_year5`
+- `planned_debt_reduction_amount`
+- `forecast_revenue_cagr`
+- `forecast_employee_cagr`
+- `forecast_fcf_margin_year5`
+- `planned_debt_reduction_pct`
 
-It contains:
+Do not reintroduce the old SME form pattern where the applicant only enters four year-5 targets.
 
-- open-work, manual/compliance, evidence-follow-up, and rejected-today metrics;
-- status, grade, and analyst filters;
-- a visible task table;
-- controlled bulk rejection;
-- selected-case detail;
-- handoff to Personal Workspace.
+### Lender Side
 
-Bulk rejection updates `review_history`, `portfolio_history`, `bulk_final_decisions`, and `bulk_action_history`.
+The lender uses `Home.py`, `pages/1_Personal_Workspace.py`, `pages/5_LLM_Integration.py`, and supporting dashboard/governance pages.
 
-### `pages/3_Risk_Dashboard.py`
+The submitted SME intake is read-only for the lender. If applicant data is wrong, the SME must update and resubmit from the Loan Intake Portal.
 
-This is the portfolio-monitoring surface.
+The lender flow is:
 
-It contains:
+1. Open the submitted SME case from Home or Personal Workspace.
+2. Review the locked intake snapshot.
+3. Score the case using the Random Forest baseline.
+4. Validate saved documents on the lender side.
+5. Open LLM Integration and generate the AI output package.
+6. Return to Personal Workspace and complete Case Review.
+7. Publish the reviewed rating, message, and SME-safe report.
 
-- grade, recommendation, industry, region, and score filters;
-- filtered application, exposure, average-risk, and review-load metrics;
-- grade and decision distributions;
-- manual and compliance queues;
-- highest-risk applications;
-- live session decisions;
-- analyst review audit trail;
-- selected-case handoff to Personal Workspace.
+Case Review is intentionally gated behind AI output for the assignment workflow. If no AI package exists, the UI should say clearly that the analyst must use AI first.
 
-All displayed results must respond to the active filter set.
+## Sample Evidence Cases
 
-### `pages/4_Model_Insights.py`
+Sample cases are loaded in the SME portal, not Personal Workspace.
 
-This is the model-comparison and governance surface.
+Keep these case types available:
 
-It contains:
+- `Clean evidence`: coherent evidence, steady growth, improving FCF, debt decreasing.
+- `Neutral evidence`: modest dip/recovery and controlled growth.
+- `Risky evidence`: lumpy growth, weak or negative early FCF, slow debt reduction.
+- `Fraudulent evidence`: aggressive jumps, unsupported FCF improvement, inconsistent debt story, and red-flag wording in generated documents.
+- `Ambiguous evidence`: volatile but not automatically bad.
+- `Blank manual intake`: empty applicant path requiring user input before submission.
 
-- Random Forest and Logistic Regression selection;
-- model comparison;
-- configurable metric views;
-- a custom portfolio metric builder;
-- confusion matrix;
-- A-F grading thresholds;
-- governance notes;
-- global feature importance;
-- research-backed derived signals.
-
-Metrics available from each model include:
+Forecast-support sample CSVs should contain annual five-year rows matching the submitted plan fields plus an assumptions/evidence note. Fraudulent forecast-support files should contain year-level contradiction text that deterministic document validation can surface.
 
-- accuracy;
-- balanced accuracy;
-- precision;
-- recall;
-- F1;
-- ROC-AUC;
-- average precision;
-- Matthews correlation coefficient;
-- precision at the top 5%, 10%, and 20%;
-- false-positive and false-negative rates;
-- predicted review rate;
-- estimated review, false-positive, false-negative, and total error costs;
-- confusion-matrix counts.
-
-The old Risk Score API Contract Preview is currently commented out. Do not document or present it as a live page feature unless it is re-enabled and verified.
-
-### `pages/5_LLM_Integration.py`
-
-This is the optional AI second-review and case-specific explainability surface.
-
-It requires a previously scored application. When no scored case exists, show a clear link back to Personal Workspace.
-
-The page must:
-
-- show the selected supervised model baseline first;
-- show a compact card naming the deterministic model used;
-- keep the baseline score, grade, recommendation, and validation metrics visible;
-- offer Deterministic, OpenAI API, and Local server providers;
-- offer Detailed analyst memo and Concise summary detail levels;
-- call external models only after `Run LLM Review`;
-- show deterministic fallback output if an external call fails;
-- parse `AI review score: NN/100`;
-- parse `AI suggested grade: X`;
-- normalize the AI score to the shared A-F thresholds;
-- compare the AI grade with the selected ML grade;
-- retain recent LLM runs for the current demo session;
-- show SHAP driver analysis.
-
-The deterministic model card dynamically names Random Forest or Logistic Regression and explains that it produces the baseline before any optional LLM review.
-
-The SHAP helper currently explains the default Random Forest pipeline. If the selected model is Logistic Regression, do not imply that SHAP is explaining the selected Logistic Regression model unless `shap_explanations.py` is deliberately extended.
-
-Hosted OpenAI calls use `OPENAI_API_KEY` from Streamlit secrets or the environment.
-
-Local OpenAI-compatible calls accept:
-
-```text
-LOCAL_LLM_BASE_URL
-LOCAL_LLM_MODEL
-LOCAL_LLM_API_KEY
-```
-
-The URL normalizer accepts a server root, `/v1`, or a pasted chat-completions path and resolves it to the OpenAI-compatible `/v1/chat/completions` route.
-
-Local model profiles are handled by `src/utils/llm_profiles.py`:
-
-- save exactly `ip` and `model_name`;
-- never write the API token to the profile;
-- automatically create the per-user `llm_models` directory;
-- load the profile during runtime bootstrap;
-- allow `CREDRISK_LLM_MODELS_DIR` as an explicit override.
-
-Default profile locations:
-
-```text
-Windows: %LOCALAPPDATA%\CredRiskAI\llm_models\local_server.json
-macOS:   ~/Library/Application Support/CredRiskAI/llm_models/local_server.json
-Linux:   ${XDG_CONFIG_HOME:-~/.config}/CredRiskAI/llm_models/local_server.json
-```
+## Model Contract
 
-These files are outside the Git checkout. The token field is password-masked and session-only unless supplied through an environment variable. Do not add reversible token scrambling and describe it as encryption.
+The user-facing app is Random Forest only. Do not expose an ML model selector in the lender or SME workflow.
 
-### `pages/6_SME_Credit_Health.py`
-
-This is the SME-only company portal using the same synthetic scoring logic. It
-must not render a lender-side preview or selectable portfolio-case view.
+The current model bundle may still contain historical support code for other supervised models. Treat Random Forest as the default and visible baseline unless the user explicitly asks to restore model comparison.
 
-It contains:
+Risk score means application risk probability on a 0-1 scale.
 
-- a dedicated SME-company login and restricted company-portal navigation;
-- company profile, loan request, financial snapshot, and business-context entry;
-- company-controlled demo connections for PSD2/Open Banking, accounting, registry/KYB, and documents;
-- generated CSV example documents for each required document category, with a demo action that saves only missing categories;
-- real session-scoped file storage under `.tmp/sme_documents` for SME-uploaded application evidence;
-- explicit Open Banking consent simulation;
-- submission from the SME portal into the lender-side active intake workflow;
-- application lifecycle states for submitted, scored, evaluated, and published;
-- no SME access to provisional model grades, probabilities, or recommendations;
-- lender-controlled publication of the reviewed analyst rating, company-facing message, and attached SME evaluation report;
-- application-readiness indicators before publication;
-- published rating, lender decision, optional numerical score, lender message, and downloadable SME evaluation report after publication;
-- company snapshot;
-- practical next actions;
-- applicant-safe post-publication what-if changes to growth, FCF margin, cost pressure, evidence, documents, and debt reduction;
-- applicant-safe current-versus-scenario comparison without private lender probability output;
-- applicant-facing peer context;
-- evidence sources;
-- five-year forecast view.
-
-Frame connections as simulated unless a production provider is actually configured. Frame results as directional ways to improve evidence or resilience, never as promises of approval.
-
-SME document uploads are not simulated. Save the exact bytes locally, retain a
-manifest with category, original name, size, MIME type, timestamp, and SHA-256,
-and expose those same bytes to the lender for download. Keep the vault outside
-Git and remove it only through the explicit Clear Demo State workflow.
-Generated document examples must use the same save path when the SME clicks the
-demo save action; do not set evidence flags without persisted bytes.
-Document validation is classification support, not proof of legal authenticity.
-Keep validation lender-side only; the SME portal should not coach applicants on
-which suspicious submissions were detected before submission. Hosted AI
-validation must be explicit-click only and send bounded previews plus metadata
-rather than full binary documents.
-
-The lender review must keep four records separate:
-
-1. immutable model score, model grade, and model recommendation;
-2. analyst rating, lender action, internal note, and adjustment rationale;
-3. persisted AI evaluation package containing a private internal report and applicant-safe SME report draft;
-4. SME-facing published rating, optional numerical score, publication message, reviewed report copy, and timestamp.
-
-The current-score signature must match before an evaluation package can be
-published. Keep the internal report private. Publication requires a non-empty
-SME report, and the exact lender-reviewed text must be copied into the
-application lifecycle so later LLM runs cannot silently change an already
-published report. Treat the SME prompt as guidance rather than a privacy
-boundary: retain the applicant-safety filter that removes model/AI scores,
-provisional grades, validation metrics, and internal routing language before a
-draft reaches the publication form.
-
-### `pages/7_Profile_Settings.py`
-
-This is the analyst profile and connected-app simulation.
-
-It contains Profile, Personal Apps, and Admin Controls tabs. It manages:
-
-- analyst identity and organization;
-- user type, permission, and manager;
-- Slack, Teams, Gmail, Outlook, Google Drive, OneDrive, SharePoint, and Zoom simulation;
-- preferred channel and email app;
-- review alerts and daily digest;
-- dark-mode preference;
-- controlled editing of access-related fields.
-
-This is a demo profile system, not production identity and access management.
-
-### `pages/8_About.py`
-
-This is the lender-only terminology and policy reference. It must not expose
-internal scoring dimensions, derived ratios, or grade policy to SME users.
-
-It contains:
-
-- the decision-support usage boundary;
-- searchable scoring-dimension definitions;
-- derived-signal definitions;
-- A-F grade policy and recommendation mapping.
-
-Keep the language understandable to analysts and bankers.
-If an SME profile opens this page directly, show a blocked/explanatory message
-with links back to SME Credit Health, SME Tutorials, and Support. Do not render
-the internal tables.
-
-### `pages/9_Support.py`
-
-This is the role-aware simulated support surface.
-
-It contains:
-
-- lender support contact cards and SME-facing YourBank consultant cards;
-- support or consultant request form;
-- recent support request history;
-- role-specific scripted live chat;
-- lender and SME FAQ sets.
-
-Support requests are demo session records and email drafts. Do not imply that a real support desk was contacted. Never invite users to include passwords, API keys, or sensitive applicant data.
-For SME users, frame support as connecting with a YourBank consultant rather
-than contacting the platform company or internal analyst helpdesk.
-
-### `pages/11_Acronym_Guide.py`
-
-This is the role-aware Help glossary for acronyms and metric explanations.
-
-It contains:
-
-- lender-facing acronyms and metric guidance for Personal Workspace, evidence
-  review, monitoring, and governance;
-- SME-facing applicant-safe acronyms and metric guidance for the company portal,
-  document uploads, simulated connections, and published outcomes;
-- search across acronyms and metric rows;
-- links back to the relevant workflow pages.
-
-Keep glossary source data in `src/utils/acronym_guide.py`. Do not expose
-internal score thresholds, model governance details, or analyst-only policy
-language to SME users.
-
-### `pages/10_Tutorials.py`
-
-This is the searchable, text-first learning hub. It is role-aware: lenders see
-the full workspace guide catalog, while SME users see applicant-facing guides
-for application setup, documents and connections, submission/results, and
-consultant support, and the role-aware Acronym Guide.
-
-Each tutorial includes:
-
-- slug, title, target page, category, time, and level;
-- summary and feature tags;
-- learning objectives;
-- four step-by-step sections;
-- action and tip guidance;
-- internal navigation to the live page.
-
-The hub uses query parameters to open individual guides. Keep links in the current browser tab. Tutorials must remain aligned with actual page behavior whenever a feature, label, or workflow changes.
-
-Do not add decorative placeholder screenshots or generated product mockups unless explicitly requested. The current tutorial direction is text-first.
-
-## Core Architecture
-
-### `src/core/data_pipeline.py`
-
-Owns schema, derived features, synthetic data generation, loading, validation, and five-year forecast creation.
-
-Public contracts:
-
-```text
-BASE_NUMERIC_COLUMNS
-DERIVED_NUMERIC_COLUMNS
-NUMERIC_COLUMNS
-CATEGORICAL_COLUMNS
-TARGET_COLUMN
-DEPRECATED_COLUMNS
-add_derived_features()
-build_forecast_table()
-generate_seed_data()
-load_seed_data()
-ensure_seed_data()
-```
-
-The target is `is_fraud`, while the UI generally describes the prediction as an application risk score to fit the wider credit-risk workflow.
-
-`forecast_plan_confidence_score` is deprecated. Drop it when encountered and do not reintroduce it.
-
-If canonical seed data is missing, stale, lacks required columns, or contains placeholder company names, regenerate deterministic data. The normal generator uses 1,200 rows and seed 42.
-
-Derived features cover:
-
-- debt and requested-exposure ratios;
-- recent-loan velocity and payment pressure;
-- collateral and external-financing pressure;
-- financial distress and transaction anomaly;
-- company-scale and governance mismatch;
-- cash-flow, runway, and cash-conversion pressure;
-- forecast aggressiveness and execution;
-- interest expense, annual debt service, DSCR, and +2% stress;
-- document completeness, quality, and process integrity;
-- identity/KYB, working-capital, financial-statement, related-party, and narrative risk.
-
-When adding a model input:
-
-1. Add it to the correct schema list.
-2. Populate or derive it consistently.
-3. Handle stale seed regeneration.
-4. Add input UI or explain why it is system-derived.
-5. Update About and Tutorials where user-facing.
-6. Update this guide.
-
-### `src/core/modeling.py`
-
-Owns training, metrics, score generation, grade mapping, recommendation mapping, rule flags, and portfolio scoring.
-
-Supported models:
-
-```text
-random_forest       -> Random Forest
-logistic_regression -> Logistic Regression
-```
-
-Default model: `random_forest`.
-
-Both models use a shared scikit-learn preprocessing pipeline:
-
-- median imputation and standard scaling for numeric fields;
-- most-frequent imputation and one-hot encoding for categorical fields;
-- a stratified 75/25 train/test split with random state 42.
-
-Current classifiers:
-
-```python
-RandomForestClassifier(
-    n_estimators=220,
-    min_samples_leaf=4,
-    random_state=42,
-    class_weight="balanced",
-)
-
-LogisticRegression(
-    max_iter=2500,
-    class_weight="balanced",
-    solver="lbfgs",
-)
-```
-
-Both output `predict_proba(...)[..., 1]` between 0 and 1.
-
-Feature importance uses Random Forest `feature_importances_` or absolute Logistic Regression coefficients.
-
-### Risk Grade Policy
-
-Use this mapping everywhere:
+A-F mapping:
 
 ```text
 A: score < 0.15
@@ -618,7 +169,7 @@ E: score < 0.74
 F: score >= 0.74
 ```
 
-Model recommendation:
+Recommendations:
 
 ```text
 A-B -> Approve
@@ -626,340 +177,386 @@ C-D -> Manual Review
 E-F -> Reject
 ```
 
-Do not duplicate threshold logic with different values. Reuse the modeling policy or keep any display-only mapping exactly synchronized.
+Keep the score, model grade, analyst rating, and published rating visibly distinct.
+
+## Repository Structure
+
+```text
+Home.py
+pages/
+  1_Personal_Workspace.py
+  2_Operations_Desk.py
+  3_Risk_Dashboard.py
+  4_Model_Insights.py
+  5_LLM_Integration.py
+  6_SME_Credit_Health.py
+  7_Profile_Settings.py
+  8_About.py
+  9_Support.py
+  10_Tutorials.py
+  11_Acronym_Guide.py
+src/
+  core/
+    data_pipeline.py
+    modeling.py
+    runtime.py
+  features/
+    alignment_features.py
+    case_workflow.py
+    document_validation.py
+    explanations.py
+    shap_explanations.py
+    workbench_features.py
+  ui/
+    components.py
+    document_validation.py
+  utils/
+    acronym_guide.py
+    demo_persistence.py
+    document_examples.py
+    document_storage.py
+    formatting.py
+    llm_profiles.py
+    table_views.py
+    workflow_transfer.py
+data/
+  docs/
+  seed/
+docs/
+  CredRiskAI_Pitchdeck.html
+  CredRiskAI_Pitchdeck.pdf
+  CredRiskAI_Pitchdeck.pptx
+tests/
+README.md
+DEMO.md
+requirements.txt
+Run_App.bat
+```
+
+`.tmp/`, `.venv/`, bytecode, local LLM profile folders, and generated demo files are not source artifacts. Do not commit them.
+
+## Page Contracts
+
+### `Home.py`
+
+Home is the lender employee homepage, not a marketing page.
+
+It shows:
+
+- welcome context for the lender analyst;
+- suggested actions;
+- SME Portal Intake entries;
+- operations queue indicators;
+- Slack/workspace updates;
+- calendar context;
+- links into Personal Workspace and Operations Desk.
+
+SME-submitted rows must hand off the exact submitted snapshot into Personal Workspace using `SME_SUBMISSION_SOURCE`.
+
+### `pages/1_Personal_Workspace.py`
+
+This is the lender single-case workspace.
+
+It must:
+
+- load SME-submitted snapshots as read-only intake;
+- show the submitted annual five-year plan table when available;
+- keep legacy generated forecast fallback for older sessions without `forecast_plan_rows`;
+- score with the Random Forest baseline;
+- show evidence, risk analysis, decision package, AI output, case materials, and audit history;
+- require AI output before final Case Review;
+- keep document validation lender-side;
+- publish only applicant-safe report text to the SME lifecycle record.
+
+Do not add editable intake fields for SME-owned data here.
+
+### `pages/2_Operations_Desk.py`
+
+This is the synthetic queue workboard for non-SME demo operations.
+
+It covers:
+
+- queue filtering;
+- evidence gaps;
+- SLA and routing visibility;
+- bulk actions;
+- handoff into Personal Workspace.
+
+Keep it separate from the SME-submitted intake list so open tasks and submitted SME cases do not look like the same object.
+
+### `pages/3_Risk_Dashboard.py`
+
+This is portfolio monitoring.
+
+It covers:
+
+- filtered portfolio metrics;
+- grade and decision distributions;
+- live session decisions;
+- highest-risk cases;
+- review audit history.
+
+Displayed results should respond to active filters.
+
+### `pages/4_Model_Insights.py`
+
+This is model governance and explanation.
+
+It should align with the RF-only app surface:
+
+- Random Forest baseline metrics;
+- confusion matrix or model quality views;
+- A-F thresholds;
+- feature importance;
+- derived signal explanations;
+- governance notes.
+
+Do not document a disabled API preview or hidden model selector as live behavior.
+
+### `pages/5_LLM_Integration.py`
+
+This creates the AI evaluation package for the latest scored case.
+
+It must:
+
+- work deterministically without external credentials;
+- support explicit OpenAI API and local OpenAI-compatible calls only after a button click;
+- show the supervised Random Forest baseline separately from AI output;
+- generate a private internal lender report and a separate applicant-safe SME report draft;
+- persist the package by case/signature so Personal Workspace can require it before Case Review.
+
+Do not save API tokens to disk.
+
+### `pages/6_SME_Credit_Health.py`
+
+This is the SME Loan Intake Portal.
+
+It must:
+
+- block lender users from editing SME intake;
+- load sample cases on the SME side;
+- support blank manual intake;
+- require the five-row five-year plan before save/submission;
+- save sample/generated files through the same document vault as uploads;
+- submit a locked application snapshot to lender review;
+- show readiness before publication;
+- show published rating/report after lender publication;
+- avoid exposing internal lender probabilities, provisional grades, AI scores, or validation metrics to the SME.
+
+### `pages/7_Profile_Settings.py`
+
+This is profile and connected-app simulation.
+
+It manages user profile, role, permissions, manager/team fields, Slack/Teams, email, storage, Zoom, digest, alerts, and dark-mode preference.
+
+### `pages/8_About.py`
+
+This is lender-only reference material for scoring dimensions, derived ratios, grade policy, and recommendation mapping.
+
+If opened by an SME profile, it should block internal content and route the user back to SME-safe pages.
+
+### `pages/9_Support.py`
+
+This is role-aware support.
+
+Lenders see platform support language. SMEs see YourBank consultant-support language. Support requests are local demo records, not real support tickets.
+
+### `pages/10_Tutorials.py`
+
+This is the text-first tutorial hub.
+
+Keep it aligned with live page behavior and current labels. Do not add generated placeholder screenshots unless explicitly requested.
+
+### `pages/11_Acronym_Guide.py`
+
+This is the role-aware glossary.
+
+SMEs should see applicant-safe language. Lenders can see internal metric and governance explanations.
+
+## Core Modules
 
 ### `src/core/runtime.py`
 
-Owns shared Streamlit bootstrap.
+Every page should call:
 
-It:
-
-- restores demo state;
-- ensures current seed schema and named companies;
-- trains or refreshes the two-model bundle;
-- initializes shared workflow state;
-- loads local LLM profile values;
-- reads LLM environment variables;
-- persists the serializable demo state.
-
-Default selected model is Random Forest. Invalid saved model keys reset to the default.
-
-### `src/utils/workflow_transfer.py`
-
-Owns small, serializable helpers for moving SME-submitted applications into
-lender views.
-
-It:
-
-- defines `SME_SUBMISSION_SOURCE`;
-- extracts submitted application snapshots from `sme_submission_history`;
-- falls back to active or SME company application state for older sessions;
-- builds lender-facing SME Portal Intake rows;
-- returns the exact submitted snapshot for Home, Operations Desk, and Personal
-  Workspace handoff buttons.
-
-Keep these helpers free of Streamlit UI calls so they can be reused in tests and
-multiple pages.
-
-### `src/features/case_workflow.py`
-
-Owns:
-
-- demo scenarios;
-- analyst review actions;
-- case-summary export;
-- similar-application calculation.
-
-### `src/features/workbench_features.py`
-
-Owns:
-
-- missing-document and queue-status logic;
-- Alice Cooper's workload assignment;
-- recommended loan terms;
-- portfolio-monitoring preview;
-- grouped risk drivers;
-- data-source status;
-- decision timeline;
-- model-confidence rows;
-- downloadable credit memo.
-
-Alice's queue contract:
-
-```text
-Maximum assigned tasks: 20
-Same-day tasks:         2 when available
-This-week tasks:        5 when available
-Remaining tasks:        next week
-Other analysts:         M. van Dijk and S. Jansen
+```python
+st.set_page_config(...)
+bootstrap_state()
+render_sidebar()
 ```
 
-Queue routing:
+`bootstrap_state()` restores local demo state, ensures seed data and model bundle, initializes workflow stores, and loads local LLM profile values.
 
-```text
-E-F                         -> Compliance review
-Document completeness < .8 -> Request documents
-C-D                         -> Manual review
-Otherwise                   -> Ready for approval
-```
+### `src/core/data_pipeline.py`
 
-### `src/features/alignment_features.py`
+Owns schema, generated seed data, derived features, forecast validation, forecast table rendering, and model-facing feature preparation.
 
-Owns:
+Important forecast helpers:
 
-- what-if scenario transformation;
-- scenario comparison;
-- peer benchmarking;
-- evidence-source coverage;
-- borrower action suggestions;
-- dormant API payload helpers;
-- latest-or-sample case selection.
+- `validate_forecast_plan_rows()`
+- `forecast_metrics_from_plan_rows()`
+- `build_forecast_table()`
 
-The API payload helper exists, but the Model Insights UI for it is currently disabled.
+`build_forecast_table()` should return submitted `forecast_plan_rows` exactly when valid. For older data without those rows, keep the generated fallback.
 
-### `src/features/explanations.py`
+### `src/core/modeling.py`
 
-Owns:
+Owns training, metrics, scoring, grade mapping, recommendations, and rule flags.
 
-- offline deterministic explanation;
-- hosted OpenAI explanation;
-- local OpenAI-compatible explanation;
-- URL normalization;
-- visible error state;
-- deterministic fallback.
+The visible workflow uses Random Forest. Keep any underlying compatibility code from leaking into app copy unless intentionally exposed.
 
-The deterministic explanation includes:
+### `src/utils/demo_persistence.py`
 
-- decision, grade, and risk score;
-- applicant context;
-- top risk drivers;
-- mitigating factors;
-- recommended analyst action;
-- compliance note.
-
-LLM prompts must use the selected model label, prediction, validation metrics, applicant inputs, and shared grade thresholds. They must prohibit invented facts and legal certainty.
-
-### `src/features/shap_explanations.py`
-
-Owns case-specific SHAP contribution analysis. It currently uses the model bundle's default Random Forest pipeline.
-
-### `src/ui/components.py`
-
-Owns:
-
-- default Alice Cooper profile;
-- navigation sections;
-- profile merging and saving;
-- internal page links and case handoff;
-- global light/dark styling;
-- demo login and verification;
-- login transition;
-- first-session tutorial prompt;
-- sidebar rendering;
-- sign-out and demo-state reset.
-
-Keep shared app chrome here instead of copying it into individual pages.
-
-### Utilities
-
-`src/utils/demo_persistence.py` stores selected JSON-safe session values under:
+Stores JSON-safe local demo state in:
 
 ```text
 .tmp/demo_sessions/<demo_session>.json
 ```
 
-The `demo_session` query parameter reconnects a browser refresh to its local demo state. `.tmp` is ignored by Git.
+The `demo_session` query parameter reconnects refreshes to local demo state.
 
-Do not add secrets or API tokens to `PERSISTED_KEYS`.
+`Clear Session` must:
 
-`src/utils/formatting.py` provides European-style number and currency formatting and parsing.
+- delete the active demo-session JSON file;
+- delete the active local SME document vault;
+- create a new `demo_session` id;
+- set authentication to false;
+- return the app to login state.
 
-`src/utils/table_views.py` centralizes application-table labels and formatting.
+Do not add secrets, API keys, or model objects to persisted state.
 
-`src/utils/llm_profiles.py` stores only the local endpoint/IP and model name outside the repository.
+### `src/utils/document_storage.py`
 
-## State and Persistence Rules
+Owns local saved document bytes and manifests under:
 
-Shared state is initialized in `bootstrap_state()`. Important groups include:
+```text
+.tmp/sme_documents/<demo_session>/<application>/
+```
 
-- seed data and model bundle;
-- score, portfolio, and review histories;
-- latest application, prediction, explanation, and review;
-- selected supervised model;
-- LLM provider, output, source, error, signature, and run history;
-- local LLM endpoint, model, token, and saved-setting state;
-- bulk-decision state;
-- support-ticket history;
-- active queue/intake case;
-- profile, theme, authentication, and onboarding preferences.
+The lender should download the same bytes the SME saved. Do not fake evidence flags without saved bytes.
 
-Persist only values listed in `PERSISTED_KEYS`. Model objects and data frames are reconstructed rather than serialized into demo JSON.
+### `src/utils/document_examples.py`
+
+Generates fictional CSV sample evidence.
+
+Keep generated files:
+
+- synthetic;
+- category-specific;
+- realistic enough for validation demos;
+- aligned with the current submitted intake fields;
+- saved through `document_storage.py` when the SME chooses to save examples.
+
+### `src/features/document_validation.py`
+
+Owns lender-side deterministic and optional AI document checks.
+
+Validation is triage/classification support, not proof of authenticity. Hosted/local AI calls should use bounded previews and metadata, not full binary documents.
+
+### `src/utils/llm_profiles.py`
+
+Stores local endpoint/IP and model name outside the repository. It must not store tokens.
+
+Default profile locations:
+
+```text
+Windows: %LOCALAPPDATA%\CredRiskAI\llm_models\local_server.json
+macOS:   ~/Library/Application Support/CredRiskAI/llm_models/local_server.json
+Linux:   ${XDG_CONFIG_HOME:-~/.config}/CredRiskAI/llm_models/local_server.json
+```
+
+`CREDRISK_LLM_MODELS_DIR` may override the folder.
+
+## State Rules
 
 When adding state:
 
 1. Initialize it in `bootstrap_state()`.
-2. Decide explicitly whether it should survive refresh.
+2. Decide whether it should survive refresh.
 3. Add it to `PERSISTED_KEYS` only if it is JSON-safe and non-secret.
-4. Clear or invalidate dependent state when its source case changes.
+4. Clear or invalidate dependent state when the source case changes.
+5. Make reset behavior explicit if Clear Session should remove it.
 
-## Security and Local Data Rules
+Keep these boundaries:
 
-- Never commit credentials, API tokens, customer data, or secret-bearing config files.
-- Use Streamlit secrets or environment variables for hosted credentials.
-- Keep manually entered local API tokens session-only.
-- Never add API tokens to demo persistence or local model-profile JSON.
-- Store reusable local model endpoint and model-name settings outside the checkout.
-- Do not use reversible obfuscation as a substitute for secure secret storage.
-- All included portfolio and applicant data is synthetic.
-- Support and connected-app integrations are simulations.
-- Production claims must be framed as future integration paths, not current capabilities.
+- model/data caches are reconstructed, not persisted as JSON;
+- local API tokens are session-only;
+- local LLM endpoint/model profile is outside the repo;
+- demo documents live under `.tmp/sme_documents`;
+- demo session JSON lives under `.tmp/demo_sessions`.
 
-## UI and Copy Conventions
+## UI And Copy Rules
 
-- Keep a compact operational bank-workbench feel.
-- Avoid turning pages into marketing surfaces.
-- Prefer plain analyst and banker language.
-- Preserve the teal/slate design system and shared theme behavior.
-- Use `width="stretch"` for new Streamlit tables, controls, and charts where appropriate.
-- Use `st.container(border=True)` for small informational cards.
-- Use tabs and expanders to organize dense analysis without hiding essential decisions.
-- Keep model recommendation, AI review, and final analyst action visibly distinct.
-- Use European formatting helpers instead of hand-formatting monetary values.
-- Keep desktop and mobile readability.
+- Build the actual workflow screen, not a landing page.
+- Use compact operational bank-workbench layouts.
+- Keep SME language applicant-safe.
+- Keep lender language clear but not legalistic.
+- Prefer tabs/expanders for dense workflow surfaces.
+- Keep model recommendation, AI review, analyst action, and published rating distinct.
+- Use helper formatting functions for money, percentages, months, integers, and scores.
+- Add comments to Python code where they help a new reader understand non-obvious workflow, state, model, or validation logic.
 - Do not add decorative visuals that do not improve the workflow.
 
-## Documentation and Demo Materials
+## Documentation Rules
 
-Maintain these alongside product changes:
+Update these when behavior changes:
 
-- `README.md`: setup, launch, walkthrough, page map, LLM configuration, local profile storage, and grade policy.
-- `DEMO.md`: live presentation sequence and safety notes.
-- `pages/10_Tutorials.py`: detailed user guidance for every page.
-- `pages/8_About.py`: field, derived-signal, and grade definitions.
-- `data/docs/fraud_research.md`: research grounding.
-- pitch-deck HTML/PDF/PPTX when a product change affects the presentation story.
+- `README.md`
+- `DEMO.md`
+- `.codex/CODEX.md`
+- `pages/10_Tutorials.py`
+- `pages/8_About.py`
+- `pages/11_Acronym_Guide.py`
+- pitchdeck files when the product story changes
 
-Avoid documenting commented-out or aspirational UI as if it is currently live.
-
-## Change Discipline
-
-Before editing:
-
-- inspect the relevant page and shared helper modules;
-- check `git status --short`;
-- preserve unrelated user changes;
-- look for duplicated labels or policies in About, Tutorials, README, DEMO, and this file.
-
-When changing scoring:
-
-- keep both models functional;
-- preserve 0-1 probability output;
-- keep grade thresholds synchronized;
-- verify selected-model propagation between pages;
-- update explanations and governance copy.
-
-When changing a workflow:
-
-- update session initialization;
-- update persistence only when appropriate;
-- keep handoffs between Home, Operations Desk, Risk Dashboard, Personal Workspace, and LLM Integration intact;
-- keep SME Company Portal behavior available only to SME profiles;
-- update the matching tutorial.
-
-When changing LLM behavior:
-
-- retain deterministic offline operation;
-- do not make external calls before explicit user action;
-- retain visible fallback errors;
-- keep API tokens out of disk persistence;
-- preserve the distinction between baseline model and AI second review.
+Avoid documenting commented-out or aspirational UI as live behavior.
 
 ## Verification
 
-Use the available interpreter (`python3` on macOS/Linux, often `python` inside the Windows virtual environment).
-
-Syntax check without importing the app:
+Use:
 
 ```bash
-python3 - <<'PY'
-from pathlib import Path
-
-paths = [Path("Home.py"), *Path("pages").glob("*.py"), *Path("src").rglob("*.py")]
-for path in paths:
-    compile(path.read_text(encoding="utf-8"), str(path), "exec")
-print(f"syntax ok: {len(paths)} files")
-PY
-```
-
-Model and queue smoke test:
-
-```bash
-python3 - <<'PY'
-from src.core.data_pipeline import ensure_seed_data
-from src.core.modeling import train_model
-from src.features.workbench_features import build_application_queue
-
-seed = ensure_seed_data()
-bundle = train_model(seed["applications"])
-assert set(bundle.models) == {"random_forest", "logistic_regression"}
-
-sample = seed["applications"].iloc[0].to_dict()
-for key in bundle.models:
-    prediction = bundle.score_one(sample, model_key=key)
-    assert 0 <= prediction["fraud_probability"] <= 1
-    assert prediction["model_key"] == key
-
-    queue = build_application_queue(bundle, seed["applications"], model_key=key)
-    alice = queue[queue["assigned_analyst"].eq("Ms. Cooper")]
-    assert len(alice) <= 20
-    assert alice["sla"].eq("Same day").sum() <= 2
-    assert alice["sla"].eq("This week").sum() <= 5
-
-print("model and queue smoke ok")
-PY
-```
-
-Local LLM profile smoke test:
-
-```bash
-tmp_dir="$(mktemp -d)"
-CREDRISK_LLM_MODELS_DIR="$tmp_dir/llm_models" python3 - <<'PY'
-import json
-from src.utils.llm_profiles import load_local_llm_profile, save_local_llm_profile
-
-path = save_local_llm_profile("http://localhost:1234/v1", "local-model")
-payload = json.loads(path.read_text(encoding="utf-8"))
-assert payload == {"ip": "http://localhost:1234/v1", "model_name": "local-model"}
-assert load_local_llm_profile() == payload
-assert "token" not in path.read_text(encoding="utf-8").lower()
-print("local profile smoke ok")
-PY
-```
-
-For UI changes, use `streamlit.testing.v1.AppTest` when practical and verify the affected authenticated state and conditional controls. Then run:
-
-```bash
+python3 -m compileall -q Home.py pages src tests
+python3 -m unittest discover -s tests
 git diff --check
 git status --short
 ```
 
-Run the full app with `streamlit run Home.py` for final visual verification when the change affects layout, navigation, dialogs, forms, theme, or cross-page state.
+For workflow or UI changes, also run the app when local port binding is available:
+
+```bash
+streamlit run Home.py
+```
+
+Manual workflow smoke path:
+
+1. Log in as SME.
+2. Load a sample or blank intake.
+3. Save company data with a complete five-year plan.
+4. Save or upload evidence.
+5. Submit to lender.
+6. Log in as lender.
+7. Open the submitted case.
+8. Generate AI output.
+9. Complete Case Review.
+10. Publish rating/report.
+11. Log back in as SME and view the published result.
+12. Use Clear Session and verify the app returns to login with a fresh `demo_session`.
 
 ## Non-Regression Checklist
 
 Before handing off a material change, confirm:
 
-- Home still launches from `Home.py`.
-- Authentication and sidebar navigation still work.
-- Both supervised models train and score.
-- A-F thresholds and recommendations remain consistent.
-- A case can move from a queue into Personal Workspace.
-- Scoring populates the latest application and prediction.
-- Analyst review remains separate from model and AI output.
-- Risk Dashboard and Operations Desk reflect session decisions.
-- SME Company Portal blocks lender direct access and does not expose a lender preview.
-- LLM Integration works deterministically without credentials.
-- External LLM calls require explicit user action.
-- Local model profiles contain only endpoint/IP and model name.
-- Tutorials and user-facing documentation match the live app.
-- No secrets or generated demo-session files are added to Git.
+- `Home.py` still launches the app.
+- Authentication and role routing still work.
+- SME users can access Loan Intake Portal and cannot access lender-only internals.
+- Lender users can open submitted SME snapshots but cannot edit SME intake data.
+- Five-year plan rows are required on SME save/submission.
+- Blank manual intake cannot be submitted with empty plan rows.
+- Sample evidence cases load without errors.
+- Fraudulent sample documents include detectable red-flag wording.
+- Personal Workspace requires AI output before Case Review.
+- Publication returns an applicant-safe result to the SME.
+- Clear Session deletes local demo state, logs out, and starts a new session id.
+- Deterministic LLM/document paths work without external credentials.
+- No generated `.tmp` files, credentials, or local profile JSON are staged.

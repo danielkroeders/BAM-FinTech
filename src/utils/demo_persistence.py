@@ -177,20 +177,27 @@ def persist_demo_state():
 
 
 def clear_demo_state():
-    # Clear keeps the same demo_session_id so the browser URL remains valid, but
-    # removes every other state key and all local uploaded evidence for a clean
-    # new walkthrough.
-    session_id = ensure_demo_session()
+    # Clear Session should behave like ending the current demo run. It removes
+    # the old persisted file and document vault, then starts a brand-new local
+    # demo_session token so browser refreshes cannot revive the cleared workflow.
+    old_session_id = ensure_demo_session()
     from src.utils.document_storage import clear_session_documents
 
     # Clearing state also removes local SME uploads so the next demo starts clean.
-    clear_session_documents(session_id)
-    path = _session_path(session_id)
+    clear_session_documents(old_session_id)
+    path = _session_path(old_session_id)
     if path.exists():
         path.unlink()
+
+    new_session_id = f"demo-{uuid4().hex[:12]}"
     for key in list(st.session_state.keys()):
-        if key != SESSION_STATE_KEY:
-            del st.session_state[key]
-    st.session_state[SESSION_STATE_KEY] = session_id
+        del st.session_state[key]
+    st.session_state[SESSION_STATE_KEY] = new_session_id
     st.session_state[SESSION_LOADED_KEY] = True
+    st.session_state.authenticated = False
+    st.session_state.login_stage = "credentials"
+    st.session_state.login_transition = False
+    st.session_state.clear_demo_state_requested = False
+    st.session_state.clear_demo_state_acknowledged = False
     st.session_state.demo_state_cleared_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    _set_query_session_id(new_session_id)

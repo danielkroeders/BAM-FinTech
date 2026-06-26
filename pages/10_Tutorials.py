@@ -486,7 +486,7 @@ SME_TUTORIALS = [
         "steps": [
             {
                 "title": "Open Company Data",
-                "body": "Use the SME company portal to enter the company name, industry, region, legal type, years in business, employees, revenue, debt, and requested loan amount. Interest pricing is set later by YourBank as a lender recommendation.",
+                "body": "Use the Loan Intake Portal to enter the company name, industry, region, legal type, years in business, employees, revenue, debt, and requested loan amount. Interest pricing is set later by YourBank as a lender recommendation.",
                 "action": "Fill the Company Data tab and choose Save Company Data.",
                 "tip": "Saved company data updates the readiness preview but does not submit the file yet.",
             },
@@ -553,7 +553,7 @@ SME_TUTORIALS = [
                 "title": "Download what was saved",
                 "body": "Saved files appear in the document table and can be downloaded from the portal. The lender can later download the same saved bytes.",
                 "action": "Use the download buttons to confirm the files that are attached to the application.",
-                "tip": "Use Clear Session only when you intentionally want to remove demo-session files.",
+                "tip": "Use Clear Session only when you intentionally want to remove demo-session files, log out, and start a fresh local demo session.",
             },
         ],
     },

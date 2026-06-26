@@ -925,7 +925,7 @@ def _render_session_footer():
                 width="stretch",
                 help=(
                     "Ask before resetting this demo session, saved uploads, reviews, SME submissions, "
-                    "AI outputs, and login state."
+                    "AI outputs, login state, and the local demo-session link."
                 ),
             ):
                 st.session_state.clear_demo_state_requested = True
@@ -934,7 +934,8 @@ def _render_session_footer():
             # The destructive reset uses a two-step guard because it deletes session state and local files.
             st.warning(
                 "Are you sure you want to clear this session? This will remove saved uploads and sample evidence files, "
-                "and reset SME intakes, lender reviews, AI outputs, validation results, support tickets, and login state.",
+                "reset SME intakes, lender reviews, AI outputs, validation results, support tickets, log you out, "
+                "and start a fresh local demo-session link.",
                 icon=":material/warning:",
             )
             acknowledged = st.checkbox(
