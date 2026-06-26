@@ -221,5 +221,3 @@ For a presentation runbook, see [`DEMO.md`](DEMO.md). For the research grounding
 ## License And Copyright
 
 Copyright (c) 2026 Daniel Kroeders and Joost Gaasbeek.
-
-This project is released under the [MIT License](LICENSE). Research publications and course materials included for academic context remain the property of their respective authors and publishers.
