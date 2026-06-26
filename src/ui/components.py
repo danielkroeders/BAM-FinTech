@@ -140,7 +140,7 @@ DEMO_PROMPT_HANDLED_KEY = "demo_prompt_handled_this_session"
 DEMO_PROMPT_CHECKBOX_KEY = "demo_prompt_remember_checkbox"
 
 # Enable this after the YouTube demo has been published.
-# DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=YOUR_VIDEO_ID"
+DEMO_VIDEO_URL = "https://youtu.be/tX5-d6ZqSJg"
 
 
 def _streamlit_theme_type():
@@ -858,10 +858,10 @@ def _demo_prompt_body():
         """,
         unsafe_allow_html=True,
     )
-    st.caption("The YouTube demo link will be enabled after the video is published.")
+    st.caption("The video is available through the button below.")
 
     # Uncomment when DEMO_VIDEO_URL is available. st.link_button opens external links in a new tab.
-    # st.link_button("Watch Demo on YouTube", DEMO_VIDEO_URL, width="stretch")
+    st.link_button("Watch Demo on YouTube", DEMO_VIDEO_URL, width="stretch")
 
     st.checkbox(
         "Remember my choice for next time",
