@@ -216,7 +216,7 @@ Run the full app for visual workflow validation:
 streamlit run Home.py
 ```
 
-For a presentation runbook, see [`DEMO.md`](DEMO.md). For the research grounding behind risk ratios, fraud signals, cash-flow signals, and detection measures, see [`data/docs/fraud_research.md`](data/docs/fraud_research.md).
+For the research grounding behind risk ratios, fraud signals, cash-flow signals, and detection measures, see [`data/docs/fraud_research.md`](data/docs/fraud_research.md).
 
 ## License And Copyright
 
